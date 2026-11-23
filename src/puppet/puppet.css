@@ -1,0 +1,9 @@
+.ba-puppet-stage { display:block; width:100%; height:100%; overflow:visible; user-select:none; -webkit-user-select:none; }
+.ba-puppet-stage[role="group"] { touch-action:none; }
+.ba-puppet-stage[data-grabbed] { cursor:grabbing; }
+.ba-hit { fill:transparent; stroke:none; pointer-events:all; cursor:grab; outline:none; }
+.ba-puppet-stage[data-grabbed] .ba-hit { cursor:grabbing; }
+.ba-handle-ring { pointer-events:none; fill:none; stroke:#86422f; stroke-width:2; stroke-dasharray:3 5; opacity:0; vector-effect:non-scaling-stroke; }
+.ba-hit:focus-visible ~ .ba-handle-ring, .ba-handle[data-selected] .ba-handle-ring, .ba-handle[data-snap] .ba-handle-ring { opacity:1; }
+.ba-handle[data-snap] .ba-handle-ring { stroke:#235d52; stroke-dasharray:none; stroke-width:3; }
+@media (hover:hover) { .ba-hit:hover ~ .ba-handle-ring { opacity:.8; } }

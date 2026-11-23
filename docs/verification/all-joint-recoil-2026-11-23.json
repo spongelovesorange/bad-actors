@@ -1,0 +1,220 @@
+{
+  "date": "2026-11-23",
+  "environment": "Local Chrome practice page on macOS. All distances below refer to this desktop layout.",
+  "method": "Programmatic pointer gestures delivered to the stage. Sampled actual painted shoulder and cheek compared with their resting screen positions after pointerup. Independently repeated selected gestures with native mouse input.",
+  "nativeMouseTargets": [
+    "rightAnkle",
+    "left",
+    "leftElbow"
+  ],
+  "samples": [
+    {
+      "handle": "head",
+      "selected": "head",
+      "targetStage": [
+        266,
+        93
+      ],
+      "gripErrorStageUnits": 0,
+      "maxShoulderDisplacementCssPx": 7.575,
+      "maxCheekDisplacementCssPx": 1.109,
+      "peakTorsoTiltDegrees": 3.265,
+      "settledAfterMs": 1232.6
+    },
+    {
+      "handle": "left",
+      "selected": "left",
+      "targetStage": [
+        151,
+        189
+      ],
+      "gripErrorStageUnits": 0,
+      "maxShoulderDisplacementCssPx": 23.387,
+      "maxCheekDisplacementCssPx": 18.351,
+      "peakTorsoTiltDegrees": 9.678,
+      "settledAfterMs": 1516.2
+    },
+    {
+      "handle": "right",
+      "selected": "right",
+      "targetStage": [
+        349,
+        190
+      ],
+      "gripErrorStageUnits": 0,
+      "maxShoulderDisplacementCssPx": 17.136,
+      "maxCheekDisplacementCssPx": 18.285,
+      "peakTorsoTiltDegrees": 9.075,
+      "settledAfterMs": 1516
+    },
+    {
+      "handle": "leftElbow",
+      "selected": "leftElbow",
+      "targetStage": [
+        149,
+        221.6
+      ],
+      "gripErrorStageUnits": 0.582,
+      "maxShoulderDisplacementCssPx": 33.879,
+      "maxCheekDisplacementCssPx": 28.799,
+      "peakTorsoTiltDegrees": 16,
+      "settledAfterMs": 1571.7
+    },
+    {
+      "handle": "rightElbow",
+      "selected": "rightElbow",
+      "targetStage": [
+        352,
+        215.44
+      ],
+      "gripErrorStageUnits": 0,
+      "maxShoulderDisplacementCssPx": 35.502,
+      "maxCheekDisplacementCssPx": 29.023,
+      "peakTorsoTiltDegrees": 15.843,
+      "settledAfterMs": 1550.3
+    },
+    {
+      "handle": "leftShoulder",
+      "selected": "leftShoulder",
+      "targetStage": [
+        216,
+        149
+      ],
+      "gripErrorStageUnits": 0,
+      "maxShoulderDisplacementCssPx": 24.862,
+      "maxCheekDisplacementCssPx": 20.258,
+      "peakTorsoTiltDegrees": 11.527,
+      "settledAfterMs": 843.9
+    },
+    {
+      "handle": "rightShoulder",
+      "selected": "rightShoulder",
+      "targetStage": [
+        285,
+        147
+      ],
+      "gripErrorStageUnits": 0,
+      "maxShoulderDisplacementCssPx": 22.4,
+      "maxCheekDisplacementCssPx": 20.736,
+      "peakTorsoTiltDegrees": 11.652,
+      "settledAfterMs": 1441.8
+    },
+    {
+      "handle": "waist",
+      "selected": "waist",
+      "targetStage": [
+        269,
+        249
+      ],
+      "gripErrorStageUnits": 0,
+      "maxShoulderDisplacementCssPx": 22.07,
+      "maxCheekDisplacementCssPx": 17.038,
+      "peakTorsoTiltDegrees": 8.86,
+      "settledAfterMs": 1432.9
+    },
+    {
+      "handle": "chest",
+      "selected": "chest",
+      "targetStage": [
+        236.089,
+        180.228
+      ],
+      "gripErrorStageUnits": 0,
+      "maxShoulderDisplacementCssPx": 7.753,
+      "maxCheekDisplacementCssPx": 5.984,
+      "peakTorsoTiltDegrees": 4.381,
+      "settledAfterMs": 1324.7
+    },
+    {
+      "handle": "headTilt",
+      "selected": "headTilt",
+      "targetStage": [
+        288.825,
+        81.385
+      ],
+      "gripErrorStageUnits": 0,
+      "maxShoulderDisplacementCssPx": 6.149,
+      "maxCheekDisplacementCssPx": 5.969,
+      "peakTorsoTiltDegrees": 2.951,
+      "settledAfterMs": 1390.7
+    },
+    {
+      "handle": "leftKnee",
+      "selected": "leftKnee",
+      "targetStage": [
+        203.376,
+        258.836
+      ],
+      "gripErrorStageUnits": 0,
+      "maxShoulderDisplacementCssPx": 18.4,
+      "maxCheekDisplacementCssPx": 15.735,
+      "peakTorsoTiltDegrees": 10.019,
+      "settledAfterMs": 1433.1
+    },
+    {
+      "handle": "rightKnee",
+      "selected": "rightKnee",
+      "targetStage": [
+        301.117,
+        258.758
+      ],
+      "gripErrorStageUnits": 0,
+      "maxShoulderDisplacementCssPx": 15.551,
+      "maxCheekDisplacementCssPx": 15.049,
+      "peakTorsoTiltDegrees": 9.123,
+      "settledAfterMs": 1432.5
+    },
+    {
+      "handle": "leftAnkle",
+      "selected": "leftAnkle",
+      "targetStage": [
+        190,
+        261
+      ],
+      "gripErrorStageUnits": 0,
+      "maxShoulderDisplacementCssPx": 8.247,
+      "maxCheekDisplacementCssPx": 7.213,
+      "peakTorsoTiltDegrees": 3.502,
+      "settledAfterMs": 1225.3
+    },
+    {
+      "handle": "rightAnkle",
+      "selected": "rightAnkle",
+      "targetStage": [
+        314,
+        261
+      ],
+      "gripErrorStageUnits": 0,
+      "maxShoulderDisplacementCssPx": 6.069,
+      "maxCheekDisplacementCssPx": 8.103,
+      "peakTorsoTiltDegrees": 3.496,
+      "settledAfterMs": 1224.9
+    },
+    {
+      "handle": "propHeld",
+      "selected": "prop",
+      "targetStage": [
+        280,
+        227
+      ],
+      "gripErrorStageUnits": 0,
+      "maxShoulderDisplacementCssPx": 16.738,
+      "maxCheekDisplacementCssPx": 13.873,
+      "peakTorsoTiltDegrees": 7.739,
+      "settledAfterMs": 1474.3
+    },
+    {
+      "handle": "propLoose",
+      "selected": "prop",
+      "targetStage": [
+        295,
+        247
+      ],
+      "gripErrorStageUnits": 0,
+      "maxShoulderDisplacementCssPx": 10.53,
+      "maxCheekDisplacementCssPx": 8.978,
+      "peakTorsoTiltDegrees": 4.324,
+      "settledAfterMs": 1482.8
+    }
+  ]
+}

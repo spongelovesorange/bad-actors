@@ -1,9 +1,9 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { ActorFace } from './ActorFace'
-import { handShape, initialPose, moveHandle, putDown, withHandShape, withProp, type FaceShape, type HandShape, type PuppetPose } from './geometry'
+import { handShape, initialPose, moveHandle, putDown, rotate, withHandShape, withProp, type FaceShape, type HandShape, type PuppetPose } from './geometry'
 import { PuppetArt } from './PuppetArt'
-import { computeRig, stillMotion } from './motion'
+import { advanceMotion, computeRig, createMotion, stillMotion, tug } from './motion'
 
 const eyeX = (svg: string, eye: 'left-eye' | 'right-eye') => {
   const marker = svg.match(new RegExp(`data-landmark="${eye}" cx="([^"]+)"`))
@@ -105,6 +105,46 @@ describe('articulated stage artwork', () => {
     expect(toe).toBeGreaterThan(raised.indexOf('data-rig="torso"'))
     expect(toe).toBeLessThan(raised.indexOf('data-arm="left"'))
     expect(raised.indexOf('data-sole="right"')).toBeLessThan(raised.indexOf('data-rig="torso"'))
+  })
+
+  it('replays a grabbed head corner and paints the neck to the rotating underside of the head', () => {
+    const pose = initialPose()
+    const motion = { ...stillMotion, head: -20, body: 14, balance: 4 }
+    const grip = { handle: 'headTilt' as const, point: { x: 283, y: 71 } }
+    const rig = computeRig(pose, motion, grip)
+    const head = rig.pose.head
+    const top = rotate({ x: head.x - 2, y: head.y + 23 }, head, rig.headAngle)
+    const frame = renderToStaticMarkup(<PuppetArt pose={pose} motion={motion} grip={grip} />)
+    expect(rig.joints.headTilt.x).toBeCloseTo(grip.point.x)
+    expect(rig.joints.headTilt.y).toBeCloseTo(grip.point.y)
+    expect(frame).toBe(renderToStaticMarkup(<PuppetArt pose={pose} rig={rig} />))
+    expect(frame.match(/data-neck="" d="([^"]+)"/)?.[1]?.endsWith(` ${top.x} ${top.y}`)).toBe(true)
+  })
+
+  it('rocks a loose prop around its actual center with a smaller movement from the actor', () => {
+    const pose = putDown(withProp(initialPose(), 'cup'))
+    const engine = createMotion()
+    tug(engine, 'prop', { x: 68, y: -18 }, 16)
+    advanceMotion(engine, 0.04)
+    const rig = computeRig(pose, engine.value)
+    expect(Math.abs(rig.propAngle - pose.propTurn)).toBeGreaterThan(1)
+    expect(rig.propCenter).toEqual(pose.propPosition)
+    expect(Math.abs(engine.value.body)).toBeLessThan(Math.abs(rig.propAngle - pose.propTurn))
+    const svg = renderToStaticMarkup(<PuppetArt pose={pose} rig={rig} />)
+    expect(svg).toContain(`data-visible-prop="cup" transform="translate(${rig.propCenter.x} ${rig.propCenter.y}) rotate(${rig.propAngle})`)
+  })
+
+  it('seats a newly picked-up cup at the wrist even while the loose object still has angular momentum', () => {
+    const engine = createMotion()
+    tug(engine, 'prop', { x: 76, y: -23 }, 16)
+    advanceMotion(engine, 0.04)
+    const pose = moveHandle(withProp(initialPose(), 'cup'), 'right', { x: 269, y: 113 })
+    const held = computeRig(pose, engine.value)
+    const rest = computeRig(pose, stillMotion)
+    expect(Math.abs(engine.value.prop)).toBeGreaterThan(1)
+    expect(held.propAngle).toBe(pose.propTurn)
+    expect(held.propCenter).toEqual(rest.propCenter)
+    expect(held.pose.right).toEqual(rest.pose.right)
   })
 
   it('replays old two-channel motion without losing the rendered actor', () => {

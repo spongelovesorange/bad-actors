@@ -8,7 +8,7 @@ To playtest with someone beside you, read the cue privately, choose **Hide cue**
 
 ![The understudy brings a mug to its mouth. Its free hand shoots up and the rest of it wobbles.](docs/sandbag-take.gif)
 
-[Four poses made with the joint controls](docs/poses.jpg) · [Full rehearsal screen](docs/rehearsal.jpg)
+[Watch a foot pull the actor off balance](docs/leg-recoil.gif) · [Four poses made with the joint controls](docs/poses.jpg) · [Full rehearsal screen](docs/rehearsal.jpg)
 
 ### Run the rehearsal
 
@@ -21,7 +21,7 @@ npm run practice
 
 Open the local URL printed by Vite. The practice entry uses the same stage as the DeepSpace landing page and runs without an account or provider credentials. Drag the head or either palm. Keyboard players can tab to a handle and use the arrow keys. Hold Shift for larger steps.
 
-Grab any part of the actor on the same stage. Plant one boot, lift the other, pull the waist down, then tilt the head. The shoulders and elbows can move independently while a posed wrist keeps the cup steady. Use the hand shape controls for spread palms or fists, and turn either boot by its own controls. Choose **Side-eye** or **Bracing** to see how the same pose reads with a different expression.
+Grab any part of the actor on the same stage. Pull a boot sharply upward and let go. The knee folds, the hips shift and the neck catches up. Try the same pull at the shoulder to feel how the weight travels differently. Slow drags let you place a joint precisely. The hand shape controls give either hand spread fingers or a fist. Choose **Side-eye** or **Bracing** to see how the same pose reads with a different expression.
 
 To compare the controls, open **How to play → Compare the feel**. Try lifting one hand, bringing the cup to the mouth, and stopping a quick wave in each mode. **Body follow** lets the torso and head settle after the hand stops. **Direct only** keeps the torso still.
 

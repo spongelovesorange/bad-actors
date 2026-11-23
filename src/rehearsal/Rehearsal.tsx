@@ -29,10 +29,11 @@ import {
   type HandShape,
   type PropKind,
   type PuppetPose,
+  type PuppetStageApi,
 } from '../puppet'
 import { ActorFace } from '../puppet/ActorFace'
 import { isJoint, stageHandles } from '../puppet/geometry'
-import { turnFoot } from '../puppet/joints'
+import { footAngle, turnFoot } from '../puppet/joints'
 import './rehearsal.css'
 
 // These are public movement exercises. Live round assignments belong on the server.
@@ -346,6 +347,7 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
   const [resetMessage, setResetMessage] = useState('')
   const [grabbing, setGrabbing] = useState(false)
   const [bodyFollow, setBodyFollow] = useState(true)
+  const stage = useRef<PuppetStageApi>(null)
   const compareMotion = import.meta.env.DEV || !accountAvailable
   const helpTrigger = useRef<HTMLElement | null>(null)
   const cueHeading = useRef<HTMLHeadingElement>(null)
@@ -388,6 +390,17 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
     setGuess('')
     setResetMessage('')
     requestAnimationFrame(() => cueHeading.current?.focus({ preventScroll: true }))
+  }
+  function rotatePart(part: 'left' | 'right' | 'prop', degrees: number) {
+    const next = part === 'prop' ? turnProp(pose) : turnFoot(pose, part, degrees)
+    if (next === pose) return
+    if (part === 'prop') {
+      stage.current?.reactToTurn('prop', degrees)
+    } else {
+      const change = footAngle(next, part) - footAngle(pose, part)
+      stage.current?.reactToTurn(part === 'left' ? 'leftAnkle' : 'rightAnkle', change)
+    }
+    inputPose(next)
   }
   function inputPose(next: PuppetPose) {
     setPhase('practice')
@@ -441,6 +454,7 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
               <div className="ba-stage-canvas">
                 <div className="ba-player">
                   <PuppetStage
+                    stageRef={stage}
                     pose={pose}
                     onPoseChange={inputPose}
                     bodyFollow={bodyFollow}
@@ -567,7 +581,7 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
               </div>
               {phase === 'practice' && prop && (
                 <div className="ba-prop-tools">
-                  <button type="button" onClick={() => inputPose(turnProp(pose))}>
+                  <button type="button" disabled={grabbing} onClick={() => rotatePart('prop', 45)}>
                     <RefreshCw size={13} /> Turn prop
                   </button>
                   {pose.holder && (
@@ -611,7 +625,7 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
                       aria-label={`Turn ${side} foot counterclockwise`}
                       title={`Turn ${side} foot counterclockwise`}
                       disabled={grabbing || turnFoot(pose, side, -12) === pose}
-                      onClick={() => inputPose(turnFoot(pose, side, -12))}
+                      onClick={() => rotatePart(side, -12)}
                     >
                       <RotateCcw size={16} aria-hidden="true" />
                     </button>
@@ -620,7 +634,7 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
                       aria-label={`Turn ${side} foot clockwise`}
                       title={`Turn ${side} foot clockwise`}
                       disabled={grabbing || turnFoot(pose, side, 12) === pose}
-                      onClick={() => inputPose(turnFoot(pose, side, 12))}
+                      onClick={() => rotatePart(side, 12)}
                     >
                       <RotateCw size={16} aria-hidden="true" />
                     </button>

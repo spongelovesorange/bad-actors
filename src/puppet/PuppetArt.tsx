@@ -1,5 +1,6 @@
 import {
   handShape,
+  rotate,
   shoulders,
   type Hand,
   type HandShape,
@@ -8,6 +9,7 @@ import {
 } from './geometry'
 import { computeRig, stillMotion, type PuppetMotion, type PuppetRig, type SavedMotion } from './motion'
 import { ActorFace } from './ActorFace'
+import type { Grip } from './contact'
 
 export { ActorFace } from './ActorFace'
 export { stillMotion, type PuppetMotion } from './motion'
@@ -117,12 +119,13 @@ function Body({ rig }: { rig: PuppetRig }) {
 
 function Neck({ rig, motion }: { rig: PuppetRig; motion: PuppetMotion }) {
   const stem = rig.point({ x: 246, y: 153 })
-  const top = { x: rig.pose.head.x - 2, y: rig.pose.head.y + 23 }
+  const head = rig.pose.head
+  const top = rotate({ x: head.x - 2, y: head.y + 23 }, head, rig.headAngle)
   const bend = { x: (stem.x + top.x) / 2 + motion.head * 0.29, y: (stem.y + top.y) / 2 + 1 }
   const d = `M ${xy(stem)} Q ${xy(bend)} ${xy(top)}`
   return (
     <g fill="none">
-      <path d={d} stroke={ink} strokeWidth="20" />
+      <path data-neck="" d={d} stroke={ink} strokeWidth="20" />
       <path d={d} stroke="#746a56" strokeWidth="14" />
       <path d={d} stroke="#aa9873" strokeWidth="13" strokeDasharray="2 5" strokeLinecap="butt" />
     </g>
@@ -148,7 +151,7 @@ function Head({ rig }: { rig: PuppetRig }) {
 function PropArt({ rig }: { rig: PuppetRig }) {
   const { pose, propCenter: center } = rig
   return (
-    <g data-visible-prop={pose.prop} transform={`translate(${xy(center)}) rotate(${pose.propTurn})`} stroke={ink} strokeWidth="2.5">
+    <g data-visible-prop={pose.prop} transform={`translate(${xy(center)}) rotate(${rig.propAngle})`} stroke={ink} strokeWidth="2.5">
       {pose.prop === 'phone' && <g transform="rotate(5)">
         <rect x="-10.5" y="-23" width="21" height="45" rx="3.5" fill="#47585d" />
         <rect x="-7.75" y="-17.5" width="15.5" height="29.5" rx="1.3" fill="#adc8c6" strokeWidth="1.3" />
@@ -170,8 +173,8 @@ function PropArt({ rig }: { rig: PuppetRig }) {
 }
 
 /** Only the actor and the prop are included in a visual observation. */
-export function PuppetArt({ pose, motion = stillMotion, rig: stagedRig }: { pose: PuppetPose; motion?: SavedMotion; rig?: PuppetRig }) {
-  const rig = stagedRig ?? computeRig(pose, motion)
+export function PuppetArt({ pose, motion = stillMotion, grip, rig: stagedRig }: { pose: PuppetPose; motion?: SavedMotion; grip?: Grip; rig?: PuppetRig }) {
+  const rig = stagedRig ?? computeRig(pose, motion, grip)
   const visible = rig.pose
   // A lifted shin can cross in front of the sack. Grounded legs stay behind it.
   const liftLeft = rig.joints.leftAnkle.y < 289

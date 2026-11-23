@@ -1,6 +1,20 @@
 # Bad Actors verification
 
-## Sandbag playtest revision · November 23, 2026
+## Recoil from every grab point · November 23, 2026
+
+On revision `7264d7b` the player could pose all the joints, but a browser trace confirmed that pulling a foot, elbow, waist or loose prop left every measured motion channel at zero. The revised stage applies a speed-sensitive impulse for each point. An arm pull loads the shoulder. A foot or knee pull loads the hips. Head and chest rotation, held and loose props, and the foot turn controls each have a response. The stage holds the actual grab point under the pointer and lets the remaining mass follow. Slow placement stays quiet.
+
+[Watch the foot pull](leg-recoil.gif) · [Geometry and rendering benchmark](verification/puppet-physics-2026-11-23.md)
+
+The local Chrome check exercised all 14 body targets and both held and loose prop drags on the single stage. It delivered pointer events to the page and tracked the actual painted shoulder and cheek after release. All 16 gestures acquired the intended target and settled. The largest measured grip error across the set was 0.582 stage units. On this desktop, a quick pull on the left and right shoulders respectively moved a painted landmark by 24.9 and 22.4 CSS pixels. The corresponding displacements were 33.9 and 35.5 pixels for the elbows and 18.4 and 15.6 for the knees. Separate native mouse drags confirmed pointer capture and release on a foot, wrist and elbow. [Per-target browser measurements](verification/all-joint-recoil-2026-11-23.json)
+
+At the same left-knee travel of approximately 15 stage units, deliberate placement moved the tracked landmarks by 0.00 CSS pixels after release. A flick moved one by 18.4 pixels. Selecting **Direct only** in Help also produced 0.00 pixels of secondary movement on a full foot drag. In the 3.20-second foot-pull clip the right boot rose across the body, the torso tilted 16°, the hips moved 22.82 stage units and the other boot stayed planted. The GIF contains 80 frames at 740 × 404.
+
+In a fresh local Chrome page, a page-level `matchMedia` override supplied `prefers-reduced-motion: reduce`. The foot drag again produced 0.00 pixels of secondary shoulder or cheek movement. This exercises the preference branch in the app. The operating system preference itself was not toggled.
+
+TypeScript, ESLint, all 69 unit tests and the practice build passed. The resulting `index-DlIzX99K.js` has SHA-256 `bf85455e67c5259263c6b8c5acb8eef46b39bb156cff70bf9ff9a769ea170fa7`. Playwright discovered 34 cases. Its bundled Chromium could not start in the local macOS sandbox, so this run has no Playwright pass count. The browser measurements above used a separate local Chrome session. Physical-phone handling is still unverified.
+
+## Sandbag playtest revision · November 23, 2026 (7264d7b)
 
 The player reported that the original torso stood still when they flicked an empty hand and that the mug covered the actor’s face. We repeated their gesture in the local rehearsal. During visual review the sandbag’s resting arms still looked like hands on hips, so we lowered the untouched wrists and let each sleeve sag. The final take starts with an empty sleeve hanging beside the bag.
 
@@ -14,9 +28,9 @@ The same stage accepts a drag on either wrist, either shoulder or elbow, the wai
 
 On the unified desktop page, Chrome reported all 14 body controls simultaneously in the reset pose. Five native mouse drags acquired the intended targets (left wrist, right foot, waist, head and left elbow). Every trial recorded trusted pointer movement, capture and release, and changed the corresponding visible position. The phone in the opening pose adds a fifteenth target. Repeating a tap can select the next control when multiple landmarks coincide.
 
-The motion regressions exercise the same throw at 30, 60 and 120 simulated updates per second, an interrupted frame, fixed planted wrists, high and low elbow bends, parked feet and a saved pose without joint overrides. [Benchmark, scope and reproduction](verification/puppet-physics-2026-11-23.md)
+The motion regressions exercise the same throw at 30, 60 and 120 simulated updates per second, an interrupted frame, fixed planted wrists, high and low elbow bends, parked feet and a saved pose without joint overrides. [Benchmark, scope and reproduction at this revision](https://github.com/spongelovesorange/bad-actors/blob/7264d7bba1f4160889f494111fd041b37f122a54/docs/verification/puppet-physics-2026-11-23.md)
 
-TypeScript, ESLint, the 49-test local unit suite and the standalone practice build passed. The practice JavaScript bundle was `index-DWBoO8_w.js` (SHA-256 `fb7f18a8d3e731106b04e7c784eb5450b48323fd02bdffec39b3fa38618b4819`). The extreme pose test checked 64 combinations over 7,040 simulated frames, including exact retention of the planted boots, hand and cup. A laugh from an unprompted human viewer and physical-phone handling remain unmeasured.
+At revision `7264d7b`, TypeScript, ESLint, the 49-test local unit suite and the standalone practice build passed. The practice JavaScript bundle was `index-DWBoO8_w.js` (SHA-256 `fb7f18a8d3e731106b04e7c784eb5450b48323fd02bdffec39b3fa38618b4819`). The extreme pose test checked 64 combinations over 7,040 simulated frames, including exact retention of the planted boots, hand and cup. A laugh from an unprompted human viewer and physical-phone handling remain unmeasured.
 
 ### OpenAI-compatible visual guessing probe
 

@@ -37,9 +37,12 @@ test('all joints can be posed together while hands, feet and expression keep the
   await foot.press('Shift+ArrowUp')
   await expect.poll(async () => Number(await foot.getAttribute('cy'))).toBeLessThan(footStart - 1)
   const sole = stage.locator('[data-sole="left"]')
+  await expect(stage).toHaveAttribute('data-settled', '1')
   const lifted = await sole.getAttribute('transform')
   await page.getByRole('button', { name: 'Turn left foot clockwise', exact: true }).click()
+  await expect(stage).toHaveAttribute('data-settled', '0')
   await expect.poll(() => sole.getAttribute('transform')).not.toBe(lifted)
+  await expect(stage).toHaveAttribute('data-settled', '1')
 
   await page.getByRole('button', { name: 'Bracing', exact: true }).click()
   await expect(stage.locator('[data-rig="head"] [data-face]')).toHaveAttribute('data-face', 'braced')

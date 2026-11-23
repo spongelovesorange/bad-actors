@@ -1,7 +1,8 @@
+import { chestHandle, contactHead, contactTransform, headTiltOffset, type Affine, type Grip } from './contact'
 import { footAngle, posedElbow } from './joints'
 import { sleeveElbow } from './sleeve'
 import { defaultAnkle, legLandmarks } from './legs'
-import { clamp, distance, feel, hands, homeHead, pivot, propCenter, restPoint, shoulders, reachableHead, reachableWrist, rotate, type Hand, type Handle, type Joint, type Point, type PuppetPose } from './geometry'
+import { clamp, distance, feel, hands, homeHead, pivot, propCenter, restPoint, shoulders, reachableHead, reachableWrist, rotate, type Hand, type StageHandle, type Joint, type Point, type PuppetPose } from './geometry'
 
 export type PuppetMotion = {
   /** Clockwise tilt in degrees. */
@@ -14,17 +15,19 @@ export type PuppetMotion = {
   loose: number
   /** Horizontal shift of the pelvis toward the boot taking the load. */
   balance: number
+  /** Independent rocking angle of the object around its fixed grip. */
+  prop: number
 }
 
-export const stillMotion: PuppetMotion = { body: 0, head: 0, lift: 0, loose: 0, balance: 0 }
+export const stillMotion: PuppetMotion = { body: 0, head: 0, lift: 0, loose: 0, balance: 0, prop: 0 }
 // Older frozen rehearsal frames captured just torso and neck, then added sleeve and stretch.
 export type SavedMotion = Pick<PuppetMotion, 'body' | 'head'> & Partial<PuppetMotion>
 function currentMotion(m: SavedMotion): PuppetMotion {
-  if (Number.isFinite(m.balance)) return m as PuppetMotion
+  if (Number.isFinite(m.prop)) return m as PuppetMotion
   return {
     body: Number.isFinite(m.body) ? m.body : 0,
     head: Number.isFinite(m.head) ? m.head : 0,
-    lift: m.lift || 0, loose: m.loose || 0, balance: 0,
+    lift: m.lift || 0, loose: m.loose || 0, balance: m.balance || 0, prop: 0,
   }
 }
 export type MotionEngine = { value: PuppetMotion; speed: PuppetMotion; quietTime: number }
@@ -35,21 +38,57 @@ export function createMotion(): MotionEngine {
   return { value: { ...stillMotion }, speed: { ...stillMotion }, quietTime: tailSeconds }
 }
 
-/** A tug deposits momentum immediately. Pointer-up may precede the next animation frame. */
-export function tug(engine: MotionEngine, handle: Handle, delta: Point, milliseconds: number) {
-  if (handle === 'prop') return
+// Hands pull the upper trunk; feet and knees transmit their first kick through the hip.
+const coupling = {
+  wrist: { torque: 4.3, stretch: 4.0, hips: 0, neck: -3, sleeve: -7.5 },
+  head: { torque: 8, stretch: 10, hips: 1.6, neck: -2, sleeve: -7 },
+  shoulder: { torque: 16.5, stretch: 14, hips: 4, neck: -12, sleeve: -16 },
+  elbow: { torque: 13.5, stretch: 10, hips: 3, neck: -10, sleeve: -14 },
+  waist: { torque: 7.8, stretch: 9.5, hips: 10, neck: -5, sleeve: -8 },
+  chest: { torque: 12, stretch: 5.5, hips: 4, neck: -8.6, sleeve: -9 },
+  neck: { torque: 7.3, stretch: 5, hips: 1.5, neck: 11, sleeve: -6.5 },
+  knee: { torque: 15, stretch: 12, hips: 15, neck: -10.5, sleeve: -15 },
+  ankle: { torque: 7.4, stretch: 7.8, hips: 9, neck: -4.8, sleeve: -8 },
+  looseProp: { torque: 1.8, stretch: 1.3, hips: 0.8, neck: 3.5, sleeve: -2.7 },
+}
+const transmissions: Record<StageHandle, keyof typeof coupling> = {
+  left: 'wrist', right: 'wrist', head: 'head', prop: 'looseProp',
+  leftShoulder: 'shoulder', rightShoulder: 'shoulder', leftElbow: 'elbow', rightElbow: 'elbow',
+  waist: 'waist', chest: 'chest', headTilt: 'neck', leftKnee: 'knee', rightKnee: 'knee',
+  leftAnkle: 'ankle', rightAnkle: 'ankle',
+}
+
+/** Signed travel in stage units, measured from accepted player input rather than spring motion. */
+export function tug(engine: MotionEngine, handle: StageHandle, delta: Point, milliseconds: number, holder: Hand | null = null) {
   const speed = Math.hypot(delta.x, delta.y) / clamp(milliseconds, 6, 64)
-  const intensity = clamp((speed - 0.10) / 0.85, 0, 1)
+  const source = handle === 'prop' && holder ? holder : handle
+  const region = transmissions[source]
+  const shortLever = region === 'shoulder' || region === 'elbow' || region === 'knee'
+  // A fast 12-unit shoulder shrug already spans most of its travel; a hand can travel 124.
+  const intensity = clamp((speed - 0.10) / (shortLever ? 0.31 : 0.85), 0, 1)
   if (!intensity) return
-  const side = handle === 'left' ? -1 : handle === 'right' ? 1 : 0
-  const twist = (delta.x + 0.96 * side * delta.y) * intensity
-  const up = -delta.y * intensity
-  const v = engine.speed
-  v.body = clamp(v.body + 4.3 * twist, -365, 365)
-  v.lift = clamp(v.lift + 4.0 * up, -330, 370)
-  // The head and the empty sleeve initially resist the body's pull.
-  if (handle !== 'head') v.head = clamp(v.head - 3.0 * twist, -370, 370)
-  v.loose = clamp(v.loose - 7.5 * twist, -660, 660)
+  const c = coupling[region]
+  const side = source.startsWith('left') ? -1 : source.startsWith('right') ? 1 : 0.46
+  const horizontal = delta.x * intensity, vertical = delta.y * intensity
+  const pull = 0.96 * side * vertical
+  // A straight diagonal still loads the sleeve, even when the two torques oppose.
+  const sum = horizontal + pull
+  const stronger = Math.abs(horizontal) >= Math.abs(pull) ? horizontal : pull
+  const twist = shortLever
+    ? Math.sign(stronger) * Math.hypot(horizontal, pull)
+    : Math.abs(sum) >= Math.abs(stronger) * 0.30 ? sum : stronger * 0.30
+  const v = engine.speed = currentMotion(engine.speed)
+  v.body = clamp(v.body + c.torque * twist, -365, 365)
+  v.lift = clamp(v.lift - c.stretch * vertical, -330, 370)
+  v.balance = clamp(v.balance + c.hips * (horizontal + 0.60 * pull), -260, 260)
+  v.head = clamp(v.head + c.neck * twist, -370, 370)
+  v.loose = clamp(v.loose + c.sleeve * twist, -660, 660)
+  if (handle === 'prop') {
+    // Unlike a hinged shoulder, an object rocking in midair has no opposing joint torque.
+    const rollDirection = Math.abs(horizontal) >= Math.abs(vertical) ? horizontal : vertical
+    const swing = Math.sign(rollDirection) * Math.hypot(horizontal, vertical)
+    v.prop = clamp(v.prop - 7.6 * swing, -270, 270)
+  }
   engine.quietTime = 0
 }
 
@@ -90,6 +129,7 @@ export function advanceMotion(e: MotionEngine, seconds: number, holdHead = false
       const neckGoal = e.value.body * 0.81 - torsoAcceleration * 0.0010
       advanceSpring(e, 'head', neckGoal, 12.5, 0.24, feel.headSway, dt)
     }
+    if (e.value.prop || e.speed.prop) advanceSpring(e, 'prop', 0, 14.5, 0.29, 21, dt)
     advanceSpring(e, 'loose', -e.value.body * 0.95, 12, 0.27, 46, dt)
   }
   e.quietTime += elapsed
@@ -98,7 +138,6 @@ export function advanceMotion(e: MotionEngine, seconds: number, holdHead = false
   return resting ? sleepMotion(e) : true
 }
 
-type Affine = { a: number; b: number; c: number; d: number; e: number; f: number }
 const identity: Affine = { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 }
 
 function bodyTransform(m: PuppetMotion, pose?: PuppetPose): Affine {
@@ -180,6 +219,7 @@ export function displayPose(p: PuppetPose, motion: SavedMotion): PuppetPose {
 }
 
 export type PuppetRig = {
+  propAngle: number
   footAngle: Record<Hand, number>
   joints: Record<Joint, Point>
   motion: PuppetMotion
@@ -191,31 +231,38 @@ export type PuppetRig = {
 }
 
 /** One frame of geometry is shared by the painted body, all limbs and the pointer hit targets. */
-export function computeRig(p: PuppetPose, motion: SavedMotion): PuppetRig {
+export function computeRig(p: PuppetPose, motion: SavedMotion, grip?: Grip): PuppetRig {
   const m = currentMotion(motion)
-  const transform = bodyTransform(m, p)
+  const transform = contactTransform(bodyTransform(m, p), grip)
   const angle = headAngle(p, m)
   const prop = propCenter(p)
-  const pose = projectPose(p, m, transform, angle, prop)
+  const { pose } = contactHead(projectPose(p, m, transform, angle, prop), angle, grip)
   const point = (a: Point) => transformPoint(a, transform)
   const offsets = p.joints
   const add = (a: Point, b?: Point) => b ? { x: a.x + b.x, y: a.y + b.y } : a
-  const leftShoulder = add(point(shoulders.left), offsets?.leftShoulder)
-  const rightShoulder = add(point(shoulders.right), offsets?.rightShoulder)
+  const pin = (handle: StageHandle, natural: Point) => {
+    if (grip?.handle !== handle) return natural
+    const amount = grip.strength ?? 1
+    return { x: natural.x + (grip.point.x - natural.x) * amount, y: natural.y + (grip.point.y - natural.y) * amount }
+  }
+  const leftShoulder = pin('leftShoulder', add(point(shoulders.left), offsets?.leftShoulder))
+  const rightShoulder = pin('rightShoulder', add(point(shoulders.right), offsets?.rightShoulder))
   const leftAnkle = add(defaultAnkle('left'), offsets?.leftAnkle)
   const rightAnkle = add(defaultAnkle('right'), offsets?.rightAnkle)
   const leftLeg = legLandmarks('left', point({ x: 229, y: 246 }), leftAnkle, offsets?.leftKnee)
   const rightLeg = legLandmarks('right', point({ x: 277, y: 246 }), rightAnkle, offsets?.rightKnee)
-  const tilt = rotate({ x: 29, y: -30 }, origin, angle)
+  const tilt = rotate(headTiltOffset, origin, angle)
   return {
+    // A caught object seats against the palm. A loose one can rock about its own center.
+    propAngle: p.propTurn + (p.holder ? 0 : m.prop),
     footAngle: { left: footAngle(p, 'left'), right: footAngle(p, 'right') },
     joints: {
-      waist: point(pivot), chest: point({ x: pivot.x, y: pivot.y - 51 }),
+      waist: point(pivot), chest: point(chestHandle),
       headTilt: add(pose.head, tilt),
       leftShoulder, rightShoulder,
-      leftElbow: posedElbow(sleeveElbow('left', pose, leftShoulder, m), offsets?.leftElbow, leftShoulder, pose.left),
-      rightElbow: posedElbow(sleeveElbow('right', pose, rightShoulder, m), offsets?.rightElbow, rightShoulder, pose.right),
-      leftAnkle, rightAnkle, leftKnee: leftLeg.knee, rightKnee: rightLeg.knee,
+      leftElbow: pin('leftElbow', posedElbow(sleeveElbow('left', pose, leftShoulder, m), offsets?.leftElbow, leftShoulder, pose.left)),
+      rightElbow: pin('rightElbow', posedElbow(sleeveElbow('right', pose, rightShoulder, m), offsets?.rightElbow, rightShoulder, pose.right)),
+      leftAnkle, rightAnkle, leftKnee: pin('leftKnee', leftLeg.knee), rightKnee: pin('rightKnee', rightLeg.knee),
     },
     motion: m, pose, point, matrix: matrixString(transform), headAngle: angle, propCenter: prop,
   }

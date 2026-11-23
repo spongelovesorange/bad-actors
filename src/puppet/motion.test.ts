@@ -138,6 +138,26 @@ describe('Bad Actors slapstick motion', () => {
     expect(rig.propCenter).toEqual(propCenter(rig.pose))
   })
 
+  it('gives a short, fast diagonal shoulder, elbow or knee pull a visible body response on either side', () => {
+    for (const grip of ['leftShoulder', 'rightShoulder', 'leftElbow', 'rightElbow', 'leftKnee', 'rightKnee'] as const) {
+      for (const x of [-10, 10]) {
+        const engine = createMotion()
+        tug(engine, grip, { x, y: -10 }, 44)
+        let maxTilt = 0, maxSleeveSwing = 0
+        for (let i = 0; i < 35; i++) {
+          advanceMotion(engine, 1 / 120)
+          maxTilt = Math.max(maxTilt, Math.abs(engine.value.body))
+          maxSleeveSwing = Math.max(maxSleeveSwing, Math.abs(engine.value.loose))
+        }
+        expect(maxTilt).toBeGreaterThan(5)
+        expect(maxSleeveSwing).toBeGreaterThan(8)
+      }
+      const gentle = createMotion()
+      tug(gentle, grip, { x: 1, y: 1 }, 24)
+      expect(advanceMotion(gentle, 1 / 60)).toBe(false)
+    }
+  })
+
   it('gives a large keyboard nudge a restrained reaction', () => {
     const engine = createMotion()
     tug(engine, 'left', { x: 0, y: -12 }, 16)

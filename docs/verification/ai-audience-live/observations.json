@@ -1,0 +1,63 @@
+{
+  "scope": "Local Chromium through the configured MG1 provider, before timed-show changes. Cue 2: Talking on the phone.",
+  "procedures": [
+    "Cup at the mouth, using Gulp; requested one look.",
+    "Phone at the ear, using Deadpan; requested one look in a fresh round."
+  ],
+  "observations": [
+    {
+      "startUTC": "2026-11-23T23:21:24.665Z",
+      "route": "/api/local-ai/observe",
+      "requestFields": [
+        "roundId",
+        "observationId",
+        "image"
+      ],
+      "input": {
+        "sha256": "8863125f7e34fdbbd70bc67e7ffe2a3eb157977dcd1f0ad2a5fad592411adc30",
+        "bytes": 35618
+      },
+      "http": 200,
+      "visionModel": "gpt-6.2-sol-2026-11-17",
+      "judgeModel": "gpt-6.2-sol-2026-11-17",
+      "visionTokens": 382,
+      "judgeTokens": 151,
+      "guess": "Taking a sip from a cup.",
+      "verdict": "incorrect",
+      "used": 1,
+      "limit": 5,
+      "elapsedMs": 15945
+    },
+    {
+      "startUTC": "2026-11-23T23:22:55.837Z",
+      "route": "/api/local-ai/observe",
+      "requestFields": [
+        "roundId",
+        "observationId",
+        "image"
+      ],
+      "input": {
+        "sha256": "7f27cd7bb6d7ffe2c131ef6badea3d5f7fc16a99e01d57ca6834c20b8f9e0971",
+        "bytes": 39340
+      },
+      "http": 200,
+      "visionModel": "gpt-6.2-sol-2026-11-17",
+      "visionTokens": 382,
+      "guess": "Holding a phone to their ear.",
+      "verdict": "unjudged",
+      "used": 1,
+      "limit": 5,
+      "elapsedMs": 19198
+    }
+  ],
+  "phoneScreen": {
+    "bubble": "Holding a phone to their ear.",
+    "judgment": "Score unavailable",
+    "phase": "ready",
+    "verdict": "unjudged",
+    "service": "live"
+  },
+  "cost": "The provider response did not expose currency cost.",
+  "image": "look-2-phone.jpg",
+  "limitation": "The second observation returned a real vision guess but no referee score or model ID. Two provider observations were made. Neither a live correct stamp nor a hosted deployment was verified by these two observations."
+}

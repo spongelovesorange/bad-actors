@@ -1,0 +1,209 @@
+{
+  "environment": "Local desktop Chrome, isolated 127.0.0.1:5187 practice page, November 23, 2026.",
+  "method": "The public React UI rendered and captured the actor in Chrome. Network fixtures intercepted status, round and observation with scripted guesses and verdicts. All other API requests were denied at the fixture server. Go through the cases by reading look count, original balloon text and settled states. Keyboard pose edits and clicks were dispatched in the browser DOM.",
+  "scope": "This records UI behavior for controlled inputs. It made no provider calls and measures neither model accuracy nor paid semantic referee behavior. Standalone Playwright Chromium launch was blocked by local macOS process sandbox (bootstrap_check_in 1100); this receipt comes from a separate Chrome session.",
+  "cases": [
+    {
+      "case": "normal",
+      "ok": true,
+      "result": {
+        "actualBalloon": [
+          "Checking the weather.",
+          "Calling somebody."
+        ],
+        "looks": 2,
+        "concurrent": 1,
+        "oneRound": true,
+        "uniqueIds": 2,
+        "imageBytes": [
+          35212,
+          32573
+        ],
+        "requestFields": [
+          "image",
+          "observationId",
+          "roundId"
+        ],
+        "phase": "complete"
+      }
+    },
+    {
+      "case": "unjudged",
+      "ok": true,
+      "result": {
+        "guess": "Calling somebody.",
+        "verdict": "unjudged",
+        "phase": "ready"
+      }
+    },
+    {
+      "case": "uncertain",
+      "ok": true,
+      "result": {
+        "guess": "Calling somebody.",
+        "verdict": "uncertain",
+        "phase": "ready"
+      }
+    },
+    {
+      "case": "stale",
+      "ok": true,
+      "result": {
+        "oldResultsRejected": true,
+        "cue": "Taking a selfie",
+        "phase": "ready"
+      }
+    },
+    {
+      "case": "offline",
+      "ok": true,
+      "result": {
+        "practiceUsable": true,
+        "lookCount": 0,
+        "panel": "AI audienceBooth closedOff duty. My seat’s still warm.Mr. StubbsI’m on my tea break. You can still pose for a friend.Connect a model to the local rehearsal for live guesses."
+      }
+    },
+    {
+      "case": "error",
+      "ok": true,
+      "result": {
+        "recovered": true,
+        "roundCount": 1,
+        "lookCount": 2
+      }
+    },
+    {
+      "case": "vision-failed",
+      "ok": true,
+      "result": {
+        "newPoseAccepted": true,
+        "lookCount": 2
+      }
+    },
+    {
+      "case": "recheck",
+      "ok": true,
+      "result": {
+        "sameImage": true,
+        "sameObservationId": true
+      }
+    },
+    {
+      "case": "daily",
+      "ok": true,
+      "result": {
+        "disabled": true,
+        "lookCount": 1
+      }
+    },
+    {
+      "case": "limit",
+      "ok": true,
+      "result": {
+        "looks": 5,
+        "phase": "complete",
+        "concurrent": 1
+      }
+    },
+    {
+      "case": "timer",
+      "ok": true,
+      "result": {
+        "initialCue": 2,
+        "firstDeal": 1,
+        "nextDeal": 2,
+        "start": 45,
+        "lastTen": 8,
+        "paused": 8,
+        "resumed": 8,
+        "secondsAtTimeout": 0,
+        "lookCount": 1
+      }
+    }
+  ],
+  "timedShow": {
+    "method": "Local Chrome issued the start, guess, next-draw, and post-expiry pose edit from the real UI. The fixture advanced the monotonic clock without waiting real minutes and withheld the simulated provider response while the clock was paused.",
+    "cases": [
+      {
+        "case": "timer",
+        "ok": true,
+        "result": {
+          "initialCue": 2,
+          "firstDeal": 1,
+          "nextDeal": 2,
+          "start": 45,
+          "lastTen": 8,
+          "paused": 8,
+          "resumed": 8,
+          "secondsAtTimeout": 0,
+          "lookCount": 1
+        }
+      }
+    ]
+  },
+  "screenshots": {
+    "environment": "Desktop Chrome. Widths in CSS pixels, screenshots at 2x device resolution. Mobile-width frames validate responsive layout and do not simulate physical touch hardware. Each measured width matched the document scroll width.",
+    "phoneRehearsal": {
+      "cue": "Talking on the phone",
+      "balloon": "Calling somebody.",
+      "verdict": "correct (simulated)",
+      "files": [
+        {
+          "name": "correct.jpg",
+          "cssWidth": 1440,
+          "pixels": [
+            2880,
+            2562
+          ]
+        },
+        {
+          "name": "mobile-390.jpg",
+          "cssWidth": 390,
+          "pixels": [
+            780,
+            3518
+          ]
+        },
+        {
+          "name": "mobile-320.jpg",
+          "cssWidth": 320,
+          "pixels": [
+            640,
+            3602
+          ]
+        }
+      ]
+    },
+    "timedDraw": {
+      "clock": "Acting clock advanced to eight seconds in a local fixture. No provider was called.",
+      "files": [
+        {
+          "name": "timer-final-desktop.jpg",
+          "cue": "Taking a selfie",
+          "cssWidth": 1440,
+          "pixels": [
+            2880,
+            2234
+          ]
+        },
+        {
+          "name": "timer-final-390.jpg",
+          "cue": "Surrendering",
+          "cssWidth": 390,
+          "pixels": [
+            780,
+            3166
+          ]
+        }
+      ]
+    }
+  },
+  "automatedLocalSummary": {
+    "passed": 11,
+    "failed": 0,
+    "baseCommit": "f581a8501f00",
+    "workingTree": "Includes the local uncommitted audience and timed-show implementation.",
+    "finishedUTC": "2026-11-23T23:30:23+00:00",
+    "execution": "Two foreground batches, six and five cases, in isolated Chrome. The separate Playwright file was linted, type-checked and collected; native Playwright Chromium was blocked by the local OS browser launch sandbox."
+  }
+}

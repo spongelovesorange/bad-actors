@@ -1,0 +1,222 @@
+import { expect, test, type Page, type Route } from '@playwright/test'
+
+type Verdict = 'correct' | 'incorrect' | 'uncertain' | 'unjudged'
+type Observation = { roundId: string; observationId: string; image: string }
+type Guess = { guess: string; verdict: Verdict; used?: number }
+type Outcome = Guess | { status: number; error: string; message: string; used?: number }
+
+// Intercept every local AI path before the browser navigates, including failed cases.
+// No test in this file can spend a real observation.
+async function mockAudience(page: Page, observe: (request: Observation, used: number) => Outcome | Promise<Outcome>, available = true) {
+  const starts: number[] = []
+  const frames: Observation[] = []
+  const counts = new Map<string, number>()
+  await page.route('**/api/local-ai/**', async (route: Route) => {
+    const pathname = new URL(route.request().url()).pathname
+    if (pathname === '/api/local-ai/status') {
+      return route.fulfill({ json: { available, model: 'mock-for-tests' } })
+    }
+    if (pathname === '/api/local-ai/rounds') {
+      const { cue } = route.request().postDataJSON() as { cue: number }
+      starts.push(cue)
+      const roundId = 'mock-round-' + starts.length
+      counts.set(roundId, 0)
+      return route.fulfill({ json: { roundId, limit: 5 } })
+    }
+    if (pathname !== '/api/local-ai/observe') throw Error('Unexpected AI path ' + pathname)
+    const request = route.request().postDataJSON() as Observation
+    frames.push(request)
+    const used = (counts.get(request.roundId) ?? 0) + 1
+    counts.set(request.roundId, used)
+    const outcome = await observe(request, used)
+    const body = { roundId: request.roundId, observationId: request.observationId, used, limit: 5, ...outcome }
+    return route.fulfill({ status: 'status' in outcome ? outcome.status : 200, json: body })
+  })
+  return { starts, frames }
+}
+
+const panel = (page: Page) => page.getByTestId('ai-audience')
+const guessButton = (page: Page) => page.getByRole('button', { name: 'Guess this pose' })
+const changePose = (page: Page) => page.getByRole('group', { name: 'Puppet stage' }).getByRole('button', { name: 'Left hand', exact: true }).press('Shift+ArrowRight')
+
+async function startRound(page: Page) {
+  await page.getByRole('button', { name: 'Try this cue with AI', exact: true }).click()
+  await expect(guessButton(page)).toBeEnabled()
+}
+
+test('a wrong observation can recover with a differently worded right answer', async ({ page }) => {
+  const { frames, starts } = await mockAudience(page, (_, used) =>
+    used === 1 ? { guess: 'Checking the weather.', verdict: 'incorrect' }
+      : { guess: 'Calling somebody.', verdict: 'correct' })
+  await page.goto('/?cue=2')
+  await startRound(page)
+  await guessButton(page).click()
+  await expect(panel(page)).toHaveAttribute('data-verdict', 'incorrect')
+  await expect(panel(page).locator('.ba-audience-balloon')).toContainText('Checking the weather.')
+  await expect(panel(page).locator('.ba-verdict')).toHaveText('Miss!')
+  await changePose(page)
+  await expect(panel(page)).toHaveAttribute('data-verdict', 'correct', { timeout: 9000 })
+  await expect(panel(page).locator('.ba-audience-balloon')).toContainText('Calling somebody.')
+  await expect(panel(page)).toHaveAttribute('data-phase', 'complete')
+  await expect(panel(page).locator('.ba-verdict')).toHaveText('Guessed it!')
+  await panel(page).locator('summary').click()
+  await expect(panel(page).locator('.ba-audience-log li')).toHaveCount(2)
+  expect(starts).toEqual([2])
+  expect(frames).toHaveLength(2)
+  for (const frame of frames) {
+    expect(Object.keys(frame).sort()).toEqual(['image', 'observationId', 'roundId'])
+    expect(frame.image).toMatch(/^data:image\/png;base64,iVBOR/)
+  }
+  expect(frames[1].image).not.toBe(frames[0].image)
+  expect(frames[1].observationId).not.toBe(frames[0].observationId)
+})
+
+test('an old round cannot score the next cue', async ({ page }) => {
+  let release!: () => void
+  let delivery!: () => void
+  const pending = new Promise<void>(resolve => { release = resolve })
+  const oldReplyIssued = new Promise<void>(resolve => { delivery = resolve })
+  const { frames } = await mockAudience(page, async () => {
+    await pending
+    delivery()
+    return { guess: 'Old guess from a retired round.', verdict: 'correct' }
+  })
+  await page.goto('/?cue=2')
+  await startRound(page)
+  await guessButton(page).click()
+  await expect.poll(() => frames.length).toBe(1)
+  await page.getByRole('button', { name: 'Next cue', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Taking a selfie' })).toBeVisible()
+  release()
+  await oldReplyIssued
+  await expect(panel(page)).toHaveAttribute('data-phase', 'ready')
+  await expect(panel(page)).not.toHaveAttribute('data-verdict', 'correct')
+  await expect(panel(page)).not.toContainText('Old guess from a retired round.')
+})
+
+test('five incorrect looks end the round even if the performer keeps moving', async ({ page }) => {
+  test.setTimeout(55000)
+  const { frames } = await mockAudience(page, (_, used) => ({ guess: 'Wrong guess ' + used, verdict: 'incorrect' }))
+  await page.goto('/?cue=2')
+  await startRound(page)
+  await guessButton(page).click()
+  for (let used = 1; used <= 5; used++) {
+    await expect(panel(page).locator('.ba-audience-balloon')).toContainText('Wrong guess ' + used, { timeout: 10000 })
+    if (used < 5) await changePose(page)
+  }
+  await expect(panel(page)).toHaveAttribute('data-phase', 'complete')
+  await changePose(page)
+  // Wait past the next possible auto-look after the five-look cap.
+  await page.waitForTimeout(4400)
+  expect(frames).toHaveLength(5)
+})
+
+test('an unavailable provider leaves the practice stage usable', async ({ page }) => {
+  const { starts, frames } = await mockAudience(page, () => { throw Error('Unavailable provider called') }, false)
+  await page.goto('/?cue=3')
+  await expect(page.getByRole('heading', { name: 'Taking a selfie' })).toBeVisible()
+  await expect(panel(page)).toHaveAttribute('data-service', 'offline')
+  await expect(panel(page)).toContainText('Booth closed')
+  await expect(page.getByRole('button', { name: 'Play with AI' })).toHaveCount(0)
+  const stage = page.getByRole('group', { name: 'Puppet stage' })
+  const palm = stage.getByRole('button', { name: 'Left hand', exact: true })
+  const before = await palm.getAttribute('cx')
+  await changePose(page)
+  await expect(palm).not.toHaveAttribute('cx', before!)
+  await expect(panel(page).locator('.ba-audience-balloon')).not.toContainText('Calling somebody.')
+  expect(starts).toEqual([])
+  expect(frames).toEqual([])
+})
+
+test('a referee outage keeps the real guess visible without declaring a win', async ({ page }) => {
+  await mockAudience(page, () => ({ guess: 'Dialling a friend.', verdict: 'unjudged' }))
+  await page.goto('/?cue=2')
+  await startRound(page)
+  await guessButton(page).click()
+  await expect(panel(page)).toHaveAttribute('data-verdict', 'unjudged')
+  await expect(panel(page)).toContainText('Dialling a friend.')
+  await expect(panel(page)).toContainText(/score unavailable/i)
+})
+
+test('a counted vision failure asks for a changed pose before the next look', async ({ page }) => {
+  const { starts, frames } = await mockAudience(page, (_, used) => used === 1
+    ? { status: 502, error: 'vision_failed', message: 'The audience could not read this snapshot. This look was counted.' }
+    : { guess: 'Calling a friend.', verdict: 'correct' })
+  await page.goto('/?cue=2')
+  await startRound(page)
+  await guessButton(page).click()
+  await expect(panel(page)).toContainText('This look was counted.')
+  await expect(panel(page)).toHaveAttribute('data-phase', 'ready')
+  await changePose(page)
+  await expect(panel(page)).toHaveAttribute('data-verdict', 'correct', { timeout: 9000 })
+  expect(frames).toHaveLength(2)
+  expect(frames[0].image).not.toBe(frames[1].image)
+  expect(starts).toEqual([2])
+})
+
+test('an in-flight retry reuses the original frame and observation ID', async ({ page }) => {
+  const { frames } = await mockAudience(page, (_, attempt) => attempt === 1
+    ? { status: 409, error: 'in_flight', message: 'The audience is still looking at a pose.' }
+    : { guess: 'Dialling a friend.', verdict: 'correct', used: 1 })
+  await page.goto('/?cue=2')
+  await startRound(page)
+  await guessButton(page).click()
+  await panel(page).getByRole('button', { name: 'Try again' }).click()
+  await expect(panel(page)).toHaveAttribute('data-verdict', 'correct', { timeout: 9000 })
+  expect(frames).toHaveLength(2)
+  expect(frames[0]).toEqual(frames[1])
+})
+
+test('a daily limit disables further AI looks while practice remains editable', async ({ page }) => {
+  const { frames } = await mockAudience(page, () => ({
+    status: 429, error: 'daily_limit', message: 'The daily AI rehearsal allowance has been used.', used: 0,
+  }))
+  await page.goto('/?cue=2')
+  await startRound(page)
+  await guessButton(page).click()
+  await expect(panel(page).getByRole('button', { name: 'Daily looks used' })).toBeDisabled()
+  await changePose(page)
+  await page.waitForTimeout(4400)
+  expect(frames).toHaveLength(1)
+})
+
+test('a timed show pauses for the audience, cuts off new looks at zero, and deals a different cue', async ({ page }) => {
+  await page.clock.install()
+  let release!: () => void
+  const pending = new Promise<void>(resolve => { release = resolve })
+  const { frames, starts } = await mockAudience(page, async () => {
+    await pending
+    return { guess: 'Checking the weather.', verdict: 'incorrect' }
+  })
+  await page.goto('/?cue=2')
+  await page.getByRole('button', { name: 'Play with AI', exact: true }).click()
+  const clock = page.getByTestId('stage-clock')
+  await expect(clock).toHaveAttribute('data-mode', 'running')
+  await expect(clock).toHaveAttribute('data-seconds', '45')
+  expect(starts).toHaveLength(1)
+  expect(starts[0]).toBeGreaterThanOrEqual(1)
+  expect(starts[0]).toBeLessThanOrEqual(6)
+  expect(starts[0]).not.toBe(2)
+  await page.clock.fastForward(36_000)
+  await expect(clock).toHaveAttribute('data-urgent', 'true')
+  await guessButton(page).click()
+  await expect(clock).toHaveAttribute('data-mode', 'paused')
+  const secondsAtPause = await clock.getAttribute('data-seconds')
+  await page.clock.fastForward(25_000)
+  await expect(clock).toHaveAttribute('data-seconds', secondsAtPause!)
+  release()
+  await expect(clock).toHaveAttribute('data-mode', 'running')
+  await expect(panel(page)).toHaveAttribute('data-verdict', 'incorrect')
+  await page.clock.fastForward(12_000)
+  await expect(clock).toHaveAttribute('data-mode', 'expired')
+  await expect(clock).toHaveAttribute('data-seconds', '0')
+  await expect(panel(page)).toHaveAttribute('data-end', 'timeout')
+  await changePose(page)
+  await page.clock.fastForward(5000)
+  expect(frames).toHaveLength(1)
+  await page.getByRole('button', { name: 'Draw another cue' }).click()
+  await expect(clock).toHaveAttribute('data-mode', 'running')
+  await expect(clock).toHaveAttribute('data-seconds', '45')
+  expect(starts).toHaveLength(2)
+  expect(starts[1]).not.toBe(starts[0])
+})

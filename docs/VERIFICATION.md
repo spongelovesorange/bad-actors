@@ -1,5 +1,26 @@
 # Bad Actors verification
 
+## Mr. Stubbs's front row · November 23, 2026
+
+**On-the-spot timed performance, independent blind reader.** The player clicked **Play with AI** and drew *Drinking water*. Starting at 45 seconds, the player picked up the cup and dragged it to the actor's mouth. The clock read 33 seconds on the first observation. An isolated local fixture captured this exact PNG before any outbound request. A fresh visual model received only that picture, without the cue, filename hints or a candidate list. Its entire answer was “Sipping from a cup.” This was a separate blind reading of the timed show. The live gateway results are listed below. [Picture the reader saw](verification/ai-audience-live/on-stage.png) · [Stage and countdown](verification/ai-audience-live/on-stage-clock.jpg) · [Timed gestures and blind reading](verification/ai-audience-live/on-stage-receipt.json)
+
+**Real local game, third-party provider.** We selected the phone cue deliberately for a controlled comparison before adding the timed show. A player posed a cup at the mouth in one round and a phone at the ear in a fresh round of the same game. The browser sent one 560 × 560 PNG of the actor and prop for each look. Vision saw neither the cue nor the referee's input. These observations used the operator-approved HTTP gateway, which reported `gpt-6.2-sol-2026-11-17`. [Two observation receipts](verification/ai-audience-live/observations.json) · [Actual second guess on stage](verification/ai-audience-live/look-2-phone.jpg)
+
+| Picture the model saw | Words shown in the balloon | Game ruling | Round trip |
+| --- | --- | --- | ---: |
+| Cup at the mouth | “Taking a sip from a cup.” | Miss for the assigned phone cue | 15.945 s |
+| Phone at the ear | “Holding a phone to their ear.” | Score unavailable. The guess remained on screen. | 19.198 s |
+
+**Real referee, text only.** Two separate calls supplied the phone cue and the candidate wording directly. The gateway returned `correct` for both “make a call” (10.963 s) and “call sombody” (6.460 s), reporting 146 tokens for each. These calls validate semantic scoring of those phrases. They did not photograph the actor. [Machine receipt](verification/ai-audience-live/paraphrases.json)
+
+After the unjudged phone image, the revised referee prompt explicitly accepts the recognizable purpose of a silent pose. It can read simple formatting around a verdict and reports a coarse error category if the provider fails. The exact original error is unknown. Automatic approval review blocked the text-only follow-up for a reported HTTPS/authorized-HTTP mismatch. We recorded no new verdict. [Follow-up receipt](verification/ai-audience-live/phone-referee.json)
+
+**Controlled browser responses.** Eleven scenarios passed in a separate local Chrome session with scripted endpoint responses. They cover the speech balloon and score, ambiguous and unjudged responses, late replies, offline practice, recoverable failures, quota limits and the timed draw. One case started at 45 seconds, advanced to eight, waited 25 simulated seconds for the audience, resumed at eight, and expired at zero. Moving after expiry sent no further picture. The next draw produced a different cue. Pictures contain the actor and prop, with the mechanical clock outside the capture. The layouts fit desktop and 390/320 CSS pixels. The separately launched Playwright Chromium was blocked by macOS. [Chrome receipt](verification/ai-audience-mock/receipts.json) · [Eight seconds on the clock](verification/ai-audience-mock/timer-final-desktop.jpg) · [390-pixel layout](verification/ai-audience-mock/timer-final-390.jpg)
+
+These checks used the local rehearsal. Hosted DeepSpace, multiple simultaneous users, microphone input and speech output were outside their scope.
+
+The final local checks passed TypeScript, ESLint, 115 unit tests across 17 files and the production practice build. The SHA-256 digests are `94d5ec0697454f47ad773e6436b731718d3197da4eadf4ee1f44cc0224a84cc5` for JavaScript and `c6c6ca9c946e231a9b279c2aa32a7aa2e9d8ba6b9e2f3c8ffe9f90063bf8ab00` for CSS.
+
 ## Six cues in the local playbill · November 23, 2026
 
 All six exercises were performed from reset on the single stage in local Chrome. The operator dragged the visible targets and used the production controls for objects, hands and expression. Each capture contains the settled actor and prop. No poses were loaded from a template. Two independent AI viewers saw only the numbered contact sheet in fresh contexts, received no answer list and described all six pictures. These were model readings of one sheet. New-player completion time, unaided human recognition, physical phones and the in-game AI remain unmeasured. This check made no paid provider calls. [Numbered contact sheet](verification/six-poses-2026-11-23/six-poses.png) · [Pointer traces, image digests and pictures](verification/six-poses-2026-11-23/receipts.json)

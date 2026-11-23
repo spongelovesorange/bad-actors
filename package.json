@@ -12,6 +12,7 @@
   },
   "scripts": {
     "practice": "vite --config practice/vite.config.ts",
+    "practice:ai": "node scripts/practice-ai.mjs",
     "build:practice": "vite build --config practice/vite.config.ts",
     "test:practice": "vitest run src/puppet src/rehearsal src/server/rehearsal-routes.test.ts",
     "dev": "deepspace dev start",

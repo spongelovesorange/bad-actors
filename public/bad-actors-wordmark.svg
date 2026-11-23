@@ -45,7 +45,32 @@
         L0 59 13 57 Q15 70 24 68 Q32 67 29 58 Q27 52 16 47
         Q1 39 0 26 Q-1 8 15 3 Q26 -1 35 5 L39 3 Z"/>
     </g>
+    <!-- One paint pass can continue across the spaces between pieces of type. -->
+    <mask id="letters" maskUnits="userSpaceOnUse" x="0" y="0" width="510" height="98">
+      <use xlink:href="#type" fill="white"/>
+    </mask>
+    <pattern id="screen" patternUnits="userSpaceOnUse" width="5.2" height="5.2" patternTransform="rotate(-16)">
+      <circle cx="2" cy="2" r="1.1" fill="#ffe3a6"/>
+    </pattern>
   </defs>
-  <use xlink:href="#type" fill="#ab382c" transform="translate(2.2 2.4)"/>
-  <use xlink:href="#type" fill="#262322"/>
+  <use xlink:href="#type" fill="#202a30" stroke="#202a30" stroke-width="3.7" stroke-linejoin="round" transform="translate(1.9 2.8)"/>
+  <use xlink:href="#type" fill="#202a30" stroke="#202a30" stroke-width="3.7" stroke-linejoin="round"/>
+  <g mask="url(#letters)">
+    <path fill="#db4943" d="M0 0h177v98H0z"/>
+    <path fill="#ff8d58" d="M0 0h178v19l-32 3 9-4-48 6 5-3-46 7 18-6L0 30z"/>
+    <path fill="#a83340" d="M0 65q62-9 112-18l-6 4 73-12v59H0z"/>
+    <path fill="url(#screen)" opacity=".64" d="M0 69l71-14-6 9-65 13zM105 48l63-12-8 6-59 14z"/>
+
+    <path fill="#24505d" d="M176 0h334v98H176z"/>
+    <path fill="#72c9bc" d="M176 0h334v36l-62 4 12-4-63 7 13-4-68 7 7-3-83 10 18-5-108 13z"/>
+    <path fill="#408a92" d="M176 61q90-12 175-21l-14 4 73-6-15 4 115-10v8q-148 14-334 34z"/>
+    <!-- The last S has slipped through the gold paint on the scenery bench. -->
+    <path fill="#dc8550" d="M307 87q84-23 147-36l-11 5 65-16 2 17-55 9 10-5q-88 21-158 26z"/>
+    <path fill="#ffd072" d="M292 88q85-27 155-44l-11 6 74-19v13l-53 10 6-3q-96 22-171 37z"/>
+    <path fill="url(#screen)" opacity=".64" d="M183 66q66-11 126-15l-9 5-121 20zM446 75l64-17v8l-61 16z"/>
+    <!-- Corners rubbed back to the pale stock; the cuts stay sharp at phone size. -->
+    <path d="m9 14 14-2-11 3-.6 8zM77 12l8-1-7 3-2 8zM122 13l15-2-13 3-1 8z
+      M209 12l7-1-5 2-3 10zM251 30q2-13 16-18-10 6-13 14zM301 12l19-2-16 3-3 7z
+      M357 31q1-15 13-18-8 5-10 12zM409 12l16-1-14 3-1 7zM468 31q-1-12 10-16-7 7-7 12z" fill="#fff0c8"/>
+  </g>
 </svg>

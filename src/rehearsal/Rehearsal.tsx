@@ -35,6 +35,10 @@ import { Phone } from '../puppet/Phone'
 import { ActorFace } from '../puppet/ActorFace'
 import { isJoint, stageHandles } from '../puppet/geometry'
 import { footAngle, turnFoot } from '../puppet/joints'
+import { AudienceSeat } from './AudienceSeat'
+import { StageClock } from './StageClock'
+import { drawAnotherCue, type ClockReading, type PlayMode } from './acting-clock'
+import { checkOpeningGuess } from './opening-guess'
 import './rehearsal.css'
 
 // These are public movement exercises. Live round assignments belong on the server.
@@ -66,24 +70,6 @@ const handShapes: { value: HandShape; label: string }[] = [
 ]
 const fineJoints = new Set<string>(stageHandles.filter(isJoint))
 
-const phoneGuesses = new Set([
-  'phone',
-  'calling',
-  'calling someone',
-  'phone call',
-  'a phone call',
-  'making a phone call',
-  'taking a call',
-  'answering the phone',
-  'talking on a phone',
-  'talking on the phone',
-  'on the phone',
-  'using a phone',
-  'making a call',
-  'talking on his phone',
-  'talking on her phone',
-  'talking on their phone',
-])
 const sessionKey = 'bad-actors:public-rehearsal:1'
 
 type Phase = 'guess' | 'revealed' | 'practice'
@@ -231,9 +217,10 @@ function PlayDialog({
       {kind === 'help' ? (
         <>
           <p>
-            Guess the opening pose, or choose <strong>Your turn</strong> to act. Hide your cue before you hand the screen to a friend.
+            Choose <strong>Play with AI</strong> to draw a cue. You get 45 seconds to act and Mr. Stubbs gets five looks. Hold still for a guess. The clock waits while he thinks.
           </p>
           <ul>
+            <li>For a friend, select <strong>Your turn</strong>, pose the actor and hide the cue before passing the screen.</li>
             <li>
               Drag any joint on the actor. Lift a shoulder, bend a knee or pull a foot forward.
               Drag the chest or head rotation point to turn it.
@@ -340,6 +327,9 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
   const [grabbing, setGrabbing] = useState(false)
   const [bodyFollow, setBodyFollow] = useState(true)
   const stage = useRef<PuppetStageApi>(null)
+  const player = useRef<HTMLDivElement>(null)
+  const [solo, setSolo] = useState<PlayMode | null>(null)
+  const [clock, setClock] = useState<ClockReading | null>(null)
   const compareMotion = import.meta.env.DEV || !accountAvailable
   const helpTrigger = useRef<HTMLElement | null>(null)
   const cueHeading = useRef<HTMLHeadingElement>(null)
@@ -391,7 +381,19 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
     setResetMessage('')
     requestAnimationFrame(() => cueHeading.current?.focus({ preventScroll: true }))
   }
+  function playWithAudience(mode: PlayMode) {
+    if (mode === 'draw') {
+      const previous = phase === 'practice' ? cue : 1
+      changeCue(drawAnotherCue(previous, exercises.length))
+      setPose(initialPose())
+      setPhase('practice')
+    }
+    setCueHidden(false)
+    setNoteOpen(false)
+    setSolo(mode)
+  }
   function changeCue(index: number) {
+    if (solo && index !== cue) setPose(initialPose())
     setCue(index)
     setNoteOpen(false)
     setResetMessage('')
@@ -419,16 +421,9 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
   }
   function submitGuess(event: FormEvent) {
     event.preventDefault()
-    const answer = guess
-      .trim()
-      .toLowerCase()
-      .replace(/[’']/g, '')
-      .replace(/[^a-z\s]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .replace(/^(he is|she is|they are|hes|shes|theyre|the actor is) /, '')
-      .trim()
-    if (!answer) return
-    setCorrect(phoneGuesses.has(answer))
+    const match = checkOpeningGuess(guess)
+    if (match === null) return
+    setCorrect(match)
     setPhase('revealed')
   }
   function reset() {
@@ -458,14 +453,14 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
           </div>
           <div className="ba-billing">
             <h2>Puppet charades</h2>
-            <p>Our lead called in sick. Drag the sandbag understudy into a pose for a friend to guess.</p>
+            <p>Our lead called in sick. Pose the understudy for a friend or our front-row AI critic.</p>
           </div>
         </header>
-        <div className="ba-workspace">
+        <div className="ba-workspace ba-has-audience">
           <section className="ba-stage-block" aria-label="Rehearsal stage">
             <div className="ba-theater">
               <div className="ba-stage-canvas">
-                <div className="ba-player">
+                <div className="ba-player" ref={player}>
                   <PuppetStage
                     stageRef={stage}
                     pose={pose}
@@ -474,11 +469,12 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
                     onGrabChange={setGrabbing}
                   />
                 </div>
+                {solo === 'draw' && clock && <StageClock seconds={clock.seconds} mode={clock.mode} className="ba-show-clock" />}
               </div>
             </div>
             <div className="ba-stage-bar">
-              <span>
-                <Hand size={17} aria-hidden="true" /> Drag any joint. A quick tug makes it wobble.
+              <span className={solo && !cueHidden ? 'ba-live-cue' : undefined}>
+                <Hand size={17} aria-hidden="true" /> {solo && !cueHidden ? <>Your cue <strong>{exercises[cue].title}</strong></> : 'Drag any joint. A quick tug makes it wobble.'}
               </span>
               <button type="button" disabled={grabbing} onClick={reset}>
                 <RotateCcw size={15} aria-hidden="true" /> Reset pose
@@ -488,13 +484,16 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
               {resetMessage}
             </span>
           </section>
+          <AudienceSeat mode={solo} canRehearse={phase === 'practice' && !cueHidden} cue={cue + 1} pose={pose} stage={stage} player={player}
+            onStart={playWithAudience} onLeave={() => setSolo(null)} onClock={setClock}
+            onNext={() => solo === 'draw' ? playWithAudience('draw') : changeCue((cue + 1) % exercises.length)} />
           <section className="ba-cue" aria-label="Cue card" data-revealed={phase === 'revealed' || undefined} data-covered={phase === 'practice' && cueHidden || undefined}>
             <div className="ba-cue-header">
               <span>Cue card</span>
               {phase === 'practice' ? (
                 <div className="ba-cue-meta">
                   <span>{String(cue + 1).padStart(2, '0')} / 06</span>
-                  <button
+                  {solo !== 'draw' && <button
                     type="button"
                     className="ba-hide-cue"
                     aria-expanded={!cueHidden}
@@ -507,7 +506,7 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
                       <EyeOff size={14} aria-hidden="true" />
                     )}
                     {cueHidden ? 'Show cue' : 'Hide cue'}
-                  </button>
+                  </button>}
                 </div>
               ) : (
                 <span>{phase === 'revealed' ? (correct ? 'Guessed it!' : 'The reveal') : 'Warm-up'}</span>
@@ -545,7 +544,7 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
                   {phase === 'practice'
                     ? cueHidden
                       ? 'Pass the screen to your guesser.'
-                      : 'Keep this slip to yourself until they guess.'
+                      : solo ? 'Stubbs sees the actor and the prop.' : 'Keep this slip to yourself until they guess.'
                     : correct
                       ? 'You got it. Now take the stage.'
                       : 'That was the sample cue. Try acting one out.'}
@@ -563,7 +562,7 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
                   </div>
               </div>
             )}
-            <div className="ba-cue-bottom">
+            {solo !== 'draw' && <div className="ba-cue-bottom">
               {phase === 'practice' ? (
                 <button
                   type="button"
@@ -576,8 +575,8 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
                   Your turn <ArrowRight size={17} />
                 </button>
               )}
-            </div>
-            {phase === 'practice' && !cueHidden && (
+            </div>}
+            {solo !== 'draw' && phase === 'practice' && !cueHidden && (
               <label className="ba-choose-cue">
                 <span>Choose a cue</span>
                 <select value={cue} aria-label="Choose a cue" onChange={(event) => changeCue(Number(event.target.value))}>
@@ -675,7 +674,7 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
           </section>
         </div>
         <p className="ba-practice-note">
-          Local rehearsal <span aria-hidden="true">/</span> The opening act has a preset answer.
+          Local rehearsal <span aria-hidden="true">/</span> The opening act uses a preset cue. Live AI starts when you invite Stubbs.
         </p>
       </main>
       {dialog && (

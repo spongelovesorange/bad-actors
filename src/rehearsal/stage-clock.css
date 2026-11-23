@@ -1,0 +1,37 @@
+.ba-clock {
+  display: block;
+  width: clamp(87px, 9vw, 114px);
+  flex: none;
+  color: #292524;
+  --clock-card: #f3dfac;
+  --clock-ink: #292524;
+}
+.ba-clock svg { display: block; width: 100%; height: auto; overflow: visible; }
+.ba-clock-stock { fill: var(--clock-card); }
+.ba-clock-digit {
+  fill: var(--clock-ink);
+  font: 800 29px/1 'Bricolage Grotesque', 'Arial Black', Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+.ba-clock-caption, .ba-clock-unit {
+  fill: #f4ead2;
+  font: 800 8.2px/1 'Courier New', monospace;
+  letter-spacing: .45px;
+}
+.ba-clock-unit { font-size: 7.1px; letter-spacing: -.25px; }
+.ba-clock-loose { transform-origin: 61px 24px; transform: rotate(2deg); }
+.ba-clock-stress { opacity: 0; }
+.ba-clock[data-urgent], .ba-clock[data-mode='expired'] { --clock-ink: #982b26; }
+.ba-clock[data-urgent] .ba-clock-stress { opacity: 1; }
+.ba-clock[data-mode='paused'] { --clock-card: #d6dcd0; }
+.ba-clock[data-mode='expired'] .ba-clock-loose { transform: rotate(6deg); }
+.ba-clock-sr { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (prefers-reduced-motion: no-preference) {
+  .ba-clock[data-urgent] .ba-clock-loose { animation: ba-clock-slip 360ms ease-out both; }
+  @keyframes ba-clock-slip {
+    0% { transform: rotate(2deg); }
+    32% { transform: rotate(14deg); }
+    65% { transform: rotate(-3deg); }
+    100% { transform: rotate(5deg); }
+  }
+}

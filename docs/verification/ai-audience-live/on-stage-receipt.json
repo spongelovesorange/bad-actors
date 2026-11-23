@@ -1,0 +1,51 @@
+{
+  "scope": "Timed draw in the local Chromium application with real stage and acting clock. An isolated server and local browser capture prevented all upstream provider traffic. A separate reader received the single actor PNG only.",
+  "roundStartedUTC": "2026-11-23T23:30:26.983Z",
+  "frameCapturedUTC": "2026-11-23T23:30:39.692Z",
+  "startingSeconds": 45,
+  "secondsAtFrame": 33,
+  "clockWhileReading": "paused",
+  "drawnCue": "Drinking water",
+  "stageGestures": [
+    {
+      "button": "Cup"
+    },
+    {
+      "button": "Gulp"
+    },
+    {
+      "grabbed": "prop",
+      "start": [
+        314,
+        269
+      ],
+      "requested": [
+        259,
+        120
+      ],
+      "after": [
+        259,
+        120
+      ]
+    }
+  ],
+  "recordedFrames": 1,
+  "upstreamProviderCalls": 0,
+  "png": {
+    "file": "on-stage.png",
+    "width": 560,
+    "height": 560,
+    "sha256": "2bda51a79c61bb493b191951372650c9a72ccf4ac59b05edae6a173ea2000f81"
+  },
+  "blindReader": {
+    "input": "The actor-only PNG. No cue, list of cues, stage controls or source repository.",
+    "reply": "Sipping from a cup.",
+    "comparison": "Matches the drawn action of drinking. The independent reading did not establish the liquid inside the cup.",
+    "comparisonMethod": "Review of the returned phrase against the original cue. No automatic referee called."
+  },
+  "screenshots": {
+    "beforeReading": "on-stage-clock.jpg",
+    "afterReading": "on-stage-blind-reading.jpg",
+    "afterReadingAnnotation": "The test harness added an explicitly labelled independent reading below the original stage. The untouched in-game audience panel remained paused while awaiting a provider."
+  }
+}

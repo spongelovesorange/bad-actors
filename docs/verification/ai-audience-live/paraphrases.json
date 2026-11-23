@@ -1,0 +1,24 @@
+{
+  "method": "Two referee-only calls using the local game provider; no screenshot or vision call in these two checks.",
+  "requestedModel": "gpt-6.2-sol",
+  "results": [
+    {
+      "utc": "2026-11-23T23:18:59.544Z",
+      "cue": "Talking on the phone",
+      "guess": "make a call",
+      "verdict": "correct",
+      "model": "gpt-6.2-sol-2026-11-17",
+      "tokens": 146,
+      "elapsedMs": 10963
+    },
+    {
+      "utc": "2026-11-23T23:19:10.507Z",
+      "cue": "Talking on the phone",
+      "guess": "call sombody",
+      "verdict": "correct",
+      "model": "gpt-6.2-sol-2026-11-17",
+      "tokens": 146,
+      "elapsedMs": 6460
+    }
+  ]
+}

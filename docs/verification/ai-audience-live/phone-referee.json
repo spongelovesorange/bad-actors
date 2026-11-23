@@ -1,0 +1,13 @@
+{
+  "method": "Text-only follow-up requested with the revised referee and the exact guess from look 2.",
+  "recordedUTC": "2026-11-23T23:25:38.555Z",
+  "requestedModel": "gpt-6.2-sol",
+  "cue": "Talking on the phone",
+  "guess": "Holding a phone to their ear.",
+  "verification": "blocked",
+  "cause": "Automatic approval review reported an HTTPS destination differing from the authorized HTTP gateway. No provider verdict or token usage was observed, and no retry was made.",
+  "model": null,
+  "tokens": null,
+  "elapsedMs": null,
+  "verdict": null
+}

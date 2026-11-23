@@ -1,8 +1,19 @@
 export type Point = { x: number; y: number }
 export type Hand = 'left' | 'right'
+export type HandShape = 'relaxed' | 'open' | 'fist'
 export type Handle = Hand | 'head' | 'prop'
+export type Joint = 'leftShoulder' | 'rightShoulder' | 'leftElbow' | 'rightElbow' |
+  'waist' | 'chest' | 'headTilt' | 'leftKnee' | 'rightKnee' | 'leftAnkle' | 'rightAnkle'
+export type StageHandle = Handle | Joint
+export const stageHandles: StageHandle[] = [
+  'head', 'left', 'right', 'prop', 'headTilt', 'leftShoulder', 'rightShoulder',
+  'leftElbow', 'rightElbow', 'chest', 'waist', 'leftKnee', 'rightKnee', 'leftAnkle', 'rightAnkle',
+]
+export function isJoint(h: StageHandle): h is Joint {
+  return h !== 'head' && h !== 'prop' && h !== 'left' && h !== 'right'
+}
 export type PropKind = 'phone' | 'cup' | 'plate'
-export type FaceShape = 'smile' | 'flat' | 'open'
+export type FaceShape = 'flat' | 'side-eye' | 'braced' | 'smile' | 'open'
 type Bend = -1 | 1
 
 export type PuppetPose = {
@@ -18,6 +29,10 @@ export type PuppetPose = {
   propTurn: number
   // An untouched wrist hangs loose. A palm placed by the actor keeps its stage position.
   pinned?: Partial<Record<Hand | 'head', boolean>>
+  // Stage-space offsets. Chest and neck store their signed rotation in x, in degrees.
+  joints?: Partial<Record<Joint, Point>>
+  footTurns?: Partial<Record<Hand, number>>
+  handShapes?: Partial<Record<Hand, HandShape>>
 }
 
 export const feel = {
@@ -65,6 +80,11 @@ export function putDown(p: PuppetPose): PuppetPose {
   if (!p.prop || !p.holder) return p
   return { ...p, holder: null, propPosition: { x: p.holder === 'right' ? 329 : 171, y: 289 } }
 }
+export const handShape = (p: PuppetPose, hand: Hand): HandShape => p.handShapes?.[hand] ?? 'relaxed'
+export function withHandShape(p: PuppetPose, hand: Hand, shape: HandShape): PuppetPose {
+  if (handShape(p, hand) === shape) return p
+  return { ...p, handShapes: { ...p.handShapes, [hand]: shape } }
+}
 export const withFace = (p: PuppetPose, face: FaceShape): PuppetPose => ({ ...p, face })
 export const turnProp = (p: PuppetPose): PuppetPose => p.prop ? { ...p, propTurn: (p.propTurn + 45) % 360 } : p
 export function propOffset(p: PuppetPose, hand = p.holder): Point {
@@ -95,13 +115,25 @@ function pin(p: PuppetPose, handle: Hand | 'head') {
   // Earlier saved poses did not distinguish loose from deliberately placed hands.
   return { ...(p.pinned ?? { left: true, right: true, head: true }), [handle]: true }
 }
-export function reachableHead(target: Point): Point {
-  const dx = target.x - homeHead.x, dy = target.y - homeHead.y
-  const scale = Math.max(1, Math.hypot(dx / feel.headRadius.x, dy / feel.headRadius.y))
-  return { x: homeHead.x + dx / scale, y: homeHead.y + dy / scale }
+export function restPoint(point: Point, p?: PuppetPose): Point {
+  const waist = p?.joints?.waist, turn = p?.joints?.chest?.x
+  if (!waist && !turn) return point
+  const turned = turn ? rotate(point, pivot, turn) : point
+  return { x: turned.x + (waist?.x ?? 0), y: turned.y + (waist?.y ?? 0) }
 }
-export function reachableWrist(target: Point, hand: Hand): Point {
-  const s = shoulders[hand]
+export function restShoulder(hand: Hand, p?: PuppetPose): Point {
+  const shoulder = restPoint(shoulders[hand], p)
+  const shrug = p?.joints?.[hand === 'left' ? 'leftShoulder' : 'rightShoulder']
+  return shrug ? { x: shoulder.x + shrug.x, y: shoulder.y + shrug.y } : shoulder
+}
+export function reachableHead(target: Point, p?: PuppetPose): Point {
+  const home = restPoint(homeHead, p)
+  const dx = target.x - home.x, dy = target.y - home.y
+  const scale = Math.max(1, Math.hypot(dx / feel.headRadius.x, dy / feel.headRadius.y))
+  return { x: home.x + dx / scale, y: home.y + dy / scale }
+}
+export function reachableWrist(target: Point, hand: Hand, p?: PuppetPose): Point {
+  const s = restShoulder(hand, p)
   const scale = Math.max(1, distance(s, target) / feel.wristReach)
   return { x: s.x + (target.x - s.x) / scale, y: s.y + (target.y - s.y) / scale }
 }
@@ -111,11 +143,11 @@ export function moveHandle(p: PuppetPose, handle: Handle, target: Point): Puppet
     return { ...p, holder: null, propPosition: { x: clamp(target.x, 46, feel.width - 46), y: clamp(target.y, 30, feel.height - 30) } }
   }
   if (handle === 'head') {
-    return { ...p, head: reachableHead(target), pinned: pin(p, handle) }
+    return { ...p, head: reachableHead(target, p), pinned: pin(p, handle) }
   }
-  const s = shoulders[handle]
+  const s = restShoulder(handle, p)
   const length = distance(s, target)
-  let hand = reachableWrist(target, handle)
+  let hand = reachableWrist(target, handle, p)
   // At a folded shoulder the elbow has no geometric preference. Retain its last direction.
   if (length < 0.08) {
     const last = p[handle], norm = distance(last, s) || 1

@@ -1,7 +1,9 @@
-import { useEffect, useId, useImperativeHandle, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type Ref } from 'react'
+import { useEffect, useId, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type Ref } from 'react'
 import { PuppetArt } from './PuppetArt'
-import { advanceMotion, createMotion, displayPose, headAngle, motionAtRest, stillMotion, tug, type PuppetMotion } from './motion'
-import { distance, feel, moveHandle, propCenter, putDown, snapHand, turnProp, type Hand, type Handle, type Point, type PuppetPose } from './geometry'
+import { advanceMotion, computeRig, createMotion, displayPose, motionAtRest, stillMotion, tug, type PuppetMotion } from './motion'
+import { pickTarget, stageTargets } from './hit'
+import { moveJoint, turnFoot, turnJoint } from './joints'
+import { distance, feel, isJoint, moveHandle, propCenter, putDown, snapHand, turnProp, type Hand, type Handle, type StageHandle, type Point, type PuppetPose } from './geometry'
 import './puppet.css'
 
 export type PuppetSnapshot = { pose: PuppetPose; motion: PuppetMotion }
@@ -16,11 +18,15 @@ type Props = {
   bodyFollow?: boolean
 }
 type Drag = {
-  id: number; handle: Handle; before: PuppetPose; current: PuppetPose; offset: Point
+  id: number; handle: StageHandle; before: PuppetPose; current: PuppetPose; offset: Point
   startClient: Point; last: Point; lastAt: number; candidate: Hand | null; moved: boolean
 }
-const handleNames = { head: 'Head', left: 'Left hand', right: 'Right hand', prop: 'Prop' }
-const allHandles: Handle[] = ['head', 'prop', 'left', 'right']
+const handleNames: Record<StageHandle, string> = {
+  head: 'Head', left: 'Left hand', right: 'Right hand', prop: 'Prop',
+  leftElbow: 'Left elbow', rightElbow: 'Right elbow', leftShoulder: 'Left shoulder', rightShoulder: 'Right shoulder',
+  waist: 'Waist', chest: 'Turn torso', headTilt: 'Tilt head', leftKnee: 'Left knee', rightKnee: 'Right knee',
+  leftAnkle: 'Left foot', rightAnkle: 'Right foot',
+}
 function center(p: PuppetPose, handle: Handle) { return handle === 'prop' ? propCenter(p) : p[handle] }
 
 function toStage(svg: SVGSVGElement, client: Point): Point | null {
@@ -36,7 +42,9 @@ function scaleFor(svg: SVGSVGElement) {
 export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, interactive = true, stageRef, bodyFollow = true }: Props) {
   const svg = useRef<SVGSVGElement>(null)
   const help = useId()
-  const [active, setActive] = useState<Handle | null>(null)
+  const [active, setActive] = useState<StageHandle | null>(null)
+  const [hovered, setHovered] = useState<StageHandle | null>(null)
+  const lastTap = useRef<{ client: Point; id: StageHandle; at: number } | null>(null)
   const [draft, setDraft] = useState<PuppetPose | null>(null)
   const [preview, setPreview] = useState<Hand | null>(null)
   const [motion, setMotion] = useState<PuppetMotion>(stillMotion)
@@ -46,9 +54,13 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
   const frame = useRef(0)
   const lastFrame = useRef(0)
   const lastBroadcast = useRef(0)
-  const engine = useRef(createMotion())
+  const [initialEngine] = useState(createMotion)
+  const engine = useRef(initialEngine)
   const rendered = draft ?? pose
-  const drawn = displayPose(rendered, motion)
+  const rig = useMemo(() => computeRig(rendered, motion), [rendered, motion])
+  const drawn = rig.pose
+  const targets = useMemo(() => stageTargets(rig, scale), [rig, scale])
+  const handleCenter = (handle: StageHandle) => isJoint(handle) ? rig.joints[handle] : handle === 'prop' ? rig.propCenter : drawn[handle]
   const settled = !active && motion === stillMotion
   const visible = useRef<PuppetSnapshot>({ pose: rendered, motion })
   const handlers = useRef({ onPoseChange, onPosePreview, onGrabChange, reduced, bodyFollow })
@@ -63,6 +75,9 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
   useEffect(() => {
     const node = svg.current
     if (!node) return
+    // A Vite refresh may preserve an engine created before the latest rig channels existed.
+    engine.current = createMotion()
+    setMotion(stillMotion)
     const measure = () => setScale(scaleFor(node))
     const media = window.matchMedia('(prefers-reduced-motion: reduce)')
     const updateMotion = () => setReduced(media.matches)
@@ -97,6 +112,13 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
       lastFrame.current = 0
     }
   }
+  function drive(handle: Handle, delta: Point, milliseconds: number) {
+    if (!bodyFollow || reduced || handle === 'prop') return
+    const now = performance.now()
+    // A fresh pull after an event-loop stall starts now, not at the previous paint.
+    if (lastFrame.current && now - lastFrame.current > 200) lastFrame.current = now
+    tug(engine.current, handle, delta, milliseconds)
+  }
   function queueFrame() {
     if (!frame.current) frame.current = requestAnimationFrame(step)
   }
@@ -104,6 +126,9 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
     const current = drag.current
     if (!current) return
     drag.current = null
+    if (!revert && snap && !current.moved) {
+      lastTap.current = { client: current.startClient, id: current.handle, at: performance.now() }
+    } else lastTap.current = null
     let finalPose = revert || !current.moved ? current.before : current.current
     if (!revert && snap && current.handle === 'prop' && !finalPose.holder && svg.current) {
       const displayed = displayPose(finalPose, engine.current.value)
@@ -146,6 +171,8 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
       window.removeEventListener('keydown', escape)
       document.removeEventListener('visibilitychange', hidden)
       cancelAnimationFrame(frame.current)
+      frame.current = 0
+      lastFrame.current = 0
     }
   }, [])
   useEffect(() => {
@@ -166,15 +193,19 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
     const client = { x: event.clientX, y: event.clientY }
     const point = toStage(svg.current, client)
     if (!point) return
-    // Overlapping touch targets resolve to the nearest actual control center.
-    const allowed = allHandles.filter(id => id !== 'prop' || pose.prop)
-    const handle = allowed.reduce((best, id) => distance(point, center(drawn, id)) < distance(point, center(drawn, best)) ? id : best)
-    const anchor = center(drawn, handle)
+    const coarse = event.pointerType === 'touch'
+    const last = lastTap.current
+    const cycle = last && performance.now() - last.at < 1000 && distance(client, last.client) < 5
+      ? { previous: last.id, slop: (coarse ? 8 : 4) / scale } : undefined
+    const handle = pickTarget(point, targets, coarse, cycle)
+    if (!handle) return
+    setHovered(null)
+    const anchor = handleCenter(handle)
     event.preventDefault()
     svg.current.setPointerCapture(event.pointerId)
     svg.current.querySelector<SVGCircleElement>('[data-handle="' + handle + '"]')?.focus({ preventScroll: true })
     // Take control at the displayed position, including an otherwise loose wrist.
-    const captured = handle === 'prop' ? pose : moveHandle(pose, handle, anchor)
+    const captured = isJoint(handle) || handle === 'prop' ? pose : moveHandle(pose, handle, anchor)
     if (handle === 'head') {
       engine.current.speed.head = 0
       engine.current.value.head = 0
@@ -190,18 +221,30 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
   }
   function update(event: PointerEvent<SVGSVGElement>) {
     const current = drag.current
-    if (!current || current.id !== event.pointerId || !svg.current) return
+    if (!svg.current) return
     const client = { x: event.clientX, y: event.clientY }
+    if (!current) {
+      if (interactive && event.pointerType !== 'touch') {
+        const hitPoint = toStage(svg.current, client)
+        setHovered(hitPoint ? pickTarget(hitPoint, targets, false) : null)
+      }
+      return
+    }
+    if (current.id !== event.pointerId) return
     const point = toStage(svg.current, client)
     if (!point) return
     if (current.handle === 'prop' && current.current.holder && distance(client, current.startClient) <= feel.detachPx) return
     const target = { x: point.x + current.offset.x, y: point.y + current.offset.y }
     const at = event.timeStamp
-    const next = moveHandle(current.current, current.handle, target)
-    const actual = center(next, current.handle)
+    const h = current.handle
+    const next = isJoint(h)
+      ? moveJoint(current.current, h, target, computeRig(current.current, engine.current.value))
+      : moveHandle(current.current, h, target)
+    if (next === current.current) return
+    const actual = isJoint(h) ? target : center(next, h)
     if (distance(actual, current.last) < 0.001) return
     const delta = { x: actual.x - current.last.x, y: actual.y - current.last.y }
-    if (bodyFollow && !reduced) tug(engine.current, current.handle, delta, at - current.lastAt)
+    if (!isJoint(h)) drive(h, delta, at - current.lastAt)
     current.current = next
     current.last = actual
     current.lastAt = at
@@ -211,7 +254,7 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
     }
     queueFrame()
   }
-  function key(event: KeyboardEvent<SVGCircleElement>, handle: Handle) {
+  function key(event: KeyboardEvent<SVGCircleElement>, handle: StageHandle) {
     if (!interactive || drag.current) return
     const arrows: Record<string, Point> = {
       ArrowLeft: { x: -1, y: 0 }, ArrowRight: { x: 1, y: 0 }, ArrowUp: { x: 0, y: -1 }, ArrowDown: { x: 0, y: 1 },
@@ -224,36 +267,51 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
       return
     }
     if (handle === 'prop' && event.key.toLowerCase() === 'r') { event.preventDefault(); onPoseChange?.(turnProp(pose)); return }
+    if ((handle === 'leftAnkle' || handle === 'rightAnkle') && event.key.toLowerCase() === 'r') {
+      event.preventDefault()
+      onPoseChange?.(turnFoot(pose, handle === 'leftAnkle' ? 'left' : 'right', event.shiftKey ? -12 : 12))
+      return
+    }
     const dir = arrows[event.key]
     if (!dir) return
     event.preventDefault()
-    const p = center(drawn, handle), n = event.shiftKey ? 12 : 3
-    const next = moveHandle(pose, handle, { x: p.x + dir.x * n, y: p.y + dir.y * n })
+    const p = handleCenter(handle), n = event.shiftKey ? 12 : 3
+    const target = { x: p.x + dir.x * n, y: p.y + dir.y * n }
+    if (isJoint(handle)) {
+      const next = handle === 'chest' || handle === 'headTilt'
+        ? turnJoint(pose, handle, (dir.x + dir.y) * (event.shiftKey ? 10 : 3))
+        : moveJoint(pose, handle, target, rig)
+      onPoseChange?.(next)
+      return
+    }
+    const next = moveHandle(pose, handle, target)
     if (event.shiftKey && handle !== 'prop' && bodyFollow && !reduced) {
       const actual = center(next, handle)
-      tug(engine.current, handle, { x: actual.x - p.x, y: actual.y - p.y }, 16)
+      drive(handle, { x: actual.x - p.x, y: actual.y - p.y }, 16)
       queueFrame()
     }
     onPoseChange?.(next)
   }
 
-  return <svg ref={svg} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 360" className="ba-puppet-stage" data-puppet-stage="" data-grabbed={active ?? undefined}
-    data-body-angle={motion.body} data-head-angle={headAngle(rendered, motion)} data-body-lift={motion.lift}
+  return <svg ref={svg} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 360" className="ba-puppet-stage" data-puppet-stage="" data-targeting={hovered || undefined} data-grabbed={active ?? undefined}
+    data-body-angle={motion.body} data-head-angle={rig.headAngle} data-balance={motion.balance} data-body-lift={motion.lift}
     data-loose-swing={motion.loose} data-settled={settled ? '1' : '0'}
     role={interactive ? 'group' : 'img'} aria-label={interactive ? 'Puppet stage' : 'Actor’s pose'} aria-describedby={interactive ? help : undefined}
-    onPointerDown={start} onPointerMove={update} onPointerUp={event => { if (drag.current?.id === event.pointerId) { update(event); finish(false, true) } }}
+    onPointerDown={start} onPointerMove={update} onPointerLeave={() => setHovered(null)} onPointerUp={event => { if (drag.current?.id === event.pointerId) { update(event); finish(false, true) } }}
     onPointerCancel={event => { if (drag.current?.id === event.pointerId) finish() }}
     onLostPointerCapture={event => { if (drag.current?.id === event.pointerId) finish() }}>
-    {interactive && <desc id={help}>Drag the head, either hand or a prop. With a control focused, use arrow keys to move, Shift to move farther, and Escape to undo a drag. For a prop, Enter picks up or puts down and R turns it.</desc>}
-    <PuppetArt pose={rendered} motion={motion}/>
-    {interactive && allHandles.filter(h => h !== 'prop' || rendered.prop).map(handle => {
-      const p = center(drawn, handle)
-      const radius = Math.max(handle === 'head' ? 39 : 15, feel.hitRadiusPx / scale)
-      return <g key={handle} className="ba-handle" data-selected={active === handle || undefined} data-snap={preview === handle || undefined}>
-        <circle data-handle={handle} className="ba-hit" cx={p.x} cy={p.y} r={radius} tabIndex={0} role="button"
+    {interactive && <desc id={help}>Drag any joint, grip, or object. Tap again in the same spot to reach an overlapping joint. Tab focuses each grip in turn. With a control focused, use arrow keys to move, Shift to move farther, and Escape to undo a drag. For a prop, Enter picks up or puts down and R turns it. For a boot, R and Shift–R turn the toes.</desc>}
+    <PuppetArt pose={rendered} motion={motion} rig={rig}/>
+    {interactive && targets.map(({ id: handle, center: p, radius, touchRadius }) => {
+      const rotation = handle === 'headTilt' || handle === 'chest'
+      return <g key={handle} className="ba-handle" data-selected={active === handle || undefined}
+        data-hovered={hovered === handle || undefined} data-snap={preview === handle || undefined}>
+        <circle data-handle={handle} className="ba-hit" cx={p.x} cy={p.y} r={touchRadius} tabIndex={0} role="button"
           aria-label={handle === 'prop' ? 'Move ' + rendered.prop : handleNames[handle]}
           aria-describedby={help} onKeyDown={event => key(event, handle)}/>
-        <circle className="ba-handle-ring" aria-hidden="true" cx={p.x} cy={p.y} r={handle === 'head' ? 49 : handle === 'prop' ? 28 : 20}/>
+        {isJoint(handle) && <path className="ba-joint-stitch" aria-hidden="true" transform={`translate(${p.x} ${p.y})`}
+          d={rotation ? 'M-4 1 A4 4 0 0 1 3-2 M3-4 V-1 H0' : 'M-2.2 1.2 L2.2-1.2'}/>}
+        <circle className="ba-handle-ring" aria-hidden="true" cx={p.x} cy={p.y} r={radius}/>
       </g>
     })}
   </svg>

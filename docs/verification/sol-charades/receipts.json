@@ -1,0 +1,35 @@
+[
+  {
+    "sample": 1,
+    "utc": "2026-11-23T22:35:23.727Z",
+    "requestedModel": "gpt-6.2-sol",
+    "imageSha256": "2b7f376456e34e8a8d8efa55d7a35aba65a8fcd3ba2c2a149c4e063729d1d25c",
+    "status": 200,
+    "guess": "Sipping from a cup.",
+    "returnedModel": "gpt-6.2-sol-2026-11-17",
+    "tokens": 376,
+    "elapsedMs": 7070
+  },
+  {
+    "sample": 2,
+    "utc": "2026-11-23T22:35:30.798Z",
+    "requestedModel": "gpt-6.2-sol",
+    "imageSha256": "bcfc3a882532fab1a5891881f949ce0b879052e43491ba6c3ad1f33fed5c7a38",
+    "status": 200,
+    "guess": "Talking on the phone.",
+    "returnedModel": "gpt-6.2-sol-2026-11-17",
+    "tokens": 375,
+    "elapsedMs": 5619
+  },
+  {
+    "sample": 3,
+    "utc": "2026-11-23T22:35:36.416Z",
+    "requestedModel": "gpt-6.2-sol",
+    "imageSha256": "bcc4c571845d1d5a78b348978bb7101ff180a9e5fcfd270a94f932579d0b2382",
+    "status": 200,
+    "guess": "Rubbing both eyes",
+    "returnedModel": "gpt-6.2-sol-2026-11-17",
+    "tokens": 374,
+    "elapsedMs": 5303
+  }
+]

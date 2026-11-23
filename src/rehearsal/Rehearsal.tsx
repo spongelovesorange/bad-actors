@@ -11,21 +11,28 @@ import {
   Info,
   RefreshCw,
   RotateCcw,
+  RotateCw,
   LogIn,
   X,
 } from 'lucide-react'
 import {
   PuppetStage,
+  handShape,
   initialPose,
   phoneSamplePose,
   putDown,
   turnProp,
   withFace,
+  withHandShape,
   withProp,
   type FaceShape,
+  type HandShape,
   type PropKind,
   type PuppetPose,
 } from '../puppet'
+import { ActorFace } from '../puppet/ActorFace'
+import { isJoint, stageHandles } from '../puppet/geometry'
+import { turnFoot } from '../puppet/joints'
 import './rehearsal.css'
 
 // These are public movement exercises. Live round assignments belong on the server.
@@ -44,9 +51,18 @@ const shelf: { kind: PropKind; label: string }[] = [
 ]
 const faces: { shape: FaceShape; label: string }[] = [
   { shape: 'flat', label: 'Deadpan' },
-  { shape: 'smile', label: 'Crooked mouth' },
-  { shape: 'open', label: 'Open mouth' },
+  { shape: 'side-eye', label: 'Side-eye' },
+  { shape: 'braced', label: 'Bracing' },
+  { shape: 'smile', label: 'Forced smile' },
+  { shape: 'open', label: 'Gulp' },
 ]
+const handShapes: { value: HandShape; label: string }[] = [
+  { value: 'relaxed', label: 'Relaxed' },
+  { value: 'open', label: 'Open palm' },
+  { value: 'fist', label: 'Fist' },
+]
+const fineJoints = new Set<string>(stageHandles.filter(isJoint))
+
 const phoneGuesses = new Set([
   'phone',
   'calling',
@@ -68,7 +84,13 @@ const phoneGuesses = new Set([
 const sessionKey = 'bad-actors:public-rehearsal:1'
 
 type Phase = 'guess' | 'revealed' | 'practice'
-type RehearsalSession = { phase: Phase; cue: number; pose: PuppetPose; correct?: boolean; cueHidden?: boolean }
+type RehearsalSession = {
+  phase: Phase
+  cue: number
+  pose: PuppetPose
+  correct?: boolean
+  cueHidden?: boolean
+}
 type DialogKind = 'help' | 'account'
 
 function restoreSession(): RehearsalSession | null {
@@ -99,6 +121,21 @@ function restoreSession(): RehearsalSession | null {
       ![-1, 1].includes(p.rightBend) ||
       !['left', 'right', null].includes(p.holder) ||
       !Number.isFinite(p.propTurn) ||
+      (p.joints !== undefined &&
+        (!p.joints || typeof p.joints !== 'object' || Array.isArray(p.joints) ||
+          Object.entries(p.joints).some(([name, point]) =>
+            !fineJoints.has(name) || !point || !Number.isFinite(point.x) || !Number.isFinite(point.y),
+          ))) ||
+      (p.handShapes !== undefined &&
+        (!p.handShapes || typeof p.handShapes !== 'object' || Array.isArray(p.handShapes) ||
+          Object.entries(p.handShapes).some(([side, shape]) =>
+            (side !== 'left' && side !== 'right') || !handShapes.some((option) => option.value === shape),
+          ))) ||
+      (p.footTurns !== undefined &&
+        (!p.footTurns || typeof p.footTurns !== 'object' || Array.isArray(p.footTurns) ||
+          Object.entries(p.footTurns).some(([side, degrees]) =>
+            (side !== 'left' && side !== 'right') || !Number.isFinite(degrees) || Math.abs(degrees) > 100,
+          ))) ||
       (p.pinned !== undefined &&
         (p.pinned === null || typeof p.pinned !== 'object' || Array.isArray(p.pinned) ||
           Object.values(p.pinned).some((pinned) => typeof pinned !== 'boolean')))
@@ -195,10 +232,13 @@ function PlayDialog({
             yourself.
           </p>
           <ul>
-            <li>Drag the head or either hand. Release to hold the pose.</li>
-            <li>Choose a prop from the tray. Drag it to move it between hands.</li>
             <li>
-              On a keyboard, Tab to a handle and move it with the arrow keys. Hold Shift for a larger step.
+              Drag any joint on the actor. Lift a shoulder, bend a knee or pull a foot forward.
+              Drag the chest or head rotation point to turn it.
+            </li>
+            <li>Choose the cup, bring it to the mouth, then flick the empty hand up. You can also drag a prop between hands.</li>
+            <li>
+              Use Tab to reach a stage handle. Arrow keys move it and Shift makes a larger step. On a foot, R and Shift+R turn it in opposite directions.
             </li>
           </ul>
           {compareMotion && (
@@ -269,28 +309,29 @@ function PropDrawing({ kind }: { kind: PropKind }) {
   )
 }
 
-function FaceDrawing({ shape }: { shape: FaceShape }) {
+function ExpressionPicker({ value, select }: { value: FaceShape; select: (shape: FaceShape) => void }) {
   return (
-    <svg
-      width="23"
-      height="23"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      aria-hidden="true"
-      strokeLinecap="round"
-    >
-      <path d="m4 5 3-2 12 1 2 3-1 12-3 2-12-1-2-3z" />
-      <path d="M8 10h.5m6.5-.5h.5" />
-      {shape === 'smile' ? (
-        <path d="m9 15 4 .5 2-1.5" />
-      ) : shape === 'flat' ? (
-        <path d="m9 15 6-.4" />
-      ) : (
-        <ellipse cx="12" cy="15.5" rx="1.9" ry="1.8" />
-      )}
-    </svg>
+    <section className="ba-faces" aria-label="Expression">
+      <h3>Expression</h3>
+      <div>
+        {faces.map(({ shape, label }) => (
+          <button
+            key={shape}
+            type="button"
+            aria-label={label}
+            aria-pressed={value === shape}
+            onClick={() => select(shape)}
+          >
+            <svg viewBox="-31 -22 62 48" width="35" height="29" aria-hidden="true">
+              <path d="m-29-15 4-5 44 1 8-3 1 6 1 29-6 8-42 2-9-7z"
+                stroke="#5e5845" strokeWidth="2" strokeLinejoin="round" fill="#d7b67c" />
+              <ActorFace shape={shape} />
+            </svg>
+            <span>{label}</span>
+          </button>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -391,7 +432,7 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
           <div>
             <div className="ba-section-tag">Charades rehearsal</div>
             <h1>The understudy is a sandbag.</h1>
-            <p>Guess the pose. Then grab a hand and act out a cue of your own.</p>
+            <p>Guess the opening act. Then drag the actor to perform your cue.</p>
           </div>
         </div>
         <div className="ba-workspace">
@@ -410,12 +451,13 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
             </div>
             <div className="ba-stage-bar">
               <span>
-                <Hand size={17} aria-hidden="true" /> Drag the head or hands
+                <Hand size={17} aria-hidden="true" /> Drag any joint. Turn the chest or head at its pin.
               </span>
               <button type="button" disabled={grabbing} onClick={reset}>
                 <RotateCcw size={15} aria-hidden="true" /> Reset pose
               </button>
             </div>
+            <ExpressionPicker value={pose.face} select={(shape) => inputPose(withFace(pose, shape))} />
             <span className="ba-sr" role="status">
               {resetMessage}
             </span>
@@ -535,22 +577,55 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
                   )}
                 </div>
               )}
-              <div className="ba-faces">
-                <h3>Expression</h3>
-                <div>
-                  {faces.map((face) => (
+              <div className="ba-hand-shapes" role="group" aria-label="Hand shapes">
+                {(['left', 'right'] as const).map((side) => {
+                  const label = side === 'left' ? 'Left hand' : 'Right hand'
+                  const holding = pose.prop && pose.holder === side
+                  return (
+                    <label key={side}>
+                      <span>{label}</span>
+                      <select
+                        aria-label={label + ' shape'}
+                        aria-describedby={holding ? 'ba-hand-grip' : undefined}
+                        value={handShape(pose, side)}
+                        disabled={grabbing}
+                        onChange={(event) => inputPose(withHandShape(pose, side, event.target.value as HandShape))}
+                      >
+                        {handShapes.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                      </select>
+                    </label>
+                  )
+                })}
+                {pose.prop && pose.holder && (
+                  <small id="ba-hand-grip">
+                    The {pose.holder} hand keeps its grip until you put the {pose.prop} down.
+                  </small>
+                )}
+              </div>
+              <div className="ba-foot-turns" role="group" aria-label="Foot rotation">
+                {(['left', 'right'] as const).map((side) => (
+                  <div key={side}>
+                    <span>{side === 'left' ? 'Left foot' : 'Right foot'}</span>
                     <button
                       type="button"
-                      key={face.shape}
-                      title={face.label}
-                      aria-label={face.label}
-                      aria-pressed={pose.face === face.shape}
-                      onClick={() => inputPose(withFace(pose, face.shape))}
+                      aria-label={`Turn ${side} foot counterclockwise`}
+                      title={`Turn ${side} foot counterclockwise`}
+                      disabled={grabbing || turnFoot(pose, side, -12) === pose}
+                      onClick={() => inputPose(turnFoot(pose, side, -12))}
                     >
-                      <FaceDrawing shape={face.shape} />
+                      <RotateCcw size={16} aria-hidden="true" />
                     </button>
-                  ))}
-                </div>
+                    <button
+                      type="button"
+                      aria-label={`Turn ${side} foot clockwise`}
+                      title={`Turn ${side} foot clockwise`}
+                      disabled={grabbing || turnFoot(pose, side, 12) === pose}
+                      onClick={() => inputPose(turnFoot(pose, side, 12))}
+                    >
+                      <RotateCw size={16} aria-hidden="true" />
+                    </button>
+                  </div>
+                ))}
               </div>
             </section>
           </aside>

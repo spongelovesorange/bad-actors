@@ -397,15 +397,13 @@
 .ba-dressing {
   margin-top: clamp(20px, 2.1vw, 28px);
 }
-.ba-tray-heading,
-.ba-faces {
+.ba-tray-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 6px;
 }
-.ba-tray-heading h2,
-.ba-faces h3 {
+.ba-tray-heading h2 {
   margin: 0;
   font-size: 19px;
   font-weight: 780;
@@ -471,34 +469,122 @@
   padding: 2px 0;
   min-height: 30px;
 }
-.ba-faces {
+.ba-hand-shapes,
+.ba-foot-turns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px 8px;
+}
+.ba-hand-shapes {
+  margin-top: 10px;
   border-top: 1px solid var(--line);
-  margin-top: 17px;
-  padding-top: 13px;
+  padding-top: 10px;
+}
+.ba-hand-shapes label {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 660;
+}
+.ba-hand-shapes select {
+  min-height: 34px;
+  border: 1px solid #a7b49f;
+  border-radius: 2px;
+  padding: 3px 4px;
+  color: var(--ink);
+  background: #e4e7da;
+  font: inherit;
+}
+.ba-hand-shapes select:focus-visible {
+  outline: 2px solid #205d47;
+  outline-offset: 2px;
+}
+.ba-hand-shapes small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 12px;
+}
+.ba-foot-turns {
+  margin-top: 9px;
+}
+.ba-foot-turns > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px;
+}
+.ba-foot-turns span {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  font-weight: 660;
+}
+.ba-foot-turns button {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 32px;
+  background: #e4e7da;
+  border: 1px solid #b8c1ad;
+  border-radius: 2px;
+}
+.ba-foot-turns button:disabled {
+  opacity: .45;
+}
+.ba-foot-turns button:hover:enabled {
+  background: #d2dbcb;
+}
+.ba-faces {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 15px;
+  border-top: 1px solid var(--line);
+  padding-top: 9px;
 }
 .ba-faces h3 {
+  margin: 0;
   font-size: 15px;
-  letter-spacing: -0.025em;
+  font-weight: 740;
+  letter-spacing: -.018em;
 }
 .ba-faces > div {
-  display: flex;
-  gap: 5px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  width: min(100%, 350px);
+  gap: 3px;
 }
 .ba-faces button {
   display: grid;
-  place-items: center;
-  width: 33px;
-  height: 33px;
-  border-radius: 3px;
-  color: #596655;
-  background: transparent;
+  justify-items: center;
+  align-content: center;
+  gap: 2px;
+  min-width: 0;
+  min-height: 52px;
+  padding: 3px 1px;
   border: 1px solid transparent;
+  border-radius: 3px;
+  color: #465344;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 630;
+  line-height: 1.1;
 }
-.ba-faces button:hover,
+.ba-faces button:hover {
+  background: #e3e6da;
+}
 .ba-faces button[aria-pressed='true'] {
-  color: #394c3d;
-  background: #dae1d1;
-  border-color: #758672;
+  color: #283c2e;
+  background: #dce3d4;
+  border-color: #637860;
+}
+@media (pointer: coarse) {
+  .ba-hand-shapes select {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  .ba-foot-turns button {
+    height: 44px;
+  }
 }
 .ba-practice-note {
   margin: 22px 0 0;
@@ -735,12 +821,8 @@
   .ba-guess-form input {
     font-size: 16px;
   }
-  .ba-faces button,
   .ba-prop-tools button {
     min-height: 44px;
-  }
-  .ba-faces button {
-    width: 44px;
   }
   .ba-practice-note {
     margin-top: 18px;

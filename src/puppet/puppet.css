@@ -1,9 +1,12 @@
 .ba-puppet-stage { display:block; width:100%; height:100%; overflow:visible; user-select:none; -webkit-user-select:none; }
 .ba-puppet-stage[role="group"] { touch-action:pan-y; }
+.ba-puppet-stage[data-targeting] { cursor:grab; }
 .ba-puppet-stage[data-grabbed] { cursor:grabbing; }
-.ba-hit { touch-action:none; fill:transparent; stroke:none; pointer-events:all; cursor:grab; outline:none; }
+.ba-hit { touch-action:none; fill:transparent; stroke:none; pointer-events:all; cursor:inherit; outline:none; }
 .ba-puppet-stage[data-grabbed] .ba-hit { cursor:grabbing; }
 .ba-handle-ring { pointer-events:none; fill:none; stroke:#86422f; stroke-width:2; stroke-dasharray:3 5; opacity:0; vector-effect:non-scaling-stroke; }
 .ba-hit:focus-visible ~ .ba-handle-ring, .ba-handle[data-selected] .ba-handle-ring, .ba-handle[data-snap] .ba-handle-ring { opacity:1; }
 .ba-handle[data-snap] .ba-handle-ring { stroke:#235d52; stroke-dasharray:none; stroke-width:3; }
-@media (hover:hover) { .ba-hit:hover ~ .ba-handle-ring { opacity:.8; } }
+@media (hover:hover) { .ba-handle[data-hovered] .ba-handle-ring { opacity:.78; } }
+.ba-joint-stitch { pointer-events:none; fill:none; stroke:#40382d; stroke-width:1.3; stroke-linecap:round; stroke-linejoin:round; opacity:.5; }
+.ba-handle[data-selected] .ba-joint-stitch, .ba-hit:focus-visible ~ .ba-joint-stitch { opacity:1; }

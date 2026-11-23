@@ -3,7 +3,7 @@ import {
   distance, initialPose, moveHandle, pivot, propCenter, rotate, shoulders, withProp,
 } from './geometry'
 import {
-  advanceMotion, bodyPoint, createMotion, cupRim, displayPose, headAngle, motionAtRest, stillMotion, tug,
+  advanceMotion, bodyMatrix, bodyPoint, computeRig, createMotion, cupRim, displayPose, headAngle, motionAtRest, stillMotion, tug,
 } from './motion'
 
 describe('Bad Actors slapstick motion', () => {
@@ -79,6 +79,63 @@ describe('Bad Actors slapstick motion', () => {
     tug(gentle, 'left', { x: 0, y: -120 }, 3000)
     advanceMotion(gentle, 1 / 60)
     expect(gentle.value.body).toBeGreaterThan(5)
+  })
+
+  it('moves the pelvis onto the supporting boot after the torso and catches the returning weight', () => {
+    const engine = createMotion()
+    tug(engine, 'left', { x: 0, y: -155 }, 35)
+    const samples = Array.from({ length: 72 }, () => {
+      advanceMotion(engine, 1 / 120)
+      return { ...engine.value }
+    })
+    const torsoPeak = Math.max(...samples.map(m => m.body))
+    const hipPeak = Math.max(...samples.map(m => m.balance))
+    const lag = samples.findIndex(m => m.balance === hipPeak) - samples.findIndex(m => m.body === torsoPeak)
+    expect(lag / 120).toBeGreaterThan(0.07)
+    expect(hipPeak).toBeGreaterThan(8)
+    expect(samples.some(m => m.body < 0 && m.balance > 7)).toBe(true)
+    expect(Math.min(...samples.map(m => m.balance))).toBeLessThan(-3)
+  })
+
+  it('produces the same trajectory at 30, 60 and 120 Hz and resumes at rest after suspension', () => {
+    const trajectories = [30, 60, 120].map(hz => {
+      const engine = createMotion()
+      tug(engine, 'left', { x: 17, y: -141 }, 42)
+      return Array.from({ length: 8 }, () => {
+        for (let i = 0; i < hz / 6; ++i) advanceMotion(engine, 1 / hz)
+        return { ...engine.value }
+      })
+    })
+    expect(trajectories[0]).toEqual(trajectories[1])
+    expect(trajectories[1]).toEqual(trajectories[2])
+    const engine = createMotion()
+    tug(engine, 'left', { x: -30, y: -100 }, 50)
+    advanceMotion(engine, 0.1)
+    expect(advanceMotion(engine, 23)).toBe(false)
+    expect(engine.value).toEqual(stillMotion)
+    expect(engine.speed).toEqual(stillMotion)
+    tug(engine, 'right', { x: -100, y: 0 }, 40)
+    expect(advanceMotion(engine, 1 / 60)).toBe(true)
+  })
+
+  it('replays older saved frames with zero displacement for channels they did not record', () => {
+    const p = initialPose()
+    const legacy = { body: 7, head: -3 }
+    expect(computeRig(p, legacy).matrix).toEqual(computeRig(p, { ...stillMotion, ...legacy }).matrix)
+    expect(computeRig(p, legacy).pose).toEqual(displayPose(p, { ...stillMotion, ...legacy }))
+    expect(computeRig(p, legacy).motion).toEqual({ ...stillMotion, ...legacy })
+  })
+
+  it('uses the same frozen geometry for the actor, soles and hit targets', () => {
+    const pose = withProp(initialPose(), 'phone')
+    const engine = createMotion()
+    tug(engine, 'left', { x: -77, y: 14 }, 45)
+    advanceMotion(engine, 0.13)
+    const rig = computeRig(pose, engine.value)
+    expect(rig.pose).toEqual(displayPose(pose, engine.value))
+    expect(rig.matrix).toEqual(bodyMatrix(engine.value))
+    expect(rig.point(pivot)).toEqual(bodyPoint(pivot, engine.value))
+    expect(rig.propCenter).toEqual(propCenter(rig.pose))
   })
 
   it('gives a large keyboard nudge a restrained reaction', () => {

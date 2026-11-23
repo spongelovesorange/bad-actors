@@ -12,7 +12,20 @@ export function sleeveElbow(side: Hand, pose: PuppetPose, shoulder: Point, motio
   const dx = palm.x - shoulder.x
   const dy = palm.y - shoulder.y
   const outward = side === 'left' ? -1 : 1
-  const solved = solveElbow(shoulder, palm, side === 'left' ? pose.leftBend : pose.rightBend)
+  const authoredBend = side === 'left' ? pose.leftBend : pose.rightBend
+  const radius = Math.hypot(dx, dy)
+  const outerBone = solveElbow(shoulder, palm, outward)
+  const halfway = mixPoints(shoulder, palm, Math.min(0.5, feel.armBone / (radius || 1)))
+  // The two IK bends are reflections across the shoulder-to-wrist line.
+  const solved = authoredBend === outward ? outerBone
+    : { x: 2 * halfway.x - outerBone.x, y: 2 * halfway.y - outerBone.y }
+  // On the way from a dangling sleeve to a salute the elbow travels outwards;
+  // the projected forearm unfolds in depth as the wrist passes the ribcage.
+  const rise = clamp((64 - dy) / 56, 0, 1)
+  const slack = clamp((96 - radius) / 56, 0, 1)
+  const outer = mixPoints(shoulder, outerBone, 1 - slack * 0.23)
+  outer.y += slack * 17
+  const silhouette = mixPoints(solved, outer, rise * rise * (3 - 2 * rise))
 
   // The ordinary two-bone solution reverses its normal when a swaying shoulder
   // travels through the wrist. A fully folded sleeve hangs down and out instead.
@@ -20,9 +33,8 @@ export function sleeveElbow(side: Hand, pose: PuppetPose, shoulder: Point, motio
     x: shoulder.x + outward * feel.armBone * 0.82,
     y: shoulder.y + feel.armBone * 0.53,
   }
-  const radius = Math.hypot(dx, dy)
   const t = clamp((radius - 9) / 40, 0, 1)
-  const bend = mixPoints(folded, solved, t * t * (3 - 2 * t))
+  const bend = mixPoints(folded, silhouette, t * t * (3 - 2 * t))
 
   // Blend by position so picking up a limp wrist doesn't change its shape.
   const hang = clamp((dy - 24) / 63, 0, 1) * clamp((128 - Math.abs(dx)) / 44, 0, 1)

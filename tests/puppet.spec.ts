@@ -46,15 +46,45 @@ test('grabbing the palm at an offset preserves the pose through release and sett
   expect(errors).toEqual([])
 })
 
+test('lifting the phone by its glass carries the wrist, then putting it down allows a handoff', async ({ page }) => {
+  const stage = await beginRehearsal(page)
+  await page.getByRole('button', { name: 'Phone', exact: true }).click()
+  const phone = stage.locator('[data-handle="prop"]')
+  await stage.scrollIntoViewIfNeeded()
+  const start = await center(phone)
+  const destination = await stage.evaluate(node => {
+    const point = new DOMPoint(377, 79).matrixTransform((node as SVGSVGElement).getScreenCTM()!)
+    return { x: point.x, y: point.y }
+  })
+  await page.mouse.move(start.x, start.y)
+  await page.mouse.down()
+  await expect(stage).toHaveAttribute('data-grabbed', 'prop')
+  await page.mouse.move(destination.x, destination.y, { steps: 6 })
+  await page.mouse.up()
+  await expect(stage.locator('[data-palm="right"]')).toHaveAttribute('data-palm-shape', 'grip')
+  await expect(stage.locator('[data-phone-side]')).toHaveAttribute('data-phone-side', 'back')
+  await expect.poll(async () => distance(destination, await center(phone))).toBeLessThan(1.5)
+
+  await page.getByRole('button', { name: 'Put down', exact: true }).click()
+  await expect(stage).toHaveAttribute('data-settled', '1')
+  const loose = await center(phone)
+  const otherPalm = await center(stage.locator('[data-handle="left"]'))
+  await page.mouse.move(loose.x, loose.y)
+  await page.mouse.down()
+  await page.mouse.move(otherPalm.x, otherPalm.y, { steps: 6 })
+  await page.mouse.up()
+  await expect(stage.locator('[data-palm="left"]')).toHaveAttribute('data-palm-shape', 'grip')
+})
+
 test('a rehearsal can switch props, remove one, and advance the cue', async ({ page }) => {
   await beginRehearsal(page)
-  for (const prop of ['Cup', 'Phone', 'Plate']) {
+  for (const prop of ['Cup', 'Phone', 'Tray']) {
     await page.getByRole('button', { name: prop, exact: true }).click()
     await expect(page.getByRole('button', { name: prop, exact: true })).toHaveAttribute('aria-pressed', 'true')
   }
   await expect(page.getByRole('button', { name: 'Cup', exact: true })).toHaveAttribute('aria-pressed', 'false')
-  await page.getByRole('button', { name: 'Plate', exact: true }).click()
-  await expect(page.getByRole('button', { name: 'Plate', exact: true })).toHaveAttribute('aria-pressed', 'false')
+  await page.getByRole('button', { name: 'Tray', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Tray', exact: true })).toHaveAttribute('aria-pressed', 'false')
   await page.getByRole('button', { name: 'Next cue' }).click()
   await expect(page.getByRole('heading', { name: 'Drinking water' })).toHaveCount(0)
 })
@@ -91,4 +121,23 @@ test('handing the screen to a guesser hides the cue until the actor shows it', a
   await expect(card.getByRole('button', { name: 'Show cue' })).toHaveAttribute('aria-expanded', 'false')
   await card.getByRole('button', { name: 'Show cue' }).click()
   await expect(card.getByRole('heading', { name: 'Talking on the phone' })).toBeVisible()
+})
+
+test('the numbered practice link opens an illustrated cue that can be concealed', async ({ page }) => {
+  await page.goto('/?cue=3')
+  const card = page.getByRole('region', { name: 'Cue card' })
+  await expect(card.getByRole('heading', { name: 'Taking a selfie' })).toBeVisible()
+  await card.getByRole('button', { name: 'Acting hint' }).click()
+  const example = card.locator('#ba-stage-note img')
+  await expect(example).toHaveAttribute('src', '/blocking/selfie.png')
+  await expect.poll(() => example.evaluate((node: HTMLImageElement) => node.naturalWidth)).toBeGreaterThan(0)
+  await card.getByRole('button', { name: 'Hide cue' }).click()
+  await expect(card.locator('#ba-stage-note')).toHaveCount(0)
+  await expect(card.getByRole('combobox')).toHaveCount(0)
+  expect(await card.innerHTML()).not.toMatch(/selfie|peace sign/i)
+  await card.getByRole('button', { name: 'Show cue' }).click()
+  await card.getByRole('combobox').selectOption({ label: 'Carrying a tray' })
+  await expect(card.getByRole('heading', { name: 'Carrying a tray' })).toBeVisible()
+  await expect(page).toHaveURL(/cue=6/)
+  await expect(card.getByRole('button', { name: 'Acting hint' })).toHaveAttribute('aria-expanded', 'false')
 })

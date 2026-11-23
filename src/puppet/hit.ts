@@ -1,13 +1,16 @@
 import { feel, isJoint, stageHandles, type Point, type PropKind, type StageHandle } from './geometry'
 import type { PuppetRig } from './motion'
 
-export type StageTarget = { id: StageHandle; center: Point; radius: number; touchRadius: number }
+export type StageTarget = {
+  id: StageHandle; center: Point; radius: number; touchRadius: number
+  tray?: { normal: Point; touchDepth: number }
+}
 function paintedRadius(id: StageHandle, prop: PropKind | null) {
   switch (id) {
     case 'head': return 40
     case 'chest': return 36
     case 'waist': return 38
-    case 'prop': return prop === 'plate' ? 35 : prop === 'phone' ? 25 : 18
+    case 'prop': return prop === 'plate' ? 53 : prop === 'phone' ? 25 : 18
     case 'left':
     case 'right': return 16
     case 'leftAnkle':
@@ -22,7 +25,12 @@ export function stageTargets(rig: PuppetRig, scale: number): StageTarget[] {
     if (id === 'prop' && !rig.pose.prop) continue
     const center = isJoint(id) ? rig.joints[id] : id === 'prop' ? rig.propCenter : rig.pose[id]
     const radius = Math.max(paintedRadius(id, rig.pose.prop), 8 / scale)
-    targets.push({ id, center, radius, touchRadius: Math.max(radius, feel.hitRadiusPx / scale) })
+    const target: StageTarget = { id, center, radius, touchRadius: Math.max(radius, feel.hitRadiusPx / scale) }
+    if (id === 'prop' && rig.pose.prop === 'plate') {
+      const angle = rig.propAngle * Math.PI / 180
+      target.tray = { normal: { x: -Math.sin(angle), y: Math.cos(angle) }, touchDepth: Math.max(17, feel.hitRadiusPx / scale) }
+    }
+    targets.push(target)
   }
   return targets
 }
@@ -44,6 +52,12 @@ export function pickTarget(point: Point, targets: StageTarget[], coarse: boolean
     const d = dx * dx + dy * dy
     const radius = coarse ? target.touchRadius : target.radius
     if (d > radius * radius) continue
+    if (target.tray) {
+      // The long enamel rim is easy to grab without claiming the empty space above and below it.
+      const depth = Math.abs(dx * target.tray.normal.x + dy * target.tray.normal.y)
+      const limit = coarse ? target.tray.touchDepth : 17
+      if (depth > limit) continue
+    }
     if (d < best || (d === best && nearest && priority(target.id) < priority(nearest.id))) {
       nearest = target
       best = d

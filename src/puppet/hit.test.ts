@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { initialPose, isJoint, moveHandle, stageHandles, withProp, type Point, type StageHandle } from './geometry'
+import { initialPose, isJoint, moveHandle, rotate, stageHandles, withProp, type Point, type StageHandle } from './geometry'
 import { pickTarget, stageTargets, type StageTarget } from './hit'
 import { moveJoint } from './joints'
 import { computeRig, stillMotion } from './motion'
@@ -27,6 +27,20 @@ describe('direct puppet picking', () => {
     expect(pickTarget({ x: 70, y: 0 }, targets, false)).toBe('waist')
     expect(pickTarget({ x: 70, y: 0 }, targets, true)).toBe('leftElbow')
     expect(pickTarget({ x: 150, y: 0 }, targets, true)).toBeNull()
+  })
+
+  it('lets a player lift either end of a turned tray without grabbing empty space above the rim', () => {
+    for (const propTurn of [0, 45, 90]) {
+      const rig = computeRig({ ...withProp(initialPose(), 'plate'), propTurn }, stillMotion)
+      const targets = stageTargets(rig, 1).filter(t => t.id === 'prop')
+      const center = rig.propCenter
+      const point = (x: number, y: number) => rotate({ x: center.x + x, y: center.y + y }, center, propTurn)
+      for (const touch of [false, true]) {
+        expect(pickTarget(point(-50, -5), targets, touch)).toBe('prop')
+        expect(pickTarget(point(50, -5), targets, touch)).toBe('prop')
+        expect(pickTarget(point(0, -42), targets, touch)).toBeNull()
+      }
+    }
   })
 
   it('lets repeated taps reach each stacked part in order even when the wrist and prop cover the face', () => {

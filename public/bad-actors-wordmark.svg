@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="510" height="98" viewBox="0 0 510 98" role="img" aria-labelledby="title">
+  <title id="title">Bad Actors</title>
+  <defs>
+    <g id="type" fill-rule="evenodd">
+      <path transform="translate(3 5) rotate(-2 24 40)" d="
+        M1 4 26 2 Q47 0 48 19 Q49 29 39 36 Q52 39 53 54
+        Q54 77 31 80 L1 81 1 72 6 69 5 13 1 12 Z
+        M21 14 22 32 Q32 33 32 22 Q32 14 24 14 Z
+        M22 45 23 67 Q36 69 36 55 Q36 45 25 45 Z
+        M9 12 15 10 11 12.5 Z"/>
+      <path transform="translate(57 7) rotate(1.8 26 39)" d="
+        M1 71 5 68 18 1 36 0 50 68 55 70 54 79 30 80 30 71 34 69
+        32 58 21 60 19 70 23 71 23 80 0 81 Z
+        M22 46 30 45 26 22 Z"/>
+      <path transform="translate(115 5) rotate(-1 23 40)" d="
+        M0 3 23 2 Q47 1 50 23 Q52 37 50 53 Q49 76 29 79
+        L0 81 0 72 5 69 5 14 0 13 Z
+        M22 15 22 66 Q34 67 34 46 L34 34 Q34 14 22 15 Z
+        M44 49 45.5 42 45.2 49 Z"/>
+      <path transform="translate(187 4) rotate(-2 25 40)" d="
+        M0 72 5 70 18 2 35 0 50 69 55 71 55 80 30 81 30 72 34 69
+        31 58 20 60 18 71 22 72 22 81 0 81 Z
+        M22 46 29 45 26 24 Z"/>
+      <path transform="translate(246 5) rotate(1 24 40) scale(.97 1)" d="
+        M45 8 46 26 33 28 Q31 16 25 16 Q17 16 17 39
+        Q16 63 25 64 Q31 66 34 50 L47 52 Q46 76 29 80
+        Q4 84 1 58 Q-2 35 3 18 Q8 1 26 1 Q32 0 37 4 L41 2 Z"/>
+      <path transform="translate(294 4) rotate(-1 25 40)" d="
+        M0 4 50 1 51 25 42 26 38 15 34 15 35 67 41 70 40 80
+        13 81 13 72 18 69 17 16 12 17 10 27 0 28 Z
+        M8 9 16 8 11 9.7 Z"/>
+      <path transform="translate(348 4) rotate(1.4 25 40)" d="
+        M25 1 Q45 -1 49 20 Q54 42 49 62 Q46 80 29 82
+        Q6 85 2 64 Q-2 47 1 26 Q3 4 25 1 Z
+        M24 15 Q17 16 18 39 Q18 68 26 68 Q34 68 34 46
+        Q34 14 24 15 Z"/>
+      <path transform="translate(403 4) rotate(-1.3 25 40)" d="
+        M0 3 25 1 Q49 0 49 23 Q49 36 38 43 L48 63 54 68 53 78
+        35 81 21 50 21 68 26 70 26 79 0 80 0 71 5 69 5 14 0 13 Z
+        M21 14 21 35 Q32 36 32 24 Q32 13 21 14 Z
+        M36 58 34 53 36.4 55 Z"/>
+      <path transform="translate(460 10) rotate(7.5 20 41)" d="
+        M41 7 42 25 30 27 Q27 14 21 16 Q14 17 16 24
+        Q17 30 27 35 Q44 43 46 57 Q48 78 28 82 Q14 85 2 77
+        L0 59 13 57 Q15 70 24 68 Q32 67 29 58 Q27 52 16 47
+        Q1 39 0 26 Q-1 8 15 3 Q26 -1 35 5 L39 3 Z"/>
+    </g>
+  </defs>
+  <use xlink:href="#type" fill="#ab382c" transform="translate(2.2 2.4)"/>
+  <use xlink:href="#type" fill="#262322"/>
+</svg>

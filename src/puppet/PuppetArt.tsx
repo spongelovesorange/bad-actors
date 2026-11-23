@@ -9,6 +9,7 @@ import {
 } from './geometry'
 import { computeRig, stillMotion, type PuppetMotion, type PuppetRig, type SavedMotion } from './motion'
 import { ActorFace } from './ActorFace'
+import { Phone, phoneView } from './Phone'
 import type { Grip } from './contact'
 
 export { ActorFace } from './ActorFace'
@@ -86,17 +87,37 @@ const palmArt = {
     edge: 'M-11 5 L-12-3 Q-12-8-9-9 Q-7-10-5-8 Q-3-12 0-11 L3-8 Q6-11 9-8 L11-5 Q14-6 14-2 L13 4 Q11 10 5 10 L-5 10 Q-10 10-11 5Z',
     seam: 'M-10 1 Q-6-2-3 0 L3 2 Q6 5 3 7 L-2 6 M3-6 L4-3 M9-5 L10-2',
   },
+  peace: {
+    edge: 'M-8 12 Q-13 9-13 2 L-13-5 Q-12-9-8-9 Q-5-8-5-5 L-5-3 L-10-24 Q-11-29-8-30 Q-5-31-3-27 L2-12 L8-29 Q10-33 13-31 Q16-30 14-25 L9-6 Q14-9 16-6 Q19-4 16 1 L12 8 Q9 15 3 15Z',
+    seam: 'M-11-2 L-6 2 Q-3 4-3 0 M-4 8 Q0 3 5 4 L10 0',
+  },
   grip: {
     edge: 'M-9-2 Q-10-5-6-6 L5-5 Q12-4 11 2 Q10 7 5 9 L-2 8 Q-7 9-9 3Z',
     seam: 'M2 0 L8 1',
   },
-} satisfies Record<HandShape | 'grip', { edge: string; seam: string }>
+  support: {
+    edge: 'M8 6 Q4 10-3 8 L-16 2 Q-20 1-20-3 Q-20-6-16-5 L-5-3 L-7-6 Q-8-9-5-10 Q-3-11 0-8 L5-5 L12-5 Q15-5 15-2 L14 2Z',
+    seam: 'M-8-2 L-1 1 Q2 2 4 1',
+  },
+} satisfies Record<HandShape | 'grip' | 'support', { edge: string; seam: string }>
 
-function Palm({ side, pose }: { side: Hand; pose: PuppetPose }) {
+function underPlate(rig: PuppetRig, side: Hand) {
+  const p = rig.pose
+  if (p.prop !== 'plate' || !p.holder) return false
+  if (p.holder === side) return true
+  if (handShape(p, side) !== 'relaxed') return false
+  const point = rotate(p[side], rig.propCenter, -rig.propAngle)
+  const dx = point.x - rig.propCenter.x, dy = point.y - rig.propCenter.y
+  return Math.abs(dx) <= 33 && dy >= 7 && dy <= 18
+}
+
+function Palm({ side, rig }: { side: Hand; rig: PuppetRig }) {
+  const pose = rig.pose
   const shape = pose.prop && pose.holder === side ? 'grip' : handShape(pose, side)
-  const art = palmArt[shape]
+  const supporting = underPlate(rig, side)
+  const art = palmArt[supporting ? 'support' : shape]
   return (
-    <g data-palm={side} data-palm-shape={shape} transform={`translate(${xy(pose[side])}) scale(${side === 'left' ? -1 : 1} 1)`}>
+    <g data-palm={side} data-palm-shape={shape} data-support={supporting || undefined} transform={`translate(${xy(pose[side])}) rotate(${supporting ? rig.propAngle : 0}) scale(${side === 'left' ? -1 : 1} 1)`}>
       <path d={art.edge} fill="#a88959" stroke={ink} strokeWidth="2.7" />
       <path d={art.seam} fill="none" stroke="#796742" strokeWidth="1.5" />
     </g>
@@ -132,7 +153,7 @@ function Neck({ rig, motion }: { rig: PuppetRig; motion: PuppetMotion }) {
   )
 }
 
-function Head({ rig }: { rig: PuppetRig }) {
+function Head({ rig, gazeX, gazeY }: { rig: PuppetRig; gazeX?: number; gazeY?: number }) {
   const { pose, headAngle: angle } = rig
   const point = pose.head
   return (
@@ -143,31 +164,34 @@ function Head({ rig }: { rig: PuppetRig }) {
       <path d="M-46-20 L-49-28 L-39-27 Q-8-32 23-29 L41-33 L40-24 Q48-18 47 1 L46 15 Q45 24 32 27 Q15 31-16 29 Q-35 29-42 21 Q-49 14-48 1Z" fill={faceCloth} stroke={ink} strokeWidth="3.5" />
       <path d="M-45 16 Q-27 25 0 24 Q28 24 44 16 Q43 24 30 26 Q12 31-18 27 Q-38 27-45 16Z" fill="#c6a162" stroke="none" />
       <path d="M-43-22 Q-6-28 22-25 L34-27 M-38 16 L-34 20" fill="none" stroke="#947343" strokeWidth="1.6" />
-      <ActorFace shape={pose.face} motion={rig.motion} landmarks />
+      <ActorFace shape={pose.face} motion={rig.motion} gazeX={gazeX} gazeY={gazeY} landmarks />
     </g>
   )
 }
 
-function PropArt({ rig }: { rig: PuppetRig }) {
+/** An enamel serving tray with two open handles and a rolled front lip. */
+export function ServingTray() {
+  return <g stroke={ink} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M-38-5 L-49-9 Q-54-10-54-6 L-52-1 Q-50 2-43 3 M36-5 L48-10 Q53-12 54-8 L54-4 Q53-1 45 1" fill="none" strokeWidth="5" />
+    <path d="M-38-5 L-49-9 Q-52-10-52-6 L-50-2 L-43 1 M36-5 L48-10 Q51-11 52-8 L52-4 L45-1" fill="none" stroke="#a7b4a5" strokeWidth="1.8" />
+    <path d="M-45-4 L-37-12 Q-35-14-29-14 L34-12 Q38-12 40-8 L46 0 L43 6 Q42 9 36 9 L-37 8 Q-42 8-43 5Z" fill="#5d7e73" />
+    <path d="M-45-3 L-37-12 Q-36-14-29-14 L34-12 Q37-12 40-8 L45-2 Q47 1 40 2 L-38 1 Q-44 1-45-3Z" fill="#c7cbb4" strokeWidth="2" />
+    <path d="M-34-3 L-30-9 L31-8 L34-5 M-36 5 L12 6 M29 6 L36 6" fill="none" stroke="#779186" strokeWidth="1.35" />
+  </g>
+}
+
+function PropArt({ rig, phone }: { rig: PuppetRig; phone?: ReturnType<typeof phoneView> }) {
   const { pose, propCenter: center } = rig
   return (
     <g data-visible-prop={pose.prop} transform={`translate(${xy(center)}) rotate(${rig.propAngle})`} stroke={ink} strokeWidth="2.5">
-      {pose.prop === 'phone' && <g transform="rotate(5)">
-        <rect x="-10.5" y="-23" width="21" height="45" rx="3.5" fill="#47585d" />
-        <rect x="-7.75" y="-17.5" width="15.5" height="29.5" rx="1.3" fill="#adc8c6" strokeWidth="1.3" />
-        <path d="M-3-20 L3-20 M-2 16 L2 16" fill="none" stroke="#d3d0b7" strokeWidth="1.3" />
-      </g>}
+      {phone && <Phone width={phone.width} edge={phone.edge} />}
       {pose.prop === 'cup' && <g transform={pose.holder === 'left' ? 'scale(-1 1)' : undefined}>
         <path d="M9-6 Q22-11 20-2 Q19 5 11 5 L10 1 Q16 0 16-4 Q15-5 11-3Z" fill="#b3a394" strokeWidth="2" />
         <path d="M-13-7 L12-7 L10.5 7 Q10 10 1.5 11 Q-8 11-10 8Z" fill="#b76350" />
         <ellipse data-landmark="cup-rim" cx="-1" cy="-7" rx="12.5" ry="2.6" fill="#eee2c7" strokeWidth="2" />
         <path d="M-8.5 5 L-6.5 7" fill="none" stroke="#e6c3a2" strokeWidth="1.6" />
       </g>}
-      {pose.prop === 'plate' && <g>
-        <path d="M-35-1 Q-33 9 0 10 Q28 10 35-1Z" fill="#83958d" />
-        <ellipse cy="-2" rx="35" ry="7.5" fill="#bbc6b7" />
-        <ellipse cy="-2" rx="27" ry="4" fill="none" stroke="#77867a" strokeWidth="1.4" />
-      </g>}
+      {pose.prop === 'plate' && <ServingTray />}
     </g>
   )
 }
@@ -175,7 +199,7 @@ function PropArt({ rig }: { rig: PuppetRig }) {
 /** Only the actor and the prop are included in a visual observation. */
 export function PuppetArt({ pose, motion = stillMotion, grip, rig: stagedRig }: { pose: PuppetPose; motion?: SavedMotion; grip?: Grip; rig?: PuppetRig }) {
   const rig = stagedRig ?? computeRig(pose, motion, grip)
-  const visible = rig.pose
+  const phone = pose.prop === 'phone' ? phoneView(rig) : undefined
   // A lifted shin can cross in front of the sack. Grounded legs stay behind it.
   const liftLeft = rig.joints.leftAnkle.y < 289
   const liftRight = rig.joints.rightAnkle.y < 289
@@ -190,12 +214,12 @@ export function PuppetArt({ pose, motion = stillMotion, grip, rig: stagedRig }: 
       <Body rig={rig} />
       {liftLeft && <Leg side="left" rig={rig} lower />}
       {liftRight && <Leg side="right" rig={rig} lower />}
-      <Head rig={rig} />
+      <Head rig={rig} gazeX={phone?.gazeX} gazeY={phone?.gazeY} />
       <Arm side="left" rig={rig} />
       <Arm side="right" rig={rig} />
-      <Palm side="left" pose={visible} />
-      <Palm side="right" pose={visible} />
-      {pose.prop && <PropArt rig={rig} />}
+      <Palm side="left" rig={rig} />
+      <Palm side="right" rig={rig} />
+      {pose.prop && <PropArt rig={rig} phone={phone} />}
     </g>
   )
 }

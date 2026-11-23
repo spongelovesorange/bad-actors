@@ -42,5 +42,10 @@ export function sleeveElbow(side: Hand, pose: PuppetPose, shoulder: Point, motio
     x: palm.x + outward * 7 - motion.loose * 0.19,
     y: shoulder.y + dy * 0.72,
   }
-  return mixPoints(bend, droop, hang)
+  const sleeve = mixPoints(bend, droop, hang)
+  // A sideways reach pulls the soft sleeve taut before the wrist hits its stop.
+  // A hand up by the ear or tucked against the face still has its folded elbow.
+  const extension = clamp((radius - 84) / (feel.wristReach - 84), 0, 1)
+  const sideways = clamp((outward * dx - Math.max(65, Math.abs(dy))) / 25, 0, 1)
+  return mixPoints(sleeve, halfway, extension * extension * (3 - 2 * extension) * sideways * 0.92)
 }

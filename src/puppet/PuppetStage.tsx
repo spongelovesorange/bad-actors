@@ -1,10 +1,11 @@
 import { useEffect, useId, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type Ref } from 'react'
 import type { Grip } from './contact'
 import { PuppetArt } from './PuppetArt'
+import { FlickInk, flickAt, traceFlick } from './FlickInk'
 import { advanceMotion, computeRig, createMotion, displayPose, headAngle, motionAtRest, stillMotion, tug, type PuppetMotion, type PuppetRig } from './motion'
 import { pickTarget, stageTargets } from './hit'
 import { moveJoint, turnFoot, turnJoint } from './joints'
-import { distance, feel, isJoint, moveHandle, putDown, snapHand, turnProp, type Hand, type StageHandle, type Point, type PuppetPose } from './geometry'
+import { distance, dragHandle, isJoint, moveHandle, putDown, snapHand, turnProp, type Hand, type StageHandle, type Point, type PuppetPose } from './geometry'
 import './puppet.css'
 
 export type PuppetSnapshot = { pose: PuppetPose; motion: PuppetMotion; grip?: Grip }
@@ -25,6 +26,7 @@ type Props = {
 }
 type Drag = {
   id: number; handle: StageHandle; before: PuppetPose; current: PuppetPose; offset: Point
+  flick?: ReturnType<typeof traceFlick>
   startClient: Point; restRig: PuppetRig; restStart: Point; grabStart: Point; grip: Grip; last: Point; lastAt: number; candidate: Hand | null; moved: boolean
 }
 const handleNames: Record<StageHandle, string> = {
@@ -57,6 +59,7 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
   const released = useRef<{ grip: Grip; at: number } | null>(null)
   const [draft, setDraft] = useState<PuppetPose | null>(null)
   const [preview, setPreview] = useState<Hand | null>(null)
+  const [ink, setInk] = useState<ReturnType<typeof flickAt>>()
   const [motion, setMotion] = useState<PuppetMotion>(stillMotion)
   const [scale, setScale] = useState(1)
   const [reduced, setReduced] = useState(false)
@@ -108,6 +111,7 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
       setDraft(current.current)
       setGrip(current.grip)
       setPreview(current.candidate)
+      setInk(flickAt(current.flick, now))
       if (now - lastBroadcast.current >= 110 && visible.current.pose !== current.current) {
         handlers.current.onPosePreview?.(current.current)
         lastBroadcast.current = now
@@ -164,7 +168,7 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
     if (finalPose !== current.before || revert) handlers.current.onPoseChange?.(finalPose)
     const node = svg.current
     if (node?.hasPointerCapture(current.id)) node.releasePointerCapture(current.id)
-    setDraft(null); setActive(null); setPreview(null)
+    setDraft(null); setActive(null); setPreview(null); setInk(undefined)
     handlers.current.onGrabChange?.(false)
     if (revert) engine.current = createMotion()
     if (current.moved && !motionAtRest(engine.current)) {
@@ -214,7 +218,7 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
       if (!current) return
       drag.current = null
       if (svg.current?.hasPointerCapture(current.id)) svg.current.releasePointerCapture(current.id)
-      setDraft(null); setActive(null); setPreview(null); setGrip(undefined)
+      setDraft(null); setActive(null); setPreview(null); setGrip(undefined); setInk(undefined)
       released.current = null
       handlers.current.onGrabChange?.(false)
     }
@@ -275,7 +279,6 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
     if (current.id !== event.pointerId) return
     const point = toStage(svg.current, client)
     if (!point) return
-    if (current.handle === 'prop' && current.current.holder && distance(client, current.startClient) <= feel.detachPx) return
     // Author against the unsprung skeleton. A moving shoulder or ringing neck
     // may change the displayed grip but can never manufacture new player input.
     const target = {
@@ -283,13 +286,14 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
       y: current.restStart.y + point.y + current.offset.y - current.grabStart.y,
     }
     const at = event.timeStamp, h = current.handle
-    const next = isJoint(h) ? moveJoint(current.current, h, target, current.restRig) : moveHandle(current.current, h, target)
+    const next = isJoint(h) ? moveJoint(current.current, h, target, current.restRig) : dragHandle(current.current, h, target)
     if (next === current.current) return
     const rest = computeRig(next, stillMotion)
     const actual = rigPoint(rest, h)
     if (distance(actual, current.last) < 0.001) return
     const delta = { x: actual.x - current.last.x, y: actual.y - current.last.y }
     drive(h, delta, at - current.lastAt, current.current.holder)
+    current.flick = bodyFollow && !reduced ? traceFlick(delta, at - current.lastAt, performance.now()) : undefined
     current.grip = { handle: h, point: {
       x: current.grabStart.x + actual.x - current.restStart.x,
       y: current.grabStart.y + actual.y - current.restStart.y,
@@ -338,7 +342,7 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
     const target = { x: from.x + dir.x * n, y: from.y + dir.y * n }
     const next = handle === 'chest' || handle === 'headTilt'
       ? turnJoint(pose, handle, (dir.x + dir.y) * (event.shiftKey ? 10 : 3))
-      : isJoint(handle) ? moveJoint(pose, handle, target, rest) : moveHandle(pose, handle, target)
+      : isJoint(handle) ? moveJoint(pose, handle, target, rest) : dragHandle(pose, handle, target)
     if (event.shiftKey && next !== pose) {
       const actual = rigPoint(computeRig(next, stillMotion), handle)
       drive(handle, { x: actual.x - from.x, y: actual.y - from.y }, 16, pose.holder)
@@ -354,14 +358,16 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
     onPointerDown={start} onPointerMove={update} onPointerLeave={() => setHovered(null)} onPointerUp={event => { if (drag.current?.id === event.pointerId) { update(event); finish(false, true) } }}
     onPointerCancel={event => { if (drag.current?.id === event.pointerId) finish() }}
     onLostPointerCapture={event => { if (drag.current?.id === event.pointerId) finish() }}>
-    {interactive && <desc id={help}>Drag any joint, grip, or object. Tap again in the same spot to reach an overlapping joint. Tab focuses each grip in turn. With a control focused, use arrow keys to move, Shift to move farther, and Escape to undo a drag. For a prop, Enter picks up or puts down and R turns it. For a boot, R and Shift–R turn the toes.</desc>}
+    {interactive && <desc id={help}>Drag any joint, grip, or object. Dragging a held prop moves the hand with it. To pass it, put it down and drag it to the other palm. Tap again in the same spot to reach an overlapping joint. Tab focuses each grip in turn. With a control focused, use arrow keys to move, Shift to move farther, and Escape to undo a drag. For a prop, Enter picks up or puts down and R turns it. For a boot, R and Shift–R turn the toes.</desc>}
+    {interactive && active && grip && ink && bodyFollow && !reduced &&
+      <FlickInk handle={active} point={grip.point} angle={ink.angle} opacity={ink.opacity} />}
     <PuppetArt pose={rendered} motion={motion} rig={rig}/>
     {interactive && targets.map(({ id: handle, center: p, radius, touchRadius }) => {
       const rotation = handle === 'headTilt' || handle === 'chest'
       return <g key={handle} className="ba-handle" data-selected={active === handle || undefined}
         data-hovered={hovered === handle || undefined} data-snap={preview === handle || undefined}>
         <circle data-handle={handle} className="ba-hit" cx={p.x} cy={p.y} r={touchRadius} tabIndex={0} role="button"
-          aria-label={handle === 'prop' ? 'Move ' + rendered.prop : handleNames[handle]}
+          aria-label={handle === 'prop' ? 'Move ' + (rendered.prop === 'plate' ? 'tray' : rendered.prop) : handleNames[handle]}
           aria-describedby={help} onKeyDown={event => key(event, handle)}/>
         {isJoint(handle) && <path className="ba-joint-stitch" aria-hidden="true" transform={`translate(${p.x} ${p.y})`}
           d={rotation ? 'M-4 1 A4 4 0 0 1 3-2 M3-4 V-1 H0' : 'M-2.2 1.2 L2.2-1.2'}/>}

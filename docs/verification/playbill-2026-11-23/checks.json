@@ -1,0 +1,143 @@
+{
+  "date": "2026-11-23",
+  "environment": "Local Chrome on macOS, practice entry at 127.0.0.1:5173. Responsive widths were tested with same-origin browser frames; browser CSS layout only, without physical-phone or touchscreen claims.",
+  "method": "DOM clicks, text and select input, keyboard events on a puppet handle, browser focus and visibility checks. Measurements are CSS pixels. Each responsive frame opened its own direct ?cue=3 entry.",
+  "outcomes": {
+    "dialog": "Opened, focused inside, closed with Back to the stage and restored focus to How to play.",
+    "cueFlow": "Correct warm-up answer, Your turn, choose selfie, show hint, hide cue and hint and choices, next cue stays covered, reveal shows the new cue.",
+    "controls": {
+      "handXBefore": 177,
+      "handXAfter": 189,
+      "handXReset": 177,
+      "resetRemovedCup": true
+    },
+    "hint": "The selfie hint illustration decoded; both the illustration and acting notes were absent from the covered card markup. Opening the next cue left the new hint collapsed.",
+    "mobileOrder": "Visual and document order agree: stage, cue card, props and expressions, hand and foot adjustments. Club name and Sign in each take one text line at all measured widths."
+  },
+  "regions": "Ordered tuples are [region, x, y, width, height] in CSS pixels.",
+  "widthChecks": [
+    {
+      "width": 1440,
+      "height": 900,
+      "scrollWidth": 1440,
+      "heading": "Taking a selfie",
+      "header": {
+        "height": 47,
+        "brandLines": 1,
+        "signInLines": 1
+      },
+      "regions": [
+        [
+          ".ba-stage-block",
+          80,
+          248,
+          888,
+          530
+        ],
+        [
+          ".ba-cue",
+          1010,
+          248,
+          350,
+          300
+        ],
+        [
+          ".ba-dressing",
+          80,
+          798,
+          888,
+          111
+        ],
+        [
+          ".ba-adjust",
+          1010,
+          573,
+          350,
+          170
+        ]
+      ]
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "scrollWidth": 390,
+      "heading": "Taking a selfie",
+      "header": {
+        "height": 43,
+        "brandLines": 1,
+        "signInLines": 1
+      },
+      "regions": [
+        [
+          ".ba-stage-block",
+          14,
+          201,
+          362,
+          301
+        ],
+        [
+          ".ba-cue",
+          14,
+          518,
+          362,
+          273
+        ],
+        [
+          ".ba-dressing",
+          14,
+          812,
+          362,
+          232
+        ],
+        [
+          ".ba-adjust",
+          14,
+          1060,
+          362,
+          170
+        ]
+      ]
+    },
+    {
+      "width": 320,
+      "height": 740,
+      "scrollWidth": 320,
+      "heading": "Taking a selfie",
+      "header": {
+        "height": 43,
+        "brandLines": 1,
+        "signInLines": 1
+      },
+      "regions": [
+        [
+          ".ba-stage-block",
+          10,
+          214,
+          300,
+          256
+        ],
+        [
+          ".ba-cue",
+          10,
+          486,
+          300,
+          292
+        ],
+        [
+          ".ba-dressing",
+          10,
+          800,
+          300,
+          232
+        ],
+        [
+          ".ba-adjust",
+          10,
+          1047,
+          300,
+          170
+        ]
+      ]
+    }
+  ]
+}

@@ -4,10 +4,10 @@ import { stillMotion, type PuppetMotion } from './motion'
 const ink = '#302d27'
 const thread = '#eee1b9'
 
-type FaceProps = { shape: FaceShape; motion?: PuppetMotion; landmarks?: boolean }
+type FaceProps = { shape: FaceShape; motion?: PuppetMotion; landmarks?: boolean; gazeX?: number; gazeY?: number }
 
 /** Embroidered features share the head's local coordinates with the mug lip. */
-export function ActorFace({ shape, motion = stillMotion, landmarks = false }: FaceProps) {
+export function ActorFace({ shape, motion = stillMotion, landmarks = false, gazeX = 0, gazeY = 0 }: FaceProps) {
   const recoil = motion.head - motion.body
   const surprise = clamp((Math.abs(recoil) - 6) / 19, 0, 1)
   const recoilLook = Math.sign(recoil) * surprise * 4.5
@@ -15,14 +15,14 @@ export function ActorFace({ shape, motion = stillMotion, landmarks = false }: Fa
   const braced = shape === 'braced'
   const gulp = shape === 'open'
   const smile = shape === 'smile'
-  const eyeWhite = sideways || gulp ? 1 : surprise
-  const gaze = (sideways ? -3.6 : 0) + recoilLook * (sideways ? 0.38 : 1)
+  const eyeWhite = sideways || gulp ? 1 : Math.max(surprise, Math.abs(gazeX) / 4)
+  const gaze = clamp((sideways ? -3.6 : gazeX) + recoilLook * (sideways ? 0.38 : 1), -4.8, 4.8)
   const eyeY = gulp ? -8.5 : -7
   const eye = (right: boolean) => {
     const x = right ? 15 : -15
     const wince = braced && !right
     const pupilX = x + gaze
-    const pupilY = eyeY + (smile && right ? 1.5 : 0)
+    const pupilY = eyeY + (sideways ? 0 : gazeY) + (smile && right ? 1.5 : 0)
     return (
       <g>
         {eyeWhite > 0 && !wince && <ellipse cx={x} cy={eyeY} rx={5.5 + 1.3 * surprise} ry={gulp ? 6.3 : 4.1} fill={thread} fillOpacity={eyeWhite} />}

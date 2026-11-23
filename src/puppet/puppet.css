@@ -2,6 +2,9 @@
 .ba-puppet-stage[role="group"] { touch-action:pan-y; }
 .ba-puppet-stage[data-targeting] { cursor:grab; }
 .ba-puppet-stage[data-grabbed] { cursor:grabbing; }
+.ba-flick-ink { fill:#362f36; pointer-events:none; }
+.ba-flick-ink path + path { fill:#aa3550; }
+@media (prefers-reduced-motion:reduce) { .ba-flick-ink { display:none; } }
 .ba-hit { touch-action:none; fill:transparent; stroke:none; pointer-events:all; cursor:inherit; outline:none; }
 .ba-puppet-stage[data-grabbed] .ba-hit { cursor:grabbing; }
 .ba-handle-ring { pointer-events:none; fill:none; stroke:#86422f; stroke-width:2; stroke-dasharray:3 5; opacity:0; vector-effect:non-scaling-stroke; }

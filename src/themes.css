@@ -1,20 +1,20 @@
 [data-theme="theater"] {
   color-scheme: light;
-  --color-background: #f0efe7;
-  --color-foreground: #28382e;
-  --color-card: #f5f4ea;
-  --color-card-foreground: #28382e;
-  --color-popover: #f5f4ea;
-  --color-popover-foreground: #28382e;
-  --color-primary: #344e40;
+  --color-background: #f6ecda;
+  --color-foreground: #292524;
+  --color-card: #fff7e5;
+  --color-card-foreground: #292524;
+  --color-popover: #fff7e5;
+  --color-popover-foreground: #292524;
+  --color-primary: #a3352b;
   --color-primary-foreground: #f7f6e9;
-  --color-secondary: #dce0d1;
-  --color-secondary-foreground: #28382e;
+  --color-secondary: #e8dfcf;
+  --color-secondary-foreground: #292524;
   --color-muted: #e6e7dc;
   --color-muted-foreground: #586052;
   --color-accent: #e6d6af;
-  --color-accent-foreground: #28382e;
+  --color-accent-foreground: #292524;
   --color-border: #c3c6b7;
   --color-input: #929785;
-  --color-ring: #477365;
+  --color-ring: #354f60;
 }

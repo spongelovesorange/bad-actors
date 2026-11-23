@@ -1,5 +1,26 @@
 # Bad Actors verification
 
+## Six cues in the local playbill · November 23, 2026
+
+All six exercises were performed from reset on the single stage in local Chrome. The operator dragged the visible targets and used the production controls for objects, hands and expression. Each capture contains the settled actor and prop. No poses were loaded from a template. Two independent AI viewers saw only the numbered contact sheet in fresh contexts, received no answer list and described all six pictures. These were model readings of one sheet. New-player completion time, unaided human recognition, physical phones and the in-game AI remain unmeasured. This check made no paid provider calls. [Numbered contact sheet](verification/six-poses-2026-11-23/six-poses.png) · [Pointer traces, image digests and pictures](verification/six-poses-2026-11-23/receipts.json)
+
+| Frame | Intended action | What the two viewers read |
+| --- | --- | --- |
+| 1 | Carrying a tray | Both described carrying a tray. One also considered a shallow rectangular box. |
+| 2 | Talking on the phone | Both described a call with the phone against one ear. |
+| 3 | Covering your eyes | Both described palms covering the eyes. One suggested possible motives. |
+| 4 | Drinking water | Both described sipping from a small cup. The liquid itself has no identifying visual cue. |
+| 5 | Surrendering | Both described hands raised in surrender. One was more confident in the gesture than its intent. |
+| 6 | Taking a selfie | Both described a phone selfie and a V sign. |
+
+The previous revision, `7e85eba`, dropped the phone when the player dragged the device itself. Repeating the same gesture now moves the right wrist from (326, 262) to (372, 104). The phone ends at (377, 80), visibly attached with its back camera facing the audience. Lowering it to the ear produces the opposite reading. A separate native mouse drag verified attachment; a put-down and left-palm drop verified handoff. The wider enamel tray now has a handle at each end and a supporting-grip silhouette. The settled pictures above supply the optional acting hints in this build.
+
+Strong flicks produced two visible ink strokes in the local browser. A gentle one-unit adjustment, a 180 ms hold and a release each left zero strokes. Neither stroke was part of the actor-only snapshot.
+
+The local browser completed the opening guess and reveal, chose the selfie directly, opened its illustrated hint, hid the card and advanced with the new cue still covered. Hiding the cue removed the hint image, stage direction and chooser from the card. Keyboard input moved a hand and reset restored it; closing Help returned focus to its opener. At widths 1440, 390 and 320 CSS pixels the document fit the viewport. The last two widths are desktop Chrome layouts. [Desktop](verification/playbill-2026-11-23/desktop.jpg) · [Selfie with the actor’s hint](verification/playbill-2026-11-23/selfie.jpg) · [390px layout](verification/playbill-2026-11-23/mobile.jpg) · [Browser receipt](verification/playbill-2026-11-23/checks.json)
+
+TypeScript, 78 Vitest tests, ESLint and the standalone practice production build passed. The output bundles have SHA-256 `ed84e71f682fcbffede756a393da6b61cf7b08625999b34fde93571cae8039b2` (JavaScript) and `81f8bad6eefd3364dc143605cc91cd58cac2a475eef68148154c81a4aa11c53f` (CSS). Playwright discovered 36 cases. Standalone Chromium could not start in this environment. The interactive results above come from the separate local Chrome session. The hosted game and live integrations were outside this rehearsal check.
+
 ## Recoil from every grab point · November 23, 2026
 
 On revision `7264d7b` the player could pose all the joints, but a browser trace confirmed that pulling a foot, elbow, waist or loose prop left every measured motion channel at zero. The revised stage applies a speed-sensitive impulse for each point. An arm pull loads the shoulder. A foot or knee pull loads the hips. Head and chest rotation, held and loose props, and the foot turn controls each have a response. The stage holds the actual grab point under the pointer and lets the remaining mass follow. Slow placement stays quiet.

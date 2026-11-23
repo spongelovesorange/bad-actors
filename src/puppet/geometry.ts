@@ -1,6 +1,6 @@
 export type Point = { x: number; y: number }
 export type Hand = 'left' | 'right'
-export type HandShape = 'relaxed' | 'open' | 'fist'
+export type HandShape = 'relaxed' | 'open' | 'fist' | 'peace'
 export type Handle = Hand | 'head' | 'prop'
 export type Joint = 'leftShoulder' | 'rightShoulder' | 'leftElbow' | 'rightElbow' |
   'waist' | 'chest' | 'headTilt' | 'leftKnee' | 'rightKnee' | 'leftAnkle' | 'rightAnkle'
@@ -40,14 +40,14 @@ export const feel = {
   armBone: 80, wristReach: 124, shoulderCrossing: 9,
   headRadius: { x: 25, y: 16 }, headTilt: 20,
   bodyLean: 16, headSway: 28,
-  hitRadiusPx: 24, previewPx: 24, attachPx: 18, detachPx: 6, handoffPx: 7,
+  hitRadiusPx: 24, previewPx: 24, attachPx: 18, handoffPx: 7,
 }
 export const homeHead = { x: 251, y: 99 }
 export const shoulders = { left: { x: 225, y: 162 }, right: { x: 276, y: 160 } }
 export const pivot = { x: 251, y: 229 }
 export const hands: Hand[] = ['left', 'right']
 const propOffsets: Record<PropKind, Point> = {
-  cup: { x: -12, y: 7 }, phone: { x: 5, y: -24 }, plate: { x: -17, y: -12 },
+  cup: { x: -12, y: 7 }, phone: { x: 5, y: -24 }, plate: { x: -27, y: -12 },
 }
 
 export const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n))
@@ -90,7 +90,7 @@ export const turnProp = (p: PuppetPose): PuppetPose => p.prop ? { ...p, propTurn
 export function propOffset(p: PuppetPose, hand = p.holder): Point {
   if (!p.prop) return { x: 0, y: 0 }
   const offset = propOffsets[p.prop]
-  const x = p.prop === 'cup' && hand === 'left' ? -offset.x : offset.x
+  const x = p.prop !== 'phone' && hand === 'left' ? -offset.x : offset.x
   return rotate({ x, y: offset.y }, { x: 0, y: 0 }, p.propTurn)
 }
 export function propCenter(p: PuppetPose): Point {
@@ -161,6 +161,13 @@ export function moveHandle(p: PuppetPose, handle: Handle, target: Point): Puppet
     if (distance(oldElbow, solveElbow(s, hand, opposite)) + 1 < distance(oldElbow, solveElbow(s, hand, bend))) bend = opposite
   }
   return { ...p, [handle]: hand, [key]: bend, pinned: pin(p, handle) }
+}
+
+/** Carry a held object by its grip. A loose object can travel the whole stage. */
+export function dragHandle(p: PuppetPose, handle: Handle, target: Point): PuppetPose {
+  if (handle !== 'prop' || !p.holder || !p.prop) return moveHandle(p, handle, target)
+  const offset = propOffset(p)
+  return moveHandle(p, p.holder, { x: target.x - offset.x, y: target.y - offset.y })
 }
 
 /** Test the point where the hand grips the object, or the object's center for touch drops. */

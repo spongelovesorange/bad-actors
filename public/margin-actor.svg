@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="116" height="96" viewBox="0 0 116 96">
+  <defs>
+    <pattern id="dots" width="3.6" height="3.6" patternUnits="userSpaceOnUse" patternTransform="rotate(-13)">
+      <circle cx="1.3" cy="1.3" r="1.04" fill="#cd8d28"/>
+    </pattern>
+  </defs>
+  <!-- A scrawled publicity sketch of the understudy catching its balance. -->
+  <path d="M32 43C27 28 37 12 55 7 73 2 91 9 96 24 103 47 89 62 70 67 52 71 37 60 32 43Z" fill="url(#dots)"/>
+  <path d="M49 13q12-8 27-6m9 4 4 2" fill="none" stroke="#c48a30" stroke-width="1.1" stroke-linecap="round"/>
+  <g fill="#557986">
+    <path d="M76 44 97 37 91 41 101 39 81 47 88 45 77 51Z"/>
+    <path d="m77 66 21 1-10 2 5 1-16 1Z"/>
+  </g>
+  <!-- The soles face in different directions. The hanging boot just skims the ground. -->
+  <g stroke="#282322" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M69 62q6 11 2 15l-9 7M77 61q7 8 13 3l7-8" fill="none" stroke-width="4.5"/>
+    <path d="m69 64q5 9 2 12m8-13q6 5 11 0" fill="none" stroke="#c49b64" stroke-width="1.25"/>
+    <path d="m57 80 6 2 4 4-3 4-15-2q-4-2-1-5 2-2 9-1zM94 54l4-5q4-2 5 1v7l-2 7q-2 3-5-1l-3-5z" fill="#282322" stroke-width="1.4"/>
+    <path d="m49 85 13 2m37-33-1 6" fill="none" stroke="#f5ead2" stroke-width="1.05"/>
+    <!-- The arm pointing at the title is below the cheek, clear of the eyes. -->
+    <path d="M61 44q-2 7-10 6L29 39m40 0q11-1 12-10l2-7" fill="none" stroke-width="4.5"/>
+    <path d="M60 44q-3 7-10 4l-17-9m38 0q9-3 9-10" fill="none" stroke="#c89956" stroke-width="1.1"/>
+    <path d="m30 39-4 2-6-1-5-2q-2-2 1-2l5 1-7-5q0-2 2-1l7 4-3-6q0-2 2-1l5 7 3 1zM80 24l-3-6q0-2 2-1l2 3V12q1-3 2-1l1 7 2-6q2-1 2 1l-2 7 3-2q2-1 2 1l-6 6z" fill="#e4b45c" stroke-width="1.6"/>
+    <!-- Canvas weight with a very heavy bottom gusset. -->
+    <path d="M57 40q4-4 11-4 6 1 7 6l2 5q4 4 10 10 5 6 0 12-8 7-25 4-10-2-10-8 0-5 2-11z" fill="#d8a151" stroke-width="2.7"/>
+    <path d="M53 62q3 10 19 9 13-1 17-9-1 9-9 11-21 4-27-5z" fill="#a77741" stroke-width="1.2"/>
+    <path d="m60 43-3 14m2 4-.6 3m18-.6 6-1.5" fill="none" stroke="#5a4131" stroke-width="1"/>
+    <!-- A zigzag of cord is all that keeps the block head on. -->
+    <path d="m60 41 4-4-7 1 5-5-8 1 3.5-5" fill="none" stroke-width="2.25"/>
+    <g transform="translate(-2 -2) rotate(-20 51 26)">
+      <path d="M44 14q-3-8 .5-10 5-1 8 8l-3 .8q-2-6-3-5l1 5z" fill="#b5955e" stroke-width="1.8"/>
+      <path d="m33 17 3-4 23-2 5 1 2 12-.5 8-4 3-22 2-5-3z" fill="#e7c178" stroke-width="2.5"/>
+      <path d="m36 15 23-2m-20 3-.2-2m4.2 1 .2-2m4.5 1 .4-2" fill="none" stroke="#655334" stroke-width=".95"/>
+      <path d="m39 21 5-1m6 0 5 .8" fill="none" stroke-width="1.6"/>
+      <path d="M41 23q2-1.3 2.7 1-.2 2.1-2 2-1.8-.6-.7-3zm10 .2q1.8-1.2 2.5.9-.1 2.2-1.7 2-1.8-.1-.8-2.9z" fill="#282322" stroke="none"/>
+      <path d="m46 30 6-.7 1 .5" fill="none" stroke-width="1.5"/>
+    </g>
+  </g>
+  <!-- Dry marker trails stop just short of the neighboring fallen S. -->
+  <g fill="#b33d2d">
+    <path d="M36 54q-9 11-26 13l5-3 13-5zM10 67l4-4-8 4 5 2 3-1z"/>
+    <path d="M35 60 21 69l7-3zM97 49l8-8-6 9zM103 51l7-4-5 5z"/>
+    <path d="m38 9-6-7q4 1 8 7zm-4 4-7-2 1-1 6 1z"/>
+  </g>
+  <path d="M38 91q8-1 19 1m-17 1 8-.3" stroke="#4f6670" stroke-width="1" fill="none" stroke-linecap="round"/>
+</svg>

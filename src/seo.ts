@@ -26,7 +26,7 @@ declare const __DEEPSPACE_SITE_ORIGIN__: string | undefined
 
 export const seo = {
   title: `${APP_NAME} · Puppet charades`,
-  description: 'Play puppet charades. Guess the opening pose, choose a prop and drag the actor into a scene of your own.',
+  description: 'Play charades with a sandbag understudy. Grab a hand, give it a prop and see if a friend can guess the pose.',
   /** Public origin for canonical URLs, og:url, and the sitemap — no trailing
    *  slash. Replace with the custom domain once one is attached, e.g.
    *  'https://www.example.com'. */

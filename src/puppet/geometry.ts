@@ -16,14 +16,15 @@ export type PuppetPose = {
   holder: Hand | null
   propPosition: Point
   propTurn: number
+  // An untouched wrist hangs loose. A palm placed by the actor keeps its stage position.
+  pinned?: Partial<Record<Hand | 'head', boolean>>
 }
 
 export const feel = {
   width: 500, height: 360,
-  armBone: 65, wristReach: 124, shoulderCrossing: 9,
+  armBone: 80, wristReach: 124, shoulderCrossing: 9,
   headRadius: { x: 25, y: 16 }, headTilt: 20,
-  bodyLean: 3.4, headSway: 4.8,
-  bodyFrequency: 18, headFrequency: 15, damping: 0.74,
+  bodyLean: 16, headSway: 28,
   hitRadiusPx: 24, previewPx: 24, attachPx: 18, detachPx: 6, handoffPx: 7,
 }
 export const homeHead = { x: 251, y: 99 }
@@ -31,7 +32,7 @@ export const shoulders = { left: { x: 225, y: 162 }, right: { x: 276, y: 160 } }
 export const pivot = { x: 251, y: 229 }
 export const hands: Hand[] = ['left', 'right']
 const propOffsets: Record<PropKind, Point> = {
-  cup: { x: -14, y: -17 }, phone: { x: 5, y: -24 }, plate: { x: -17, y: -12 },
+  cup: { x: -12, y: 7 }, phone: { x: 5, y: -24 }, plate: { x: -17, y: -12 },
 }
 
 export const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n))
@@ -44,16 +45,17 @@ export function rotate(point: Point, center: Point, degrees: number): Point {
 }
 export function initialPose(): PuppetPose {
   return {
-    left: { x: 168, y: 181 }, right: { x: 333, y: 136 }, head: { ...homeHead },
-    leftBend: -1, rightBend: 1, face: 'smile', prop: null, holder: null,
+    left: { x: 177, y: 267 }, right: { x: 326, y: 262 }, head: { ...homeHead },
+    leftBend: 1, rightBend: -1, pinned: {}, face: 'flat', prop: null, holder: null,
     propPosition: { x: 341, y: 285 }, propTurn: 0,
   }
 }
 export function phoneSamplePose(): PuppetPose {
   const p = initialPose()
   p.right = { x: 296, y: 124 }
-  p.left = { x: 183, y: 238 }
+  p.left = { x: 177, y: 267 }
   p.leftBend = 1
+  p.rightBend = 1
   return withProp(p, 'phone')
 }
 export function withProp(p: PuppetPose, prop: PropKind | null): PuppetPose {
@@ -65,8 +67,11 @@ export function putDown(p: PuppetPose): PuppetPose {
 }
 export const withFace = (p: PuppetPose, face: FaceShape): PuppetPose => ({ ...p, face })
 export const turnProp = (p: PuppetPose): PuppetPose => p.prop ? { ...p, propTurn: (p.propTurn + 45) % 360 } : p
-export function propOffset(p: PuppetPose): Point {
-  return p.prop ? rotate(propOffsets[p.prop], { x: 0, y: 0 }, p.propTurn) : { x: 0, y: 0 }
+export function propOffset(p: PuppetPose, hand = p.holder): Point {
+  if (!p.prop) return { x: 0, y: 0 }
+  const offset = propOffsets[p.prop]
+  const x = p.prop === 'cup' && hand === 'left' ? -offset.x : offset.x
+  return rotate({ x, y: offset.y }, { x: 0, y: 0 }, p.propTurn)
 }
 export function propCenter(p: PuppetPose): Point {
   if (!p.holder || !p.prop) return p.propPosition
@@ -86,20 +91,31 @@ function crossesShoulder(a: Point, b: Point, s: Point) {
   const t = clamp(((s.x - a.x) * dx + (s.y - a.y) * dy) / (dx * dx + dy * dy || 1), 0, 1)
   return distance(s, { x: a.x + dx * t, y: a.y + dy * t }) < feel.shoulderCrossing
 }
+function pin(p: PuppetPose, handle: Hand | 'head') {
+  // Earlier saved poses did not distinguish loose from deliberately placed hands.
+  return { ...(p.pinned ?? { left: true, right: true, head: true }), [handle]: true }
+}
+export function reachableHead(target: Point): Point {
+  const dx = target.x - homeHead.x, dy = target.y - homeHead.y
+  const scale = Math.max(1, Math.hypot(dx / feel.headRadius.x, dy / feel.headRadius.y))
+  return { x: homeHead.x + dx / scale, y: homeHead.y + dy / scale }
+}
+export function reachableWrist(target: Point, hand: Hand): Point {
+  const s = shoulders[hand]
+  const scale = Math.max(1, distance(s, target) / feel.wristReach)
+  return { x: s.x + (target.x - s.x) / scale, y: s.y + (target.y - s.y) / scale }
+}
 export function moveHandle(p: PuppetPose, handle: Handle, target: Point): PuppetPose {
   if (!Number.isFinite(target.x) || !Number.isFinite(target.y)) return p
   if (handle === 'prop') {
     return { ...p, holder: null, propPosition: { x: clamp(target.x, 46, feel.width - 46), y: clamp(target.y, 30, feel.height - 30) } }
   }
   if (handle === 'head') {
-    const dx = target.x - homeHead.x, dy = target.y - homeHead.y
-    const scale = Math.max(1, Math.hypot(dx / feel.headRadius.x, dy / feel.headRadius.y))
-    return { ...p, head: { x: homeHead.x + dx / scale, y: homeHead.y + dy / scale } }
+    return { ...p, head: reachableHead(target), pinned: pin(p, handle) }
   }
   const s = shoulders[handle]
   const length = distance(s, target)
-  const scale = Math.max(1, length / feel.wristReach)
-  let hand = { x: s.x + (target.x - s.x) / scale, y: s.y + (target.y - s.y) / scale }
+  let hand = reachableWrist(target, handle)
   // At a folded shoulder the elbow has no geometric preference. Retain its last direction.
   if (length < 0.08) {
     const last = p[handle], norm = distance(last, s) || 1
@@ -112,15 +128,18 @@ export function moveHandle(p: PuppetPose, handle: Handle, target: Point): Puppet
     const opposite = bend === 1 ? -1 : 1
     if (distance(oldElbow, solveElbow(s, hand, opposite)) + 1 < distance(oldElbow, solveElbow(s, hand, bend))) bend = opposite
   }
-  return { ...p, [handle]: hand, [key]: bend }
+  return { ...p, [handle]: hand, [key]: bend, pinned: pin(p, handle) }
 }
 
 /** Test the point where the hand grips the object, or the object's center for touch drops. */
 export function snapHand(p: PuppetPose, pixelsPerUnit: number, previous: Hand | null, release = false): Hand | null {
   if (!p.prop || p.holder) return null
-  const center = propCenter(p), offset = propOffset(p)
-  const grip = { x: center.x - offset.x, y: center.y - offset.y }
-  const score = (hand: Hand) => Math.min(distance(center, p[hand]), distance(grip, p[hand])) * pixelsPerUnit
+  const center = propCenter(p)
+  function score(hand: Hand) {
+    const offset = propOffset(p, hand)
+    const grip = { x: center.x - offset.x, y: center.y - offset.y }
+    return Math.min(distance(center, p[hand]), distance(grip, p[hand])) * pixelsPerUnit
+  }
   const left = score('left'), right = score('right')
   let next: Hand = left <= right ? 'left' : 'right'
   const limit = release ? feel.attachPx : feel.previewPx

@@ -1,115 +1,175 @@
-import { clamp, distance, feel, homeHead, pivot, propCenter, rotate, shoulders, solveElbow, type Hand, type Point, type PuppetPose } from './geometry'
+import {
+  propCenter,
+  shoulders,
+  type Hand,
+  type Point,
+  type PuppetPose,
+} from './geometry'
+import { bodyMatrix, bodyPoint, displayPose, headAngle, stillMotion, type PuppetMotion } from './motion'
 
-const ink = '#332b3c', cream = '#ffdfaa', red = '#ce4941', blue = '#4264ad'
-export type PuppetMotion = { body: number; head: number }
-export const stillMotion: PuppetMotion = { body: 0, head: 0 }
-const xy = (p: Point) => p.x + ',' + p.y
+import { mixPoints, sleeveElbow } from './sleeve'
 
-function Shoe({ left }: { left: boolean }) {
-  return <g transform={left ? 'translate(230 0)' : 'translate(271 0) scale(-1 1)'}>
-    <path d="M-10 237 Q-14 249 -8 268 L-10 287 Q-3 294 6 286 L11 250 10 236Z" fill="#eeb788" stroke={ink} strokeWidth="3.4"/>
-    <path d="M-10 272 Q-3 275 8 271 L6 291 -11 292Z" fill="#fbddaa" stroke={ink} strokeWidth="2.8"/>
-    <path d="M-10 276 Q-3 279 6 275 M-10 282 Q-3 285 6 281" fill="none" stroke={red} strokeWidth="3.5"/>
-    <path d="M-12 286 Q-6 281 1 286 L6 284 Q13 285 12 294 L12 302 Q5 308 -12 307 L-30 307 Q-39 306 -38 299 Q-37 290 -23 291Z" fill={ink} stroke={ink} strokeWidth="3"/>
-    <path d="M-35 301 Q-26 305 10 301" fill="none" stroke="#ac7058" strokeWidth="3"/>
-    <path d="M-23 295 Q-19 291 -12 292" fill="none" stroke="#807080" strokeWidth="2.4"/>
-  </g>
-}
+export { stillMotion, type PuppetMotion } from './motion'
 
-function Sleeve({ pose, side, body }: { pose: PuppetPose; side: Hand; body: number }) {
-  const shoulder = rotate(shoulders[side], pivot, body)
-  const palm = pose[side]
-  const elbow = solveElbow(shoulder, palm, side === 'left' ? pose.leftBend : pose.rightBend)
-  const d = 'M' + xy(shoulder) + ' L' + xy(elbow) + ' ' + xy(palm)
-  return <g data-arm={side} data-shoulder={xy(shoulder)} data-elbow={xy(elbow)} data-hand={xy(palm)} fill="none" strokeLinejoin="round" strokeLinecap="round">
-    <path d={d} stroke={ink} strokeWidth="21"/>
-    <path d={d} stroke="#f6cd9a" strokeWidth="15"/>
-    <path d={d} stroke={red} strokeWidth="14" strokeDasharray="5 10" strokeLinecap="butt"/>
-    <circle cx={elbow.x} cy={elbow.y} r="5" stroke="#aa6553" strokeWidth="1.6" strokeDasharray="2 3"/>
-  </g>
-}
+const ink = '#302d27'
+const canvas = '#bd9147'
+const canvasShadow = '#9f743a'
+const binding = '#665b47'
+const boot = '#454c43'
+const faceCloth = '#ddbb7a'
 
-function Palm({ point, left }: { point: Point; left: boolean }) {
-  return <g transform={'translate(' + xy(point) + ') scale(' + (left ? -1 : 1) + ' 1)'} stroke={ink} strokeLinejoin="round" strokeLinecap="round">
-    <path d="M-7 8 Q-16 3 -14 -4 Q-12 -8 -7 -5 L-7 -12 Q-6 -16 -3 -15 Q0 -15 1 -9 L3 -14 Q7 -17 9 -13 L9 -6 Q13 -10 15 -6 Q18 0 12 8 Q7 15 1 13Z" fill={cream} strokeWidth="2.8"/>
-    <path d="M-7 -5 Q-4 -4 -2 1 M4 9 Q9 8 11 4" fill="none" stroke="#ca976f" strokeWidth="1.6"/>
-  </g>
-}
+const xy = (p: Point) => `${p.x} ${p.y}`
 
-function Body({ angle }: { angle: number }) {
-  return <g transform={'rotate(' + angle + ' ' + pivot.x + ' ' + pivot.y + ')'} stroke={ink} strokeLinejoin="round" strokeLinecap="round">
-    <path d="M241 127 Q239 143 230 151 Q248 169 269 150 Q257 138 261 125Z" fill="#e8b183" strokeWidth="3"/>
-    <path d="M230 146 Q212 151 213 171 Q219 180 224 176 Q217 198 213 225 Q207 242 215 248 Q227 257 241 254 L251 238 Q255 250 258 254 Q275 258 287 249 Q295 242 287 225 L278 175 Q285 176 289 166 Q285 153 268 147Z" fill={blue} strokeWidth="4"/>
-    <path d="M279 179 Q278 198 284 226 Q288 240 281 247 Q272 251 258 249 L258 254 Q278 260 288 248 Q293 240 287 224Z" fill="#314a86" stroke="none"/>
-    <path d="M226 153 Q227 168 235 175 Q249 179 265 173 Q272 164 273 151 L267 148 Q265 161 259 165 Q247 168 240 164 Q236 157 235 147Z" fill="#edb847" strokeWidth="2.2"/>
-    <circle cx="238.5" cy="171" r="3.4" fill="#f7d274" strokeWidth="1.6"/>
-    <circle cx="265" cy="170" r="3.4" fill="#f7d274" strokeWidth="1.6"/>
-    <path d="M239 186 Q249 189 264 183 L265 196 Q260 205 250 205 Q242 205 239 199Z" fill="#6c87c3" strokeWidth="2.2"/>
-    <path d="M241 190 Q250 193 261 187" fill="none" stroke="#ebbc73" strokeWidth="1.7" strokeDasharray="2 3"/>
-    <path d="M219 235 Q225 239 234 238 M265 237 Q273 239 285 234" fill="none" stroke="#a7b9d9" strokeWidth="2" strokeDasharray="3 4"/>
-    <path d="M233 142 Q249 151 263 140 L270 149 Q255 161 235 153 L226 149Z" fill={red} strokeWidth="2.8"/>
-    <path d="M232 151 L224 166 230 165 232 172 240 153" fill="#dc5849" strokeWidth="2.3"/>
-  </g>
-}
-
-function Head({ pose, sway }: { pose: PuppetPose; sway: number }) {
-  const angle = (pose.head.x - homeHead.x) / feel.headRadius.x * feel.headTilt + sway
-  return <g transform={'translate(' + xy(pose.head) + ') rotate(' + angle + ')'} stroke={ink} strokeLinejoin="round" strokeLinecap="round">
-    <path d="M-37 -5 Q-47 -12 -49 -1 Q-50 9 -39 12 M38 -4 Q49 -12 49 -1 Q50 8 39 12" fill="#f0b58a" strokeWidth="3"/>
-    <path d="M-44 0 Q-41 -2 -39 2 M42 0 Q45 -2 46 0" fill="none" stroke="#af796a" strokeWidth="1.7"/>
-    <path d="M-39 -17 Q-37 -39 -11 -43 Q22 -49 36 -32 Q47 -18 41 6 Q36 34 14 42 Q-10 50 -29 32 Q-45 18 -39 -17Z" fill={cream} strokeWidth="3.8"/>
-    <path d="M-35 18 Q-15 43 12 39 Q29 35 37 18 Q32 37 13 43 Q-15 49 -30 31Z" fill="#e7b88c" stroke="none"/>
-    <path d="M-39 -3 Q-47 -12 -43 -25 Q-48 -38 -34 -42 Q-31 -54 -18 -50 Q-11 -59 1 -53 Q10 -60 21 -52 Q33 -54 38 -43 Q49 -42 47 -32 Q49 -24 41 -16 L38 -9 35 -22 Q25 -15 22 -22 Q13 -15 5 -24 Q-1 -16 -11 -23 Q-16 -13 -28 -17 Q-30 -7 -39 -3Z" fill="#383044" strokeWidth="3.2"/>
-    <path d="M-35 -33 Q-30 -42 -22 -40 M-10 -43 Q-5 -48 2 -45 M14 -43 Q20 -48 27 -41" fill="none" stroke="#66536b" strokeWidth="2.5"/>
-    <g transform={pose.face === 'open' ? 'translate(0 -3)' : undefined}>
-      <path d={pose.face === 'flat' ? 'M-27 -6 L-16 -6 M11 -7 L22 -8' : 'M-27 -5 Q-22 -10 -15 -7 M10 -8 Q17 -13 23 -9'} fill="none" strokeWidth="2.8"/>
+function Leg({ side, motion }: { side: Hand; motion: PuppetMotion }) {
+  const left = side === 'left'
+  const hip = bodyPoint({ x: left ? 229 : 277, y: 246 }, motion)
+  const ankle = { x: left ? 222 : 280, y: 297 }
+  const dx = ankle.x - hip.x
+  const dy = ankle.y - hip.y
+  const length = Math.hypot(dx, dy) || 1
+  const bow = Math.sqrt(Math.max(0, 28.5 ** 2 - length ** 2 / 4)) * (left ? 1 : -1)
+  const knee = {
+    x: (hip.x + ankle.x) / 2 - dy / length * bow,
+    y: (hip.y + ankle.y) / 2 + dx / length * bow,
+  }
+  const d = `M ${xy(hip)} L ${xy(knee)} ${xy(ankle)}`
+  const inward = left ? 1 : -1
+  return (
+    <g>
+      <path d={d} fill="none" stroke={ink} strokeWidth="14" />
+      <path d={d} fill="none" stroke={binding} strokeWidth="9" />
+      <circle data-knee={side} cx={knee.x} cy={knee.y} r="3" fill="#847357" stroke="none" />
+      <g data-sole={side} transform={`translate(${xy(ankle)}) scale(${inward} 1)`}>
+        <path d="M-6-4 Q0-8 7-4 L8 6 Q7 9 3 9 L-19 9 Q-23 7-20 3 Q-18 0-7-1Z" fill={boot} stroke={ink} strokeWidth="2.8" />
+        <path d="M-18 6 L5 6" fill="none" stroke="#a09376" strokeWidth="1.5" />
+      </g>
     </g>
-    {pose.face === 'flat'
-      ? <path d="M-24 3 Q-19 5 -14 2 M11 2 Q17 4 21 0" fill="none" strokeWidth="3"/>
-      : <g fill={ink} stroke="none"><ellipse cx="-18" cy="3" rx="3.2" ry={pose.face === 'open' ? 6 : 4.5}/><ellipse cx="16" cy="1" rx="3.2" ry={pose.face === 'open' ? 6 : 4.5}/></g>}
-    <g fill="#e8937f" stroke="none"><ellipse cx="-27" cy="13" rx="7" ry="3.4" transform="rotate(10 -27 13)"/><ellipse cx="27" cy="10" rx="7" ry="3.5" transform="rotate(-10 27 10)"/></g>
-    <path d="M-3 4 Q2 1 5 8 Q5 12 -1 12" fill="#e8a174" stroke="#ac7860" strokeWidth="1.6"/>
-    {pose.face === 'open' ? <ellipse cx="2" cy="24" rx="6" ry="8" fill={ink} strokeWidth="1"/>
-      : <path d={pose.face === 'flat' ? 'M-5 24 L9 23' : 'M-9 22 Q1 32 13 20 Q3 26 -9 22Z'} fill={ink} strokeWidth="2.2"/>}
-    <path d="M-28 22 L-25 23 M23 20 L26 18" fill="none" stroke="#bd8a73" strokeWidth="1.5"/>
-  </g>
+  )
+}
+
+function Arm({ side, pose, motion }: { side: Hand; pose: PuppetPose; motion: PuppetMotion }) {
+  const shoulder = bodyPoint(shoulders[side], motion)
+  const palm = pose[side]
+  const elbow = sleeveElbow(side, pose, shoulder, motion)
+  const before = mixPoints(elbow, shoulder, 0.45)
+  const after = mixPoints(elbow, palm, 0.45)
+  const d = `M ${xy(shoulder)} L ${xy(before)} Q ${xy(elbow)} ${xy(after)} L ${xy(palm)}`
+  return (
+    <g data-arm={side} data-shoulder={`${shoulder.x},${shoulder.y}`} data-elbow={`${elbow.x},${elbow.y}`} data-hand={`${palm.x},${palm.y}`} fill="none">
+      <path d={d} stroke={ink} strokeWidth="12.5" />
+      <path d={d} stroke="#80735a" strokeWidth="7" />
+    </g>
+  )
+}
+
+function Palm({ point, side, holding }: { point: Point; side: Hand; holding: boolean }) {
+  return (
+    <g transform={`translate(${xy(point)}) scale(${side === 'left' ? -1 : 1} 1)`}>
+      <path
+        d={holding
+          ? 'M-9-2 Q-10-5-6-6 L5-5 Q12-4 11 2 Q10 7 5 9 L-2 8 Q-7 9-9 3Z'
+          : 'M-6-7 L-5-10 L0-11 Q3-10 4-7 L8-8 Q13-7 12-2 L10 6 Q9 11 5 12 L-1 12 Q-4 11-4 8 Q-10 6-11 2 L-13-2 Q-13-6-9-5Z'}
+        fill="#a88959"
+        stroke={ink}
+        strokeWidth="2.7"
+      />
+      <path d={holding ? 'M2 0 L8 1' : 'M4 7 L7 3'} fill="none" stroke="#796742" strokeWidth="1.5" />
+    </g>
+  )
+}
+
+function Body({ motion }: { motion: PuppetMotion }) {
+  return (
+    <g data-rig="torso" transform={bodyMatrix(motion)}>
+      {/* A canvas ballast bag. The bottom gusset contains most of its volume. */}
+      <path d="M229 149 Q244 146 262 147 Q279 150 283 168 Q288 184 300 202 Q313 222 313 240 Q313 252 303 258 Q290 266 259 266 L226 264 Q200 262 193 250 Q187 239 191 222 Q195 205 207 185 L216 165 Q220 154 229 149Z" fill={canvas} stroke={ink} strokeWidth="3.8" />
+      <path d="M194 239 Q211 251 249 252 Q286 255 311 238 Q312 252 301 258 Q284 267 249 263 L224 262 Q201 259 194 251Z" fill={canvasShadow} stroke="none" />
+      <path d="M201 246 Q227 258 266 257 Q289 256 302 250" stroke="#775a36" strokeDasharray="5 3" strokeWidth="1.4" fill="none" />
+      <path d="M231 154 Q238 156 247 156 M197 233 L194 241 L207 241 M298 245 L306 240 L304 228" stroke="#866537" strokeWidth="2" fill="none" />
+      {/* One crooked darn, deliberately away from the face and controls. */}
+      <path d="M283 204 L293 214 M283 209 L288 204 M286 212 L291 207 M289 215 L294 210" stroke="#795c37" strokeWidth="2.15" fill="none" />
+    </g>
+  )
+}
+
+function Neck({ head, motion }: { head: Point; motion: PuppetMotion }) {
+  const stem = bodyPoint({ x: 246, y: 153 }, motion)
+  const top = { x: head.x - 2, y: head.y + 23 }
+  const bend = { x: (stem.x + top.x) / 2 + motion.head * 0.29, y: (stem.y + top.y) / 2 + 1 }
+  const d = `M ${xy(stem)} Q ${xy(bend)} ${xy(top)}`
+  return (
+    <g fill="none">
+      <path d={d} stroke={ink} strokeWidth="20" />
+      <path d={d} stroke="#746a56" strokeWidth="14" />
+      <path d={d} stroke="#aa9873" strokeWidth="13" strokeDasharray="2 5" strokeLinecap="butt" />
+    </g>
+  )
+}
+
+function Head({ pose, point, angle }: { pose: PuppetPose; point: Point; angle: number }) {
+  const mouth = pose.face === 'smile' ? 'M-4 13 Q3 17 10 12' : 'M-4 14 L10 14'
+  return (
+    <g data-rig="head" transform={`translate(${xy(point)}) rotate(${angle})`}>
+      {/* Webbing handle, intentionally offset so the silhouette leans when still. */}
+      <path d="M-26-28 L-29-39 Q-30-43-25-44 L-15-45 Q-11-45-10-41 L-6-29" stroke={ink} strokeWidth="7" fill="none" />
+      <path d="M-26-29 L-28-39 Q-29-41-25-42 L-16-43 Q-14-43-13-40 L-9-29" stroke={binding} strokeWidth="3" fill="none" />
+      <path d="M-46-20 L-49-28 L-39-27 Q-8-32 23-29 L41-33 L40-24 Q48-18 47 1 L46 15 Q45 24 32 27 Q15 31-16 29 Q-35 29-42 21 Q-49 14-48 1Z" fill={faceCloth} stroke={ink} strokeWidth="3.5" />
+      <path d="M-45 16 Q-27 25 0 24 Q28 24 44 16 Q43 24 30 26 Q12 31-18 27 Q-38 27-45 16Z" fill="#c6a162" stroke="none" />
+      <path d="M-43-22 Q-6-28 22-25 L34-27 M-38 16 L-34 20" fill="none" stroke="#947343" strokeWidth="1.6" />
+      <g fill={ink}>
+        <circle data-landmark="left-eye" cx="-15" cy="-7" r="2.7" />
+        <circle data-landmark="right-eye" cx="15" cy="-7" r="2.7" />
+        <circle data-landmark="nose" cx="1" cy="1" r="0" />
+        <path d="M0-1 L2 2 L-1 2" fill="none" stroke="#8b693c" strokeWidth="1.7" />
+        {pose.face === 'open'
+          ? <ellipse cx="4" cy="14" rx="4" ry="5" />
+          : <path d={mouth} fill="none" stroke={ink} strokeWidth="2.9" />}
+        <circle data-landmark="mouth" cx="5" cy="14" r="0" />
+      </g>
+    </g>
+  )
 }
 
 function PropArt({ pose }: { pose: PuppetPose }) {
   const center = propCenter(pose)
-  return <g data-visible-prop={pose.prop} transform={'translate(' + xy(center) + ') rotate(' + pose.propTurn + ')'} stroke={ink} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round">
-    {pose.prop === 'phone' && <g transform="rotate(6)">
-      <rect x="-12" y="-25" width="24" height="49" rx="5" fill="#679d8f"/>
-      <rect x="-8.5" y="-18" width="17" height="32" rx="2.5" fill="#cee3d6" strokeWidth="1.8"/>
-      <path d="M-4 -21 L4 -21 M-3 19 L2 19" strokeWidth="2"/>
-      <path d="M-5 -11 L2 -15 M-5 -5 L5 -11" stroke="#f2f5dd" strokeWidth="2"/>
-    </g>}
-    {pose.prop === 'cup' && <g>
-      <path d="M15 -13 Q30 -18 29 -5 Q28 5 15 7 L14 2 Q23 0 23 -6 Q24 -10 16 -8Z" fill="#d56d53"/>
-      <path d="M-20 -15 Q-5 -20 17 -15 L15 9 Q13 18 -1 18 Q-15 18 -17 9Z" fill="#dc7958"/>
-      <ellipse cy="-14.5" cx="-1.6" rx="18" ry="4.7" fill="#914d40" strokeWidth="2.2"/>
-      <path d="M-13 -5 L-12 6" stroke="#f4ae81" strokeWidth="3"/>
-    </g>}
-    {pose.prop === 'plate' && <g>
-      <path d="M-42 -2 Q-34 11 0 12 Q31 12 42 -2Z" fill="#7b9b8d"/>
-      <ellipse cy="-2" rx="43" ry="10" fill="#d9dfbf"/>
-      <ellipse cy="-2" rx="33" ry="5.5" fill="#aec2aa" stroke="#829a82" strokeWidth="1.7"/>
-    </g>}
-  </g>
+  return (
+    <g data-visible-prop={pose.prop} transform={`translate(${xy(center)}) rotate(${pose.propTurn})`} stroke={ink} strokeWidth="2.5">
+      {pose.prop === 'phone' && <g transform="rotate(5)">
+        <rect x="-10.5" y="-23" width="21" height="45" rx="3.5" fill="#47585d" />
+        <rect x="-7.75" y="-17.5" width="15.5" height="29.5" rx="1.3" fill="#adc8c6" strokeWidth="1.3" />
+        <path d="M-3-20 L3-20 M-2 16 L2 16" fill="none" stroke="#d3d0b7" strokeWidth="1.3" />
+      </g>}
+      {pose.prop === 'cup' && <g transform={pose.holder === 'left' ? 'scale(-1 1)' : undefined}>
+        <path d="M9-6 Q22-11 20-2 Q19 5 11 5 L10 1 Q16 0 16-4 Q15-5 11-3Z" fill="#b3a394" strokeWidth="2" />
+        <path d="M-13-7 L12-7 L10.5 7 Q10 10 1.5 11 Q-8 11-10 8Z" fill="#b76350" />
+        <ellipse data-landmark="cup-rim" cx="-1" cy="-7" rx="12.5" ry="2.6" fill="#eee2c7" strokeWidth="2" />
+        <path d="M-8.5 5 L-6.5 7" fill="none" stroke="#e6c3a2" strokeWidth="1.6" />
+      </g>}
+      {pose.prop === 'plate' && <g>
+        <path d="M-35-1 Q-33 9 0 10 Q28 10 35-1Z" fill="#83958d" />
+        <ellipse cy="-2" rx="35" ry="7.5" fill="#bbc6b7" />
+        <ellipse cy="-2" rx="27" ry="4" fill="none" stroke="#77867a" strokeWidth="1.4" />
+      </g>}
+    </g>
+  )
 }
 
-/** This group contains the entire observable character. Handles, stage copy and room data live outside it. */
+/** Only the actor and the prop are included in a visual observation. */
 export function PuppetArt({ pose, motion = stillMotion }: { pose: PuppetPose; motion?: PuppetMotion }) {
-  // A folded arm has no unique elbow direction. Ease shoulder motion out close to either wrist.
-  const clearance = Math.min(distance(shoulders.left, pose.left), distance(shoulders.right, pose.right))
-  const blend = clamp(clearance / 17, 0, 1)
-  const body = motion.body * blend * blend * (3 - 2 * blend)
-  return <g data-puppet-art="" pointerEvents="none">
-    <ellipse cx="245" cy="310" rx="64" ry="7" fill="#48303a" opacity=".16"/>
-    <Shoe left/><Shoe left={false}/>
-    <Sleeve pose={pose} side="left" body={body}/><Sleeve pose={pose} side="right" body={body}/>
-    <Body angle={body}/><Head pose={pose} sway={motion.head}/>
-    <Palm point={pose.left} left/><Palm point={pose.right} left={false}/>
-    {pose.prop && <PropArt pose={pose}/>}
-  </g>
+  const visible = displayPose(pose, motion)
+  return (
+    <g data-puppet-art="" pointerEvents="none" strokeLinecap="round" strokeLinejoin="round">
+      <ellipse cx="251" cy="307" rx="56" ry="4" fill="#37342e" opacity="0.2" />
+      <Leg side="left" motion={motion} />
+      <Leg side="right" motion={motion} />
+      <Neck head={visible.head} motion={motion} />
+      <Body motion={motion} />
+      <Arm side="left" pose={visible} motion={motion} />
+      <Arm side="right" pose={visible} motion={motion} />
+      <Head pose={pose} point={visible.head} angle={headAngle(pose, motion)} />
+      <Palm point={visible.left} side="left" holding={pose.holder === 'left'} />
+      <Palm point={visible.right} side="right" holding={pose.holder === 'right'} />
+      {pose.prop && <PropArt pose={visible} />}
+    </g>
+  )
 }

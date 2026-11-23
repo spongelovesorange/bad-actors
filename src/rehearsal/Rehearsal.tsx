@@ -4,14 +4,14 @@ import {
   ArrowRight,
   CircleHelp,
   CornerDownLeft,
-  Drama,
+  ClipboardList,
   Eye,
   EyeOff,
   Hand,
-  Lightbulb,
+  Info,
   RefreshCw,
   RotateCcw,
-  Ticket,
+  LogIn,
   X,
 } from 'lucide-react'
 import {
@@ -43,8 +43,8 @@ const shelf: { kind: PropKind; label: string }[] = [
   { kind: 'plate', label: 'Plate' },
 ]
 const faces: { shape: FaceShape; label: string }[] = [
-  { shape: 'smile', label: 'Smile' },
-  { shape: 'flat', label: 'Straight mouth' },
+  { shape: 'flat', label: 'Deadpan' },
+  { shape: 'smile', label: 'Crooked mouth' },
   { shape: 'open', label: 'Open mouth' },
 ]
 const phoneGuesses = new Set([
@@ -98,10 +98,14 @@ function restoreSession(): RehearsalSession | null {
       ![-1, 1].includes(p.leftBend) ||
       ![-1, 1].includes(p.rightBend) ||
       !['left', 'right', null].includes(p.holder) ||
-      !Number.isFinite(p.propTurn)
+      !Number.isFinite(p.propTurn) ||
+      (p.pinned !== undefined &&
+        (p.pinned === null || typeof p.pinned !== 'object' || Array.isArray(p.pinned) ||
+          Object.values(p.pinned).some((pinned) => typeof pinned !== 'boolean')))
     )
       return null
-    return { ...saved, pose: { ...base, ...p } }
+    // Older saved poses predate free limbs. Keep their authored positions fixed.
+    return { ...saved, pose: { ...base, ...p, pinned: p.pinned ?? { left: true, right: true, head: true } } }
   } catch {
     return null
   }
@@ -111,9 +115,7 @@ export function Brand({ href = '/' }: { href?: string }) {
   return (
     <a className="ba-brand" href={href} aria-label="Bad Actors home">
       <img src="/favicon.svg" width="40" height="40" alt="" />
-      <span>
-        Bad Actors<span className="ba-brand-period">.</span>
-      </span>
+      <span>Bad Actors</span>
     </a>
   )
 }
@@ -184,7 +186,7 @@ function PlayDialog({
       <button type="button" className="ba-dialog-x" aria-label="Close" onClick={close}>
         <X size={19} />
       </button>
-      <div className="ba-stamp">{kind === 'help' ? <Drama /> : <Ticket />}</div>
+      <div className="ba-stamp">{kind === 'help' ? <ClipboardList /> : <LogIn />}</div>
       <h2 id="ba-dialog-title">{kind === 'help' ? 'How to play' : 'Local rehearsal'}</h2>
       {kind === 'help' ? (
         <>
@@ -234,33 +236,33 @@ function PropDrawing({ kind }: { kind: PropKind }) {
       viewBox="0 0 56 43"
       aria-hidden="true"
       className="ba-prop-art"
-      stroke="#392b35"
+      stroke="#343c33"
       strokeWidth="2.1"
       strokeLinejoin="round"
       strokeLinecap="round"
     >
       {kind === 'phone' ? (
         <g transform="rotate(-11 28 22)">
-          <rect x="18" y="2.5" width="21" height="36" rx="4" fill="#625978" />
-          <rect x="20.5" y="6" width="16" height="25" rx="1.4" fill="#b5cfc6" />
-          <path d="m23 17 5-5m4 5-6 7" stroke="#eaf4db" />
-          <path d="M26 34.5h5" stroke="#f6d69d" />
+          <rect x="18" y="2.5" width="21" height="36" rx="4" fill="#424f53" />
+          <rect x="20.5" y="6" width="16" height="25" rx="1.4" fill="#b4c1ad" />
+          <path d="m23 17 5-5m4 5-6 7" stroke="#e0e3ca" />
+          <path d="M26 34.5h5" stroke="#cdc9ae" />
         </g>
       ) : kind === 'cup' ? (
         <g transform="rotate(-5 28 23)">
-          <path d="M34 13h5c9 0 9 14 1 15l-6 1" fill="#db6c56" />
-          <path d="M35 18h4q4 0 3 4t-6 3" fill="#f9edd5" />
-          <path d="M10 11h26v15q-1 10-12 11-13-1-14-12z" fill="#e38368" />
-          <ellipse cx="23" cy="11.5" rx="13" ry="4.5" fill="#ffe3ae" />
-          <path d="M14 12q10-4 18 0" fill="none" stroke="#8a5141" />
-          <path d="M14 18v5" fill="none" stroke="#ffc29b" />
+          <path d="M34 13h5c9 0 9 14 1 15l-6 1" fill="#98594b" />
+          <path d="M35 18h4q4 0 3 4t-6 3" fill="#edece3" />
+          <path d="M10 11h26v15q-1 10-12 11-13-1-14-12z" fill="#aa6855" />
+          <ellipse cx="23" cy="11.5" rx="13" ry="4.5" fill="#ebe0b9" />
+          <path d="M14 12q10-4 18 0" fill="none" stroke="#765d47" />
+          <path d="M14 18v5" fill="none" stroke="#dba88b" />
         </g>
       ) : (
         <g transform="rotate(-6 28 23)">
-          <path d="M4 22q2 12 23 13 21 0 25-12" fill="#a5aaa2" />
-          <ellipse cx="28" cy="21" rx="24" ry="8" fill="#e6d9b1" />
-          <ellipse cx="28" cy="21" rx="17" ry="4.7" fill="#b7c4b4" />
-          <path d="M15 21q11-5 26 0" fill="none" stroke="#f8ebc9" />
+          <path d="M4 22q2 12 23 13 21 0 25-12" fill="#888e82" />
+          <ellipse cx="28" cy="21" rx="24" ry="8" fill="#c9cbbb" />
+          <ellipse cx="28" cy="21" rx="17" ry="4.7" fill="#a8b2a5" />
+          <path d="M15 21q11-5 26 0" fill="none" stroke="#e2e1d0" />
         </g>
       )}
     </svg>
@@ -279,28 +281,18 @@ function FaceDrawing({ shape }: { shape: FaceShape }) {
       aria-hidden="true"
       strokeLinecap="round"
     >
-      <circle cx="12" cy="12" r="9" />
-      <path d="M8 9h.4m7.2 0h.4" />
+      <path d="m4 5 3-2 12 1 2 3-1 12-3 2-12-1-2-3z" />
+      <path d="M8 10h.5m6.5-.5h.5" />
       {shape === 'smile' ? (
-        <path d="M7.7 14q4.3 6 8.6 0" />
+        <path d="m9 15 4 .5 2-1.5" />
       ) : shape === 'flat' ? (
-        <path d="M8 15h8" />
+        <path d="m9 15 6-.4" />
       ) : (
-        <ellipse cx="12" cy="15.5" rx="2.8" ry="2.5" />
+        <ellipse cx="12" cy="15.5" rx="1.9" ry="1.8" />
       )}
     </svg>
   )
 }
-
-const Footlights = memo(function Footlights() {
-  return (
-    <div className="ba-stage-lip" aria-hidden="true">
-      {Array.from({ length: 9 }, (_, i) => (
-        <i key={i} />
-      ))}
-    </div>
-  )
-})
 
 export default function Rehearsal({ accountAvailable = true }: { accountAvailable?: boolean }) {
   const [pose, setPose] = useState<PuppetPose>(phoneSamplePose)
@@ -397,13 +389,9 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
       <main className="ba-wrap ba-main">
         <div className="ba-intro">
           <div>
-            <div className="ba-section-tag">
-              <i aria-hidden="true" /> Sample practice
-            </div>
-            <h1>
-              Make a little <em>scene.</em>
-            </h1>
-            <p>You act. We guess. Try the opening pose, then take the stage.</p>
+            <div className="ba-section-tag">Charades rehearsal</div>
+            <h1>The understudy is a sandbag.</h1>
+            <p>Guess the pose. Then grab a hand and act out a cue of your own.</p>
           </div>
         </div>
         <div className="ba-workspace">
@@ -419,7 +407,6 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
                   />
                 </div>
               </div>
-              <Footlights />
             </div>
             <div className="ba-stage-bar">
               <span>
@@ -437,7 +424,7 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
             <section className="ba-cue" aria-label="Cue card">
               <div className="ba-cue-header">
                 <span>
-                  <Ticket size={17} aria-hidden="true" /> Cue card
+                  <ClipboardList size={17} aria-hidden="true" /> Cue card
                 </span>
                 {phase === 'practice' ? (
                   <div className="ba-cue-meta">
@@ -569,8 +556,7 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
           </aside>
         </div>
         <p className="ba-practice-note">
-          <Lightbulb size={15} aria-hidden="true" /> Practice is local. Your opening guess is checked against
-          the sample cue.
+          <Info size={15} aria-hidden="true" /> Local practice. The opening pose has a preset answer.
         </p>
       </main>
       {dialog && (

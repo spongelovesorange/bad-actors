@@ -59,6 +59,15 @@ describe('authored puppet pose', () => {
       expect(snapHand(closer, scale, null, true)).toBe('left')
     }
   })
+  it('aligns the mirrored mug handle with the receiving hand at any prop rotation', () => {
+    for (const hand of hands) {
+      for (const angle of [0, 90, 270]) {
+        const held = { ...withProp(initialPose(), 'cup'), holder: hand, propTurn: angle }
+        const loose = moveHandle(held, 'prop', propCenter(held))
+        expect(snapHand(loose, 3, null, true)).toBe(hand)
+      }
+    }
+  })
   it('keeps the previous snap candidate when both palms are equally close', () => {
     let p = withProp(initialPose(), 'cup')
     p = moveHandle(moveHandle(p, 'left', { x: 250, y: 147 }), 'right', { x: 253, y: 147 })

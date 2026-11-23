@@ -17,7 +17,7 @@
  */
 
 export const THEMES = [
-  { id: 'theater', label: 'Theater', description: 'Warm rehearsal paper and burgundy stage curtains.' },
+  { id: 'theater', label: 'Community hall', description: 'Taped cardboard flats under a single work light.' },
 ] as const
 
 export type ThemeId = (typeof THEMES)[number]['id']

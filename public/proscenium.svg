@@ -1,36 +1,92 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" preserveAspectRatio="none">
-<defs>
-  <linearGradient id="wall" x2="0" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#dbc5a9"/><stop offset=".7" stop-color="#efe0be"/><stop offset="1" stop-color="#ebcc98"/></linearGradient>
-  <radialGradient id="spot"><stop stop-color="#fff9dc" stop-opacity=".98"/><stop offset=".69" stop-color="#fff2c6" stop-opacity=".76"/><stop offset=".94" stop-color="#fff0c0" stop-opacity=".23"/><stop offset="1" stop-color="#fff0c0" stop-opacity="0"/></radialGradient>
-  <linearGradient id="floor" x2="0" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#bd8056"/><stop offset=".17" stop-color="#dda36a"/><stop offset="1" stop-color="#d59259"/></linearGradient>
-  <pattern id="paper" width="7" height="7" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".65" fill="#693f30" opacity=".17"/><circle cx="4.5" cy="3.5" r=".5" fill="#fffbe2" opacity=".45"/></pattern>
-  <pattern id="shade" width="5" height="5" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".8" fill="#221922" opacity=".2"/></pattern>
-  <path id="spark" d="M0-9Q1-1 6 0Q1 1 0 9Q-1 1-6 0Q-1-1 0-9Z"/>
-  <g id="drape">
-    <path d="M-2 1h153c-3 33-13 74-30 106-16 30-40 58-68 88 8 29 21 80 16 144-2 32 4 78 13 116-13 17-26 17-36 6-11 13-27 12-37 3L-2 468Z" fill="#6c2739" stroke="#472433" stroke-width="3"/>
-    <path d="M3 2h125c-5 59-43 139-77 184C66 121 80 61 78 2ZM14 2h33c-4 58-17 116-30 170C24 103 22 42 14 2Z" fill="#9e3c46"/>
-    <path d="M108 2c-14 72-35 128-60 181M75 2c-4 63-16 115-36 176M37 2c3 65-7 123-15 163" fill="none" stroke="#5c2538" stroke-width="3"/>
-    <path d="M-1 194c13 11 36 14 55-2l-2-11c-15 9-37 11-53 6z" fill="#edab56" stroke="#452a30" stroke-width="2"/>
-    <path d="M48 195c-1 35-2 43-12 51m0 0-3 12 7-2 3-8z" fill="none" stroke="#d8984f" stroke-width="3"/>
-    <path d="M0 204c14 4 20 3 25 1-10 88-10 185-10 251-6 1-10 0-15-4zM38 205c-2 55 18 131 17 177 0 29 2 55 8 77l-14-1c-12-66-21-169-11-253z" fill="#a53743"/>
-    <path d="M18 204c-13 98-14 191-10 245m24-243c-1 97 3 200 14 253m9-220c9 92 2 147 18 211" fill="none" stroke="#542638" stroke-width="2.7"/>
-    <path d="M0 2h150q-26 120-97 190l17 261q-13 19-29 7l-35 8z" fill="url(#shade)" opacity=".5"/>
+  <defs>
+    <pattern id="flutes" width="7" height="16" patternUnits="userSpaceOnUse">
+      <path d="M1 0v16" stroke="#544d3c" opacity=".13"/>
+      <path d="M2 0v16" stroke="#f7efc7" opacity=".13"/>
+    </pattern>
+    <pattern id="grit" width="123" height="94" patternUnits="userSpaceOnUse">
+      <path d="m9 16 4 1m72 29 2-1m-38 32 5-1m61 9 2 1" fill="none" stroke="#4a4431" opacity=".22"/>
+      <path d="m67 9 2 1m-47 45 4-1m87-44 1 1" stroke="#fff4c8" opacity=".45"/>
+    </pattern>
+    <clipPath id="flats"><path d="m64 120 165-21 11 3 187-13 12 3 222-6 10 7 165 21-7 293-753-1z"/></clipPath>
+    <clipPath id="light"><path d="M267 63 759 406 233 406z"/></clipPath>
+    <g id="tape" fill="#ccc6a6" stroke="#817e64" stroke-width=".7">
+      <path d="m0 1 38-2 1 2-1 2 2 2-1 3-39 2 1-3-2-2 2-2z"/>
+      <path d="m5 3 24-1" fill="none" stroke="#f6f0d1"/>
+    </g>
+    <g id="flat-seams" fill="none">
+      <path d="m231 100 9 166-1 137m192-311-4 70 4 236m233-310-8 191 1 124" stroke="#514e3b" stroke-width="3.5"/>
+      <path d="m234 101 10 162-2 140M435 93l-4 70 3 235m234-309-8 191v124" stroke="#e0d8b3" stroke-width="2"/>
+      <g fill="#b2a785" stroke="#77745c" stroke-width=".65">
+        <path d="m221 149 28-4 2 9-28 4zM226 328l29-3 1 8-28 3z"/>
+        <path d="m417 238 31 1v8l-31-1zM650 146l28 3-1 8-28-2z"/>
+      </g>
+    </g>
+  </defs>
+  <!-- Corrugated scenery flats stand against a painted block wall. -->
+  <path fill="#4d5e56" d="M0 0h900v415H0z"/>
+  <g fill="none" stroke="#31453f" opacity=".62" stroke-width="2">
+    <path d="M0 56h900M0 113h900M0 170h900M0 227h900M0 284h900M0 341h900"/>
+    <path d="M75 0v55m144-55v55m145-55v55m145-55v55m144-55v55m144-55v55M140 57v55m145-55v41m145-41v32m145-32v33m145-33v38m146-38v56M18 114v55m791-55v54m65 2v55m-852 3v55m846 1v56"/>
   </g>
-</defs>
-<path fill="url(#wall)" d="M0 0h900v520H0z"/>
-<path d="m155-12 274 440H117Zm542 0L474 431h283Z" fill="#ffeabb" opacity=".17"/>
-<ellipse cx="450" cy="252" rx="301" ry="285" fill="url(#spot)"/>
-<g fill="#a67f57" opacity=".55"><use href="#spark" transform="translate(214 157) scale(.8)"/><use href="#spark" transform="translate(665 231) scale(.73)"/><use href="#spark" transform="translate(632 137) scale(.4)"/><use href="#spark" transform="translate(266 311) scale(.45)"/></g>
-<g fill="#a67f57" opacity=".4"><circle cx="198" cy="180" r="1.8"/><circle cx="643" cy="258" r="2"/><circle cx="241" cy="294" r="1.7"/><circle cx="673" cy="153" r="1.5"/></g>
-<path fill="url(#paper)" d="M0 0h900v445H0z"/>
-<path fill="url(#floor)" d="M0 410q448-2 900 0v110H0z"/>
-<g fill="none" stroke="#8e5d45" stroke-width="1.5" opacity=".63">
-  <path d="M0 410h900M0 426h900M0 448h900M0 482h900m-853-94-90 132m183-108L79 520m146-108-42 108m139-108-20 108m130-108-6 108m90-108 9 108m89-108 32 108m61-108 47 108m44-108 72 108m58-108 86 103"/>
-</g>
-<g fill="none" stroke="#aa744e" stroke-width="1.4" opacity=".7"><path d="m62 462 62-1m70 30c17-3 40-1 57-2m37-55 53 1m219 31 45-1m162-32 45 1M518 503q31-2 62-1m-402-45 41-1"/></g>
-<use href="#drape"/><use href="#drape" transform="translate(900) scale(-1 1)"/>
-<path d="M0-8h900v31c-55 15-104 20-156 6-49 24-105 27-151 7-50 23-102 24-148 5-50 20-103 19-148-4-51 18-105 13-151-9C98 46 45 43 0 25Z" fill="#512532" opacity=".25" transform="translate(0 4)"/>
-<path d="M0-8h900v31c-55 15-104 20-156 6-49 24-105 27-151 7-50 23-102 24-148 5-50 20-103 19-148-4-51 18-105 13-151-9C98 46 45 43 0 25Z" fill="#8b3444" stroke="#592539" stroke-width="2"/>
-<path d="M6 20q72 19 137 2 77 37 154 8 69 36 148 6 75 29 147-6 73 29 152-6 85 15 151-5" fill="none" stroke="#d69a5b" stroke-width="2"/>
-<g fill="none" stroke="#69293b" stroke-width="2.7" opacity=".85"><path d="M18 0q44 24 95 23M131 0q60 43 126 36M262 0q82 49 149 38M416 0q75 44 139 40M568 0q63 39 129 35M718 0q64 29 127 29"/></g>
+  <path fill="#394a43" d="M0 260h900v154H0z"/>
+  <path fill="#293b36" d="M0 261h900v4H0zm0 123h900v32H0z"/>
+  <g transform="translate(6 6)" fill="#273630" opacity=".72"><path d="m64 120 165-21 11 3 187-13 12 3 222-6 10 7 165 21-7 293-753-1z"/></g>
+  <g clip-path="url(#flats)">
+    <path fill="#a59e83" d="M58 80h790v332H58z"/>
+    <path fill="#979780" d="m64 120 165-21 10 306H75z"/>
+    <path fill="#a7a48a" d="m434 91 227-7-6 322-224-1z"/>
+    <path fill="#93927b" d="m665 90 174 24-7 292-177-1z"/>
+    <path fill="url(#flutes)" d="M58 80h790v332H58z"/>
+    <path fill="url(#grit)" d="M58 80h790v332H58z"/>
+    <use href="#flat-seams"/>
+    <!-- A hard-edged pool from the work lamp bleaches the scenery. -->
+    <g clip-path="url(#light)">
+      <path d="M58 80h790v332H58z" fill="#e9e3c5"/>
+      <path d="m434 91 227-7-6 322-224-1z" fill="#e2ddc0"/>
+      <path d="m665 90 174 24-7 292-177-1z" fill="#d8d1b2"/>
+      <path fill="url(#flutes)" opacity=".54" d="M58 80h790v332H58z"/>
+      <path fill="url(#grit)" opacity=".74" d="M58 80h790v332H58z"/>
+      <use href="#flat-seams" opacity=".72"/>
+    </g>
+    <path d="m75 122 9 273m-1-4 29-15m697-251-12 269m-27-280 17 15 22-3" stroke="#6b6955" fill="none" opacity=".54"/>
+  </g>
+  <use href="#tape" transform="translate(65 130) rotate(-40)"/>
+  <use href="#tape" transform="translate(810 102) rotate(32)"/>
+  <!-- A borrowed hall, a crooked hand-lettered sign, one working lamp. -->
+  <g transform="translate(102 158) rotate(-7)">
+    <path d="m3 5 83 1 3 35-86-1z" fill="#555743" opacity=".55"/>
+    <path d="m0 0 86 1 1 34-87-1z" fill="#d8cdaf" stroke="#565947" stroke-width="1.5"/>
+    <g fill="none" stroke="#404840" stroke-width="2.7" stroke-linecap="square" stroke-linejoin="round">
+      <path d="M21 11h-8l-2 2v4l9 2v4l-2 2h-8m17-14h10m-5-1v15m9 0 5-15 5 15m-9-5h8m16-9h-8l-2 2v10l2 2h8v-7h-4m17-7h-8v14h8m-8-7h6"/>
+    </g>
+    <use href="#tape" transform="translate(29 -4) rotate(5) scale(.65 .85)"/>
+  </g>
+  <!-- Stage deck, light spill and a pair of worn tape marks. -->
+  <path fill="#706f61" d="m0 399 900-3v124H0z"/>
+  <path fill="#545a50" d="m0 400 900-4v5L0 406z"/>
+  <path fill="#c9c6a8" d="m233 402 523-2q40 9 47 36c7 28-108 51-277 59-165 7-291-5-304-29-9-15 1-40 11-64z"/>
+  <g fill="none" stroke="#55594b" opacity=".4">
+    <path d="m117 405-90 102m273-103-49 100m244-101 6 104m179-105 66 104m82-104 69 63M0 454l900-5"/>
+    <path d="m22 444 41-2m732 20 30-2m-658 21 40-1m-87-68 17-1m628 15 15-1m-480 41 29-1"/>
+  </g>
+  <path d="M0 405h900v115H0z" fill="url(#grit)"/>
+  <g fill="#86564a" opacity=".77">
+    <path d="m421 458 5-3 42 14-5 3-17-6-4-2z"/>
+    <path d="m426 472-5-2 42-16 5 2-16 7-10 3z"/>
+  </g>
+  <path fill="#424a42" d="m0 507 900-4v17H0z"/>
+  <path fill="#9d9781" d="m0 505 900-4v3L0 508z"/>
+  <path d="m32 513 80-1m497-2 47-1m143 1 32-1" fill="none" stroke="#686d5e"/>
+  <!-- The light is attached to the rail and aimed downstage right. -->
+  <path d="M0 10h900" stroke="#303e37" stroke-width="9"/>
+  <path d="M262 12c-41 22-60-18-92-1m80 0v17" fill="none" stroke="#202d29" stroke-width="3"/>
+  <path d="m267 63-3 34 59-3z" fill="#ffefbf" opacity=".19"/>
+  <g transform="translate(250 31) rotate(-29)">
+    <path d="M-10-13v14q0 10 10 9 10 0 10-10v-11" fill="none" stroke="#25332e" stroke-width="4"/>
+    <path d="m-6-4 15 1 5 20 3 8-38 2 5-9z" fill="#39483e" stroke="#25332e" stroke-width="2"/>
+    <path d="m-15 17 27-2" stroke="#718072" stroke-width="2"/>
+    <path d="m-22 27 41-2 1 5-40 2z" fill="#ede4bb" stroke="#2e3932" stroke-width="1.3"/>
+    <path d="m-18 29 33-2" stroke="#fff5c9" stroke-width="2"/>
+  </g>
 </svg>

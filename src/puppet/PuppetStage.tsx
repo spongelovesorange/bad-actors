@@ -1,10 +1,11 @@
 import { useEffect, useId, useImperativeHandle, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent, type Ref } from 'react'
-import { PuppetArt, stillMotion, type PuppetMotion } from './PuppetArt'
-import { clamp, distance, feel, moveHandle, propCenter, putDown, snapHand, turnProp, type Hand, type Handle, type Point, type PuppetPose } from './geometry'
+import { PuppetArt } from './PuppetArt'
+import { advanceMotion, createMotion, displayPose, headAngle, motionAtRest, stillMotion, tug, type PuppetMotion } from './motion'
+import { distance, feel, moveHandle, propCenter, putDown, snapHand, turnProp, type Hand, type Handle, type Point, type PuppetPose } from './geometry'
 import './puppet.css'
 
 export type PuppetSnapshot = { pose: PuppetPose; motion: PuppetMotion }
-export type PuppetStageApi = { freeze: () => PuppetSnapshot }
+export type PuppetStageApi = { freeze: () => PuppetSnapshot; isSettled: () => boolean }
 type Props = {
   pose: PuppetPose
   onPoseChange?: (pose: PuppetPose) => void
@@ -16,7 +17,7 @@ type Props = {
 }
 type Drag = {
   id: number; handle: Handle; before: PuppetPose; current: PuppetPose; offset: Point
-  startClient: Point; last: Point; lastAt: number; candidate: Hand | null
+  startClient: Point; last: Point; lastAt: number; candidate: Hand | null; moved: boolean
 }
 const handleNames = { head: 'Head', left: 'Left hand', right: 'Right hand', prop: 'Prop' }
 const allHandles: Handle[] = ['head', 'prop', 'left', 'right']
@@ -32,12 +33,6 @@ function scaleFor(svg: SVGSVGElement) {
   const m = svg.getScreenCTM()
   return m ? Math.hypot(m.a, m.b) || 1 : 1
 }
-function stepSpring(value: number, speed: number, target: number, frequency: number, dt: number) {
-  const acceleration = frequency * frequency * (target - value) - 2 * feel.damping * frequency * speed
-  const velocity = speed + acceleration * dt
-  return [value + velocity * dt, velocity] as const
-}
-
 export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, interactive = true, stageRef, bodyFollow = true }: Props) {
   const svg = useRef<SVGSVGElement>(null)
   const help = useId()
@@ -51,15 +46,20 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
   const frame = useRef(0)
   const lastFrame = useRef(0)
   const lastBroadcast = useRef(0)
-  const engine = useRef({ body: 0, head: 0, bodySpeed: 0, headSpeed: 0, drive: 0, at: 0 })
+  const engine = useRef(createMotion())
   const rendered = draft ?? pose
+  const drawn = displayPose(rendered, motion)
+  const settled = !active && motion === stillMotion
   const visible = useRef<PuppetSnapshot>({ pose: rendered, motion })
   const handlers = useRef({ onPoseChange, onPosePreview, onGrabChange, reduced, bodyFollow })
   useLayoutEffect(() => {
     visible.current = { pose: rendered, motion }
     handlers.current = { onPoseChange, onPosePreview, onGrabChange, reduced, bodyFollow }
   })
-  useImperativeHandle(stageRef, () => ({ freeze: () => structuredClone(visible.current) }), [])
+  useImperativeHandle(stageRef, () => ({
+    freeze: () => structuredClone(visible.current),
+    isSettled: () => !drag.current && motionAtRest(engine.current) && visible.current.motion === stillMotion,
+  }), [])
   useEffect(() => {
     const node = svg.current
     if (!node) return
@@ -77,7 +77,7 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
   function step(now: number) {
     frame.current = 0
     const e = engine.current, current = drag.current
-    const dt = Math.min(0.032, Math.max(0.001, (now - (lastFrame.current || now - 16)) / 1000))
+    const elapsed = (now - (lastFrame.current || now - 1000 / 60)) / 1000
     lastFrame.current = now
     if (current) {
       setDraft(current.current)
@@ -88,33 +88,14 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
       }
     }
     const direct = handlers.current.reduced || !handlers.current.bodyFollow
-    if (direct) {
-      Object.assign(e, { body: 0, head: 0, bodySpeed: 0, headSpeed: 0, drive: 0 })
+    if (!direct && advanceMotion(e, elapsed, current?.handle === 'head')) {
+      setMotion({ ...e.value })
+      frame.current = requestAnimationFrame(step)
+    } else {
+      if (direct) engine.current = createMotion()
       setMotion(stillMotion)
       lastFrame.current = 0
-      return
     }
-    const goal = current ? e.drive * Math.exp(-Math.max(0, now - e.at) / 58) : 0
-    // Short substeps keep the same damped response across display refresh rates.
-    const steps = Math.ceil(dt / 0.009)
-    for (let i = 0; i < steps; i++) {
-      ;[e.body, e.bodySpeed] = stepSpring(e.body, e.bodySpeed, goal, feel.bodyFrequency, dt / steps)
-      if (current?.handle !== 'head') {
-        ;[e.head, e.headSpeed] = stepSpring(e.head, e.headSpeed, e.body * 1.32, feel.headFrequency, dt / steps)
-      }
-    }
-    e.body = clamp(e.body, -feel.bodyLean, feel.bodyLean)
-    e.head = clamp(e.head, -feel.headSway, feel.headSway)
-    const movingHead = current?.handle === 'head' ? 0 : Math.abs(e.head) + Math.abs(e.headSpeed) / 12
-    if (Math.abs(goal) + Math.abs(e.body) + Math.abs(e.bodySpeed) / 12 + movingHead < 0.018) {
-      e.body = e.bodySpeed = e.headSpeed = 0
-      if (current?.handle !== 'head') e.head = 0
-      setMotion(e.head ? { body: 0, head: e.head } : stillMotion)
-      lastFrame.current = 0
-      return
-    }
-    setMotion({ body: e.body, head: e.head })
-    frame.current = requestAnimationFrame(step)
   }
   function queueFrame() {
     if (!frame.current) frame.current = requestAnimationFrame(step)
@@ -123,23 +104,32 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
     const current = drag.current
     if (!current) return
     drag.current = null
-    let finalPose = revert ? current.before : current.current
+    let finalPose = revert || !current.moved ? current.before : current.current
     if (!revert && snap && current.handle === 'prop' && !finalPose.holder && svg.current) {
-      const holder = snapHand(finalPose, scaleFor(svg.current), current.candidate, true)
-      if (holder) finalPose = { ...finalPose, holder }
+      const displayed = displayPose(finalPose, engine.current.value)
+      const holder = snapHand(displayed, scaleFor(svg.current), current.candidate, true)
+      if (holder) finalPose = { ...moveHandle(finalPose, holder, displayed[holder]), holder }
     }
     if (finalPose !== current.before || revert) handlers.current.onPoseChange?.(finalPose)
     const node = svg.current
     if (node?.hasPointerCapture(current.id)) node.releasePointerCapture(current.id)
     setDraft(null); setActive(null); setPreview(null)
     handlers.current.onGrabChange?.(false)
-    engine.current.drive = 0
+    if (revert) engine.current = createMotion()
+    if (!motionAtRest(engine.current)) setMotion({ ...engine.current.value })
     queueFrame()
   }
   const finishRef = useRef(finish)
   useLayoutEffect(() => { finishRef.current = finish })
   useEffect(() => {
-    const stop = () => finishRef.current()
+    const stop = () => {
+      finishRef.current()
+      cancelAnimationFrame(frame.current)
+      frame.current = 0
+      lastFrame.current = 0
+      engine.current = createMotion()
+      setMotion(stillMotion)
+    }
     const hidden = () => { if (document.hidden) stop() }
     const escape = (event: globalThis.KeyboardEvent) => {
       if (event.key === 'Escape' && drag.current) { event.preventDefault(); finishRef.current(true) }
@@ -178,17 +168,25 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
     if (!point) return
     // Overlapping touch targets resolve to the nearest actual control center.
     const allowed = allHandles.filter(id => id !== 'prop' || pose.prop)
-    const handle = allowed.reduce((best, id) => distance(point, center(pose, id)) < distance(point, center(pose, best)) ? id : best)
-    const anchor = center(pose, handle)
+    const handle = allowed.reduce((best, id) => distance(point, center(drawn, id)) < distance(point, center(drawn, best)) ? id : best)
+    const anchor = center(drawn, handle)
     event.preventDefault()
     svg.current.setPointerCapture(event.pointerId)
     svg.current.querySelector<SVGCircleElement>('[data-handle="' + handle + '"]')?.focus({ preventScroll: true })
-    if (handle === 'head') engine.current.headSpeed = 0
-    drag.current = {
-      handle, id: event.pointerId, before: pose, current: pose, offset: { x: anchor.x - point.x, y: anchor.y - point.y },
-      startClient: client, last: anchor, lastAt: performance.now(), candidate: null,
+    // Take control at the displayed position, including an otherwise loose wrist.
+    const captured = handle === 'prop' ? pose : moveHandle(pose, handle, anchor)
+    if (handle === 'head') {
+      engine.current.speed.head = 0
+      engine.current.value.head = 0
+      setMotion({ ...engine.current.value })
     }
-    setActive(handle); handlers.current.onGrabChange?.(true)
+    drag.current = {
+      handle, id: event.pointerId, before: pose, current: captured, offset: { x: anchor.x - point.x, y: anchor.y - point.y },
+      startClient: client, last: anchor, lastAt: event.timeStamp, candidate: null, moved: false,
+    }
+    setDraft(captured)
+    setActive(handle)
+    handlers.current.onGrabChange?.(true)
   }
   function update(event: PointerEvent<SVGSVGElement>) {
     const current = drag.current
@@ -198,17 +196,19 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
     if (!point) return
     if (current.handle === 'prop' && current.current.holder && distance(client, current.startClient) <= feel.detachPx) return
     const target = { x: point.x + current.offset.x, y: point.y + current.offset.y }
-    const at = performance.now()
+    const at = event.timeStamp
     const next = moveHandle(current.current, current.handle, target)
     const actual = center(next, current.handle)
     if (distance(actual, current.last) < 0.001) return
-    const dt = Math.max(8, at - current.lastAt)
-    const dy = (actual.y - current.last.y) * (current.handle === 'left' ? 0.35 : -0.35)
-    const drive = ((actual.x - current.last.x) + dy) / dt * 9
-    engine.current.drive = current.handle === 'prop' ? 0 : clamp(drive, -feel.bodyLean, feel.bodyLean)
-    engine.current.at = at
-    current.current = next; current.last = actual; current.lastAt = at
-    if (current.handle === 'prop') current.candidate = snapHand(next, scaleFor(svg.current), current.candidate)
+    const delta = { x: actual.x - current.last.x, y: actual.y - current.last.y }
+    if (bodyFollow && !reduced) tug(engine.current, current.handle, delta, at - current.lastAt)
+    current.current = next
+    current.last = actual
+    current.lastAt = at
+    current.moved = true
+    if (current.handle === 'prop') {
+      current.candidate = snapHand(displayPose(next, engine.current.value), scaleFor(svg.current), current.candidate)
+    }
     queueFrame()
   }
   function key(event: KeyboardEvent<SVGCircleElement>, handle: Handle) {
@@ -227,11 +227,19 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
     const dir = arrows[event.key]
     if (!dir) return
     event.preventDefault()
-    const p = center(pose, handle), n = event.shiftKey ? 12 : 3
-    onPoseChange?.(moveHandle(pose, handle, { x: p.x + dir.x * n, y: p.y + dir.y * n }))
+    const p = center(drawn, handle), n = event.shiftKey ? 12 : 3
+    const next = moveHandle(pose, handle, { x: p.x + dir.x * n, y: p.y + dir.y * n })
+    if (event.shiftKey && handle !== 'prop' && bodyFollow && !reduced) {
+      const actual = center(next, handle)
+      tug(engine.current, handle, { x: actual.x - p.x, y: actual.y - p.y }, 16)
+      queueFrame()
+    }
+    onPoseChange?.(next)
   }
 
   return <svg ref={svg} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 360" className="ba-puppet-stage" data-puppet-stage="" data-grabbed={active ?? undefined}
+    data-body-angle={motion.body} data-head-angle={headAngle(rendered, motion)} data-body-lift={motion.lift}
+    data-loose-swing={motion.loose} data-settled={settled ? '1' : '0'}
     role={interactive ? 'group' : 'img'} aria-label={interactive ? 'Puppet stage' : 'Actor’s pose'} aria-describedby={interactive ? help : undefined}
     onPointerDown={start} onPointerMove={update} onPointerUp={event => { if (drag.current?.id === event.pointerId) { update(event); finish(false, true) } }}
     onPointerCancel={event => { if (drag.current?.id === event.pointerId) finish() }}
@@ -239,7 +247,7 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
     {interactive && <desc id={help}>Drag the head, either hand or a prop. With a control focused, use arrow keys to move, Shift to move farther, and Escape to undo a drag. For a prop, Enter picks up or puts down and R turns it.</desc>}
     <PuppetArt pose={rendered} motion={motion}/>
     {interactive && allHandles.filter(h => h !== 'prop' || rendered.prop).map(handle => {
-      const p = center(rendered, handle)
+      const p = center(drawn, handle)
       const radius = Math.max(handle === 'head' ? 39 : 15, feel.hitRadiusPx / scale)
       return <g key={handle} className="ba-handle" data-selected={active === handle || undefined} data-snap={preview === handle || undefined}>
         <circle data-handle={handle} className="ba-hit" cx={p.x} cy={p.y} r={radius} tabIndex={0} role="button"

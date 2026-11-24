@@ -33,7 +33,8 @@
 .ba-race-wins { font: 400 17px/1 system-ui, sans-serif; letter-spacing: 1px; color: #c08a12; white-space: nowrap; }
 .ba-race-roster li[data-champion] { box-shadow: inset 0 0 0 1px #a5770c; }
 .ba-race-line { margin: 0; font: 700 16px/1.25 var(--ba-voice); }
-.ba-race-line svg { margin-right: 6px; vertical-align: -3px; color: #a5770c; }
+/* Tailwind's base styles make every svg a block, which put the trophy on a line of its own. */
+.ba-race-line svg { display: inline-block; margin-right: 6px; vertical-align: -3px; color: #a5770c; }
 .ba-race-error { margin: 0; padding: 5px 8px; border-radius: 5px; background: #fbe1da; color: #7a2414; font: 650 14px/1.25 var(--ba-sign); }
 .ba-race-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .ba-app .ba-race-deal {

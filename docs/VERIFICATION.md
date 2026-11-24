@@ -1,5 +1,14 @@
 # Bad Actors verification
 
+## A match won on the live site · November 24, 2026
+
+- **The match.** On release #20 the player raced two of their own accounts in room THPC and took the match 3–0 in round 11. [Screenshot](images/match-win.jpg)
+  - The round was "Hunting for phone signal". The host finished in 0:35.4 and the second account in 0:40.8, two looks each.
+  - Stubbs said "Signal hunting, clearly!", and Judge Monitor showed "Guessed it!".
+  - The board showed three gold stars against three empty ones, "You win the match, 3–0!", and **New match** for the host.
+- **What the screenshot showed.** The trophy sat on a line of its own above the words. Tailwind's base styles make every svg a block, and the board's style for it never said otherwise. It now sits inline. On the local board, the trophy and "You win the match, 3–0!" measured as one line, 21 pixels high.
+- 236 unit tests, the typecheck, lint, both builds, all 44 stage tests and 13 DeepSpace tests pass.
+
 ## Skipping a cue that has everyone stuck · November 24, 2026
 
 - **What the player found.** In a live race on release #19, nothing the player tried got Stubbs to say "Hiding behind a tray". A stuck round could only end when every player had spent all five looks, at about 4¢ each with the voice, or once the host had finished.
@@ -45,7 +54,7 @@
     - the match ends at three wins, and the next deal starts a new one.
   - Board tests render a 1–1 score and a 3–1 match win with the New match button.
   - Screenshots of the lobby and round 1 at 1280 and 390 pixels show the empty stars and the rule, "First to win 3 rounds takes the match."
-  - A won match has not yet been played on the live site. It needs real correct rulings, which cost model calls.
+  - At this point no match had been won on the live site; the player won one on release #20 (see the first entry).
 - 233 unit tests, the typecheck, lint, both builds, all 44 stage tests and 12 DeepSpace tests pass.
 
 ## Joining by code, and a hint in view · November 24, 2026

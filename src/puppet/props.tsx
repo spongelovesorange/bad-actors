@@ -77,10 +77,12 @@ function ChickenShape() {
   return <g>
     <path d="M-3-22 L-3-12 M3-22 L3-12" fill="none" stroke="#e0892b" strokeWidth="2.6" />
     <path d="M-7-27 L-3-22 L-4-28.5 M-3-22 L0-27 M7-27 L3-22 L4-28.5 M3-22 L0-27" fill="none" stroke="#e0892b" strokeWidth="1.8" />
+    <path d="M-9-6 Q-20-6-21 4 Q-15 2-9 3Z M9-6 Q20-6 21 4 Q15 2 9 3Z" fill="#f7e38a" strokeWidth="1.5" />
     <path d="M-10-12 Q-14 2-6 12 L-4 16 Q-6 22-3 28 Q0 32 4 28 Q7 22 5 16 L7 12 Q15 0 10-12 Q0-17-10-12Z" fill="#f3d641" />
     <path d="M-7-4 Q-1 1 7-4 Q2 5-6 2Z" fill="#e6c234" strokeWidth="1.5" />
-    <path d="M-3.5 29.5 Q-8.5 30-8.5 35 Q-5.5 34.5-4 32Z" fill="#d8392f" strokeWidth="1.4" />
-    <path d="M1 31 L3.5 39.5 L6.5 31Z" fill="#ef9a2c" strokeWidth="1.4" />
+    <path d="M-3 30 Q-9 29-10 33 Q-12 36-9 38 Q-10 41-6 41 Q-4 38-3 35Z" fill="#d8392f" strokeWidth="1.4" />
+    <path d="M3 36 Q2 41 5 42 Q7 40 6 36Z" fill="#d8392f" strokeWidth="1.2" />
+    <path d="M1 30 L4 40 L7.5 30Z" fill="#ef9a2c" strokeWidth="1.4" />
     <path d="M0.4 24.6 L3.4 27.6 M3.4 24.6 L0.4 27.6" fill="none" stroke={ink} strokeWidth="1.3" />
   </g>
 }

@@ -15,7 +15,7 @@ The deck has 30 cues over five nights, and every night goes wrong in its own way
 | **Opening Night** · the six classics | **Stage fright.** The understudy trembles and sweats until you grab it. |
 | **The Prop Cupboard** · a toast, karaoke, an umbrella, a book… | **Catch!** Each act's prop is flung on from the wings and lands on the boards. Pick it up. |
 | **Big Feelings** · waving, shrugging, falling in love, a tantrum… | **Feel it.** The card names a mood. Wear that face for the hit and earn a bonus star. |
-| **Blackout Matinee** · hitchhiking, pointing at the sky, covering your ears… | **Lights out.** The hall keeps going dark. Only the actor's eyes glow while the electrician apologises. |
+| **Blackout Matinee** · hitchhiking, a bright idea, covering your ears… | **Lights out.** The hall keeps going dark. Only the actor's eyes glow while the electrician apologises. |
 | **Heckler’s Gala** · a rose proposal, a banana phone, a rubber chicken… | **Heckler.** 30-second acts and a man in the balcony shouting wrong answers. |
 
 A night opens once the night before it has had a show with three acts guessed. After the last act, the **curtain call** shows each frozen pose, what Stubbs said, stars for quick hits, your best score and his review of that night. During a game, **Hint** shows how to strike the pose and **Change cue** reopens the deck in free play.

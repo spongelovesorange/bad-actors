@@ -1,5 +1,17 @@
 # Bad Actors verification
 
+## The twelve new cues on the real models · November 24, 2026
+
+After release #8 the player approved a small paid check of the 12 new cues. Each pose was built from its cue's note and photographed by the stage's own camera. The requests matched the shipped ones exactly: Stubbs on Claude Haiku 5.5 with the night's mood and a random comic angle, then the referee on Haiku 4.5 at temperature 0. Each frame got one look; in the game Stubbs gets five and hears his earlier misses.
+
+- **First look: 9 of 12 correct.** Karaoke, rain, the book, love, hitchhiking, covering the ears, the rose and the rock concert were all named. The banana held to the ear was read as "talking on the phone", which the referee accepted for the banana phone.
+- **Three misses, three fixes:**
+  - The tantrum's fists beside the head read as "covering ears". The note now asks for fists high above the head, which read as "shaking fists in anger" (correct).
+  - "Pointing at the sky" read as "having a sudden bright idea" (uncertain). The cue is now **Having a bright idea**, a gag that suits the Blackout night, and the same pose was read as "having a sudden brainwave" (correct).
+  - The rubber chicken held up beside the head was read as "talking on a banana phone". It now has wings, a bigger comb and a wattle, and the note asks for it at arm's length. It was then read as "lifting a chicken by its neck", which can't show a swing. Renamed **Brandishing a rubber chicken**, the referee accepted that guess.
+- **Stubbs's lines carried each night's mood.** On the Blackout night he blamed the electrician; on the Gala he called the player a "cheeky heckler" for ringing him on a banana.
+- 32 calls in all cost **$0.01244**. [The record, with every guess, line and cost](verification/new-cues-haiku-2026-11-24.json) · [The twelve poses](verification/new-cues-2026-11-24/twelve-new-cues.png)
+
 ## Five nights, a bigger cupboard and a pit band · November 24, 2026
 
 The player asked for more props, faces and hand shapes. They also wanted every level to be its own surprise, with jokes in it, plus richer sounds and background music.

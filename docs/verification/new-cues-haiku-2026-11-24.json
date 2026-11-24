@@ -1,0 +1,214 @@
+{
+ "date": "2026-11-24",
+ "method": "Paid DeepSpace CLI calls to anthropic/chat-completion, billed to the developer account. Each pose was built from the cue note and photographed by the stage's own photographActor. Vision requests were byte-for-byte the shipped ones: claude-haiku-5-5, max_tokens 3000, the shipped brief, a random comic angle and the night's mood, with no cue, filename or answer list. The referee requests used claude-haiku-4-5, temperature 0 and the shipped prompt. One look per frame; in the game Stubbs gets five and is told his earlier misses.",
+ "frames": {
+  "cue-19.png": {
+   "sha256": "8a42df4f3492772fa3fbc99f4d4448a548261e4aeb548955847bf498a82a26da",
+   "cueForEvaluationOnly": "Singing karaoke"
+  },
+  "cue-20.png": {
+   "sha256": "96dc971fff2514dfb0000ff0e02b652c08d6a1b5ecf1721ed28eea1076aa12ec",
+   "cueForEvaluationOnly": "Sheltering from the rain"
+  },
+  "cue-21.png": {
+   "sha256": "ee7c6f824901ce17e82471dbe97c4d63e3f7aacac40150df24d87b74a81170fc",
+   "cueForEvaluationOnly": "Reading a book"
+  },
+  "cue-22.png": {
+   "sha256": "02693624a8eedf424136bfe25d7a4408de7c53386c250cfba231d6d3d69de25e",
+   "cueForEvaluationOnly": "Falling in love"
+  },
+  "cue-23.png": {
+   "sha256": "c5082f93a05c1822907e04a2ea2da0e1fbbf00a8808566ac3aabbaaeb6813397",
+   "cueForEvaluationOnly": "Throwing a tantrum"
+  },
+  "cue-24.png": {
+   "sha256": "21bd60356c9ee60c0503be7103a077b5ceb0167cb46fb010324619ac4ca55624",
+   "cueForEvaluationOnly": "Hitchhiking"
+  },
+  "cue-25.png": {
+   "sha256": "04f98c955926e1e4acecff19cee8d22fe0fda8b12295bad261488f73ff678866",
+   "cueForEvaluationOnly": "Pointing at the sky"
+  },
+  "cue-26.png": {
+   "sha256": "ffeab7d5c330e0f5812b9f9b99e9858183e6bb263e43565fd301be6cb73b599d",
+   "cueForEvaluationOnly": "Covering your ears"
+  },
+  "cue-27.png": {
+   "sha256": "f7cba940a359b6779f79beaa929ad9fb0192fccd9b30a77836c264374f660322",
+   "cueForEvaluationOnly": "Proposing with a rose"
+  },
+  "cue-28.png": {
+   "sha256": "8ba4c5b44727417f6a709661429a7375894d26a0115773a9cf8e5564d5da0299",
+   "cueForEvaluationOnly": "Rocking out at a concert"
+  },
+  "cue-29.png": {
+   "sha256": "7ce96bd803214a28e71f1fe9dbafc7b5390cdb1eab0b8c6e5b6e0fe03b7d8826",
+   "cueForEvaluationOnly": "Answering a banana phone"
+  },
+  "cue-30.png": {
+   "sha256": "960f8c26e564f7e46758cfa178eed905967280877c227fa286864240b968035c",
+   "cueForEvaluationOnly": "Swinging a rubber chicken"
+  },
+  "round2/cue-23.png": {
+   "sha256": "f2fe32d845cf25ff16036ae25a6b23fb9d761f2eb5d54ce4c3045144c595d033",
+   "cueForEvaluationOnly": "Throwing a tantrum"
+  },
+  "round2/cue-25.png": {
+   "sha256": "b87f9ed9eeca61561508d6710ed9df719b28b8bb74703b37ddca0bedb6a62a83",
+   "cueForEvaluationOnly": "Having a bright idea"
+  },
+  "round2/cue-30.png": {
+   "sha256": "c3c73bb8422532a511a0c78396289d9719dbcd0d8b9d04568ec2aeb593418930",
+   "cueForEvaluationOnly": "Swinging a rubber chicken"
+  }
+ },
+ "calls": [
+  {
+   "round": 1,
+   "cue": 19,
+   "title": "Singing karaoke",
+   "guess": "singing into a microphone",
+   "line": "Singing into a mic, is it? [sarcastic] Lovely grip, nearly as wobbly as your voice.",
+   "verdict": "CORRECT",
+   "costUsd": 0.000701
+  },
+  {
+   "round": 1,
+   "cue": 20,
+   "title": "Sheltering from the rain",
+   "guess": "Sheltering under an umbrella from rain",
+   "line": "Sheltering from rain, obviously! [whispers] Every umbrella here is secretly bugged by stagehands.",
+   "verdict": "CORRECT",
+   "costUsd": 0.000921
+  },
+  {
+   "round": 1,
+   "cue": 21,
+   "title": "Reading a book",
+   "guess": "reading a book",
+   "line": "[sarcastic] Reading a book? [gasps] Outrageous! Sandbags can't read, and the library's closed, you scoundrel!",
+   "verdict": "CORRECT",
+   "costUsd": 0.000741
+  },
+  {
+   "round": 1,
+   "cue": 22,
+   "title": "Falling in love",
+   "guess": "hugging yourself in adoration",
+   "line": "[sarcastic] Hugging yourself in adoration, is it? Scandalous! That hug was my spot, you shameless sandbag.",
+   "verdict": "CORRECT",
+   "costUsd": 0.000713
+  },
+  {
+   "round": 1,
+   "cue": 23,
+   "title": "Throwing a tantrum",
+   "guess": "covering ears to block out noise",
+   "line": "Covering ears, you furious sack! [sighs] Orphaned by a brass band, poor lamb, I weep.",
+   "verdict": "INCORRECT",
+   "costUsd": 0.000805
+  },
+  {
+   "round": 1,
+   "cue": 24,
+   "title": "Hitchhiking",
+   "guess": "hitchhiking for a ride",
+   "line": "[sarcastic] Hitchhiking, is it? How dare that electrician strand me in the dark!",
+   "verdict": "CORRECT",
+   "costUsd": 0.00071
+  },
+  {
+   "round": 1,
+   "cue": 25,
+   "title": "Pointing at the sky",
+   "guess": "having a sudden bright idea",
+   "line": "Having a bright idea, I see? [sarcastic] Fake one-star review for the electrician, coming up.",
+   "verdict": "UNCERTAIN",
+   "costUsd": 0.000894
+  },
+  {
+   "round": 1,
+   "cue": 26,
+   "title": "Covering your ears",
+   "guess": "covering ears against loud noise",
+   "line": "Covering ears, obviously! This sandbag was a retired lighthouse foghorn, [sarcastic] surely traumatised by the electrician.",
+   "verdict": "CORRECT",
+   "costUsd": 0.00069
+  },
+  {
+   "round": 1,
+   "cue": 27,
+   "title": "Proposing with a rose",
+   "guess": "offering a rose to someone",
+   "line": "Offering a rose, you sack! [sarcastic] Your romance is nearly as lovely as your lumpy stitching.",
+   "verdict": "CORRECT",
+   "costUsd": 0.000708
+  },
+  {
+   "round": 1,
+   "cue": 28,
+   "title": "Rocking out at a concert",
+   "guess": "singing into a microphone",
+   "line": "Singing, you cheeky sandbag! [mischievously] I still haven't forgiven you for pinching my programme.",
+   "verdict": "CORRECT",
+   "costUsd": 0.000875
+  },
+  {
+   "round": 1,
+   "cue": 29,
+   "title": "Answering a banana phone",
+   "guess": "talking on the phone",
+   "line": "Phone call, obviously! [sarcastic] Outrageous, you're ringing me on a banana, you cheeky heckler!",
+   "verdict": "CORRECT",
+   "costUsd": 0.000712
+  },
+  {
+   "round": 1,
+   "cue": 30,
+   "title": "Swinging a rubber chicken",
+   "guess": "talking on a banana phone",
+   "line": "Banana phone, is it? [sarcastic] I knew the props master swapped our telephones for fruit.",
+   "verdict": "INCORRECT",
+   "costUsd": 0.000917
+  },
+  {
+   "round": 2,
+   "cue": 23,
+   "title": "Throwing a tantrum",
+   "guess": "shaking fists in anger",
+   "line": "Fists shaking in anger, how tragic! [sighs] I still haven't forgiven you for pinching my programme.",
+   "verdict": "CORRECT",
+   "costUsd": 0.000839
+  },
+  {
+   "round": 2,
+   "cue": 25,
+   "title": "Having a bright idea",
+   "guess": "having a sudden brainwave",
+   "line": "Brainwave, obviously! [sarcastic] Now the props are sabotaging the lights, [mischievously] stashing bulbs in the teapot.",
+   "verdict": "CORRECT",
+   "costUsd": 0.000798
+  },
+  {
+   "round": 2,
+   "cue": 30,
+   "title": "Swinging a rubber chicken",
+   "guess": "lifting a chicken by its neck",
+   "line": "Lifting a chicken, is it? [sarcastic] Fake one-star review: tux fits, personality doesn't.",
+   "verdict": "INCORRECT",
+   "costUsd": 0.000873
+  },
+  {
+   "round": 3,
+   "cue": 30,
+   "note": "referee only, round-2 guess against two candidate titles",
+   "titles": {
+    "Brandishing a rubber chicken": "CORRECT",
+    "Holding up a rubber chicken": "CORRECT"
+   },
+   "costUsd": 0.00054
+  }
+ ],
+ "reportedTotalUsd": 0.01244
+}

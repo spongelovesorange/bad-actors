@@ -253,7 +253,7 @@ Deploy with `npx deepspace deploy`. `STAGE_AI_PROVIDER = "anthropic"` in `wrangl
 │   ├── actions/       server actions: the race referee
 │   ├── schemas/       DeepSpace collections and their per-row rules
 │   ├── pages/         routes: / (public stage), /room (signed in), /race
-│   ├── components/    the DeepSpace scaffold's UI kit
+│   ├── components/    the error screen, page tags and toasts
 │   ├── deck.ts        30 cues over five nights
 │   └── race.ts        race rules shared by browser and server
 ├── tests/             Playwright: stage specs (practice server) and DeepSpace specs (two real users)
@@ -266,8 +266,7 @@ Deploy with `npx deepspace deploy`. `STAGE_AI_PROVIDER = "anthropic"` in `wrangl
 │   ├── VERIFICATION.md
 │   ├── DESIGN.md      why it looks, moves and sounds the way it does
 │   └── PLAN.md        my first build plan
-├── worker.ts          the Cloudflare Worker entry
-└── AGENTS.md          instructions for coding agents, from the DeepSpace skill
+└── worker.ts          the Cloudflare Worker entry
 ```
 
 More reading: [design notes](docs/DESIGN.md) · [verification log](docs/VERIFICATION.md) · [my first build plan](docs/PLAN.md)

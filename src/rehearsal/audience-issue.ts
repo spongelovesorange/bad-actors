@@ -50,7 +50,7 @@ export function audienceIssue(error: unknown, step: 'start' | 'capture' | 'obser
     case 'in_flight':
       return { issue: 'I’m still waiting for a guess.', message: 'Try again to check the same picture.' }
     case 'unavailable':
-      return { issue: 'The local AI game is unavailable.', message: 'Check that Play-Bad-Actors.command is running, then try again.' }
+      return { issue: 'The local AI game is unavailable.', message: 'Check that npm run practice:ai is running, then try again.' }
   }
   if (error instanceof TypeError || (error instanceof Error && error.name === 'TimeoutError')) {
     return { issue: error instanceof TypeError ? 'I can’t reach the local game.' : 'The local game took too long to reply.',

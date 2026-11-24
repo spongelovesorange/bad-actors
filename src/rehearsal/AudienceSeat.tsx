@@ -148,7 +148,7 @@ export function AudienceSeat({ firstLook, paused, children, clock, flyCue, lobby
     if (availability === 'signin') offlineDetail = 'Your sign-in has expired. Refresh to sign in again.'
     if (availability === 'unconfigured') offlineDetail = 'Hosted AI hasn’t been enabled yet. You can still practice or guess with a friend.'
   } else if (localFile || localServer) {
-    offlineDetail = <>For live guesses on this Mac, open <b>Play-Bad-Actors.command</b>.</>
+    offlineDetail = <>For live guesses on this computer, run <b>npm run practice:ai</b>.</>
   }
   // The image reader can finish before the referee does. A retry keeps the words already heard.
   const pending = state.pendingGuess

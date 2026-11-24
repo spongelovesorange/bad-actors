@@ -296,7 +296,7 @@ TypeScript, 78 Vitest tests, ESLint and the standalone practice production build
 
 On revision `7264d7b` the player could pose all the joints, but a browser trace confirmed that pulling a foot, elbow, waist or loose prop left every measured motion channel at zero. The revised stage applies a speed-sensitive impulse for each point. An arm pull loads the shoulder. A foot or knee pull loads the hips. Head and chest rotation, held and loose props, and the foot turn controls each have a response. The stage holds the actual grab point under the pointer and lets the remaining mass follow. Slow placement stays quiet.
 
-[Watch the foot pull](leg-recoil.gif) · [Geometry and rendering benchmark](verification/puppet-physics-2026-11-23.md)
+[Watch the foot pull](images/leg-recoil.gif) · [Geometry and rendering benchmark](verification/puppet-physics-2026-11-23.md)
 
 The local Chrome check exercised all 14 body targets and both held and loose prop drags on the single stage. It delivered pointer events to the page and tracked the actual painted shoulder and cheek after release. All 16 gestures acquired the intended target and settled. The largest measured grip error across the set was 0.582 stage units. On this desktop, a quick pull on the left and right shoulders respectively moved a painted landmark by 24.9 and 22.4 CSS pixels. The corresponding displacements were 33.9 and 35.5 pixels for the elbows and 18.4 and 15.6 for the knees. Separate native mouse drags confirmed pointer capture and release on a foot, wrist and elbow. [Per-target browser measurements](verification/all-joint-recoil-2026-11-23.json)
 
@@ -310,7 +310,7 @@ TypeScript, ESLint, all 69 unit tests and the practice build passed. The resulti
 
 The player reported that the original torso stood still when they flicked an empty hand and that the mug covered the actor’s face. We repeated their gesture in the local rehearsal. During visual review the sandbag’s resting arms still looked like hands on hips, so we lowered the untouched wrists and let each sleeve sag. The final take starts with an empty sleeve hanging beside the bag.
 
-[Five-second take](sandbag-take.gif) · [Four poses made on stage](poses.jpg) · [Rehearsal screen](rehearsal.jpg)
+[Five-second take](images/sandbag-take.gif) · [Four poses made on stage](images/poses.jpg) · [Rehearsal screen](images/rehearsal.jpg)
 
 Chrome delivered the gestures to the local practice page. We sampled its live actor artwork and composited it with the production stage background, with the controls outside the image. The GIF contains 125 frames at 25 fps, 740 × 404 pixels, exactly 5.00 seconds (SHA-256 `dc68b25b19301979a883602c45af6529aab0a695a9bdd41a85477518030e6025`). During the throw the torso reached +15.98°, then swung back to −7.23°, +4.71° and −2.05°. The planted cup rim stayed at the mouth. The original five-second desktop recording had 599 animation frame intervals with a median of 8.30 ms, a 95th percentile of 9.20 ms and none over 33 ms. This measures animation callback spacing on this one desktop.
 

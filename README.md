@@ -1,8 +1,50 @@
-# Bad Actors
+<p align="center">
+  <a href="https://bad-actors-shi.app.space"><img src="public/bad-actors-wordmark.svg" alt="Bad Actors" width="460"></a>
+</p>
 
-**Puppet charades in a paper toy theatre where everything goes wrong.** You pose a sandbag understudy. Mr. Stubbs, an AI heckler in the front row, guesses what it is doing from a frozen picture. The look comes from [Pollock’s paper toy theatres](https://www.pollockstoymuseum.co.uk/post/toy-theatre-and-puppetry/) and the posters of *The Play That Goes Wrong*. The second also gave the game its running joke: every night, something on stage fails.
+<p align="center">
+  <b>Puppet charades in a paper toy theatre where everything goes wrong.</b><br>
+  You pose a sandbag understudy. Mr. Stubbs, an AI critic in the front row, guesses from a frozen picture.<br>
+  Judge Monitor, the hall's old computer, prints the verdict.
+</p>
 
-**[Play it live](https://bad-actors-shi.app.space)** · [How it was verified](docs/VERIFICATION.md)
+<p align="center">
+  <a href="https://bad-actors-shi.app.space"><b>▶ Play it live</b></a> ·
+  <a href="#three-minutes-for-reviewers">Three-minute tour</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#how-it-was-built">How it was built</a> ·
+  <a href="docs/VERIFICATION.md">Verification</a>
+</p>
+
+<p align="center">
+  <img alt="Built on DeepSpace" src="https://img.shields.io/badge/built%20on-DeepSpace-2f3c34">
+  <img alt="AI: Claude Haiku 5.5 and 4.5" src="https://img.shields.io/badge/AI-Claude%20Haiku%205.5%20%2B%204.5-df5139">
+  <img alt="Voice: ElevenLabs" src="https://img.shields.io/badge/voice-ElevenLabs-2c241c">
+  <img alt="Tests: 227 unit and 56 browser" src="https://img.shields.io/badge/tests-227%20unit%20%C2%B7%2056%20browser-4d9a5b">
+</p>
+
+<p align="center">
+  <img src="docs/images/hero.jpg" alt="The house curtain is down. A board ringed with bulbs reads Talking on the phone, a notice across its corner says Understudy on tonight, and Mr. Stubbs waits in the front row: Break a leg. Not literally." width="100%">
+</p>
+
+## Highlights
+
+<table>
+  <tr>
+    <td width="50%" valign="top"><img src="docs/images/demo.gif" alt="The silent how-to-play demo: the curtain opens on the cue, a white glove drags the puppet's hand to its ear, taps the phone and presses Ready, and Stubbs guesses." width="100%"><br><b>Learn by watching.</b> A silent glove plays a whole round before you read a word.</td>
+    <td width="50%" valign="top"><img src="docs/images/curtain.gif" alt="The house curtain closes, a board of chasing bulbs drops in with the cue, and the curtain parts on the actor." width="100%"><br><b>The curtain is the countdown.</b> Every act opens on its cue in big letters, then the curtain parts.</td>
+  </tr>
+  <tr>
+    <td valign="top"><img src="docs/images/hit.gif" alt="A correct guess: Judge Monitor prints Guessed it, streamers fly and six spectators clap out of time." width="100%"><br><b>Every hit is a show.</b> Streamers, a shower of used tickets and six spectators who clap out of time.</td>
+    <td valign="top"><img src="docs/images/race.jpg" alt="A race in round one: both players are posing for Answering a banana phone while a heckler shouts from the balcony." width="100%"><br><b>Race a friend.</b> Same cue on two stages. The server times the winner.</td>
+  </tr>
+  <tr>
+    <td valign="top"><img src="docs/images/leg-recoil.gif" alt="A sharp pull on a boot: the knee folds, the hips shift and the head catches up a beat late." width="100%"><br><b>A puppet with weight.</b> Pull a boot and the knee folds, the hips shift and the head lands a beat late.</td>
+    <td valign="top"><img src="docs/verification/stubbs-delivery/stubbs-speaks.gif" alt="Stubbs raises his glove, prints his guess one letter at a time, and Judge Monitor prints the ruling." width="100%"><br><b>Stubbs guesses, the machine rules.</b> The guess comes from the picture alone; the verdict comes from a second, text-only judge.</td>
+  </tr>
+</table>
+
+<sub>Captured from the game. The celebration comes from the free opening puzzle; the race uses two test accounts.</sub>
 
 ## Three minutes for reviewers
 
@@ -10,6 +52,8 @@
 2. **Free play → sign in → Talking on the phone.** Drag the actor’s hand to its ear, pick **Phone** from the prop tray and press **Ready! Guess, Stubbs**. Claude Haiku 5.5 guesses from the picture alone. Claude Haiku 4.5 rules on whether the guess means the cue, and ElevenLabs reads Stubbs’s heckle aloud.
 3. **Timed show → Opening Night.** You get five 45-second acts and a curtain call. Guess three acts to open the next night, where props are flung from the wings, then come mood bonuses, blackouts and a heckler.
 4. **Race a friend.** On the signed-in stage, open a race and send the four-letter code or link to a second account. Both stages get the same cue at the same moment; whoever makes Stubbs say it first wins, timed by the server.
+
+### At a glance
 
 | | |
 | --- | --- |
@@ -62,15 +106,13 @@ The idea, the design and every reference below are mine. The agents built from t
 
 ## The game
 
-Every visit opens with a silent demo, like the hand animations before a phone party game. The curtain opens on the cue, as it does in the game, then a white glove plays one round on the real puppet: it drags a hand up to the ear, taps the phone into it and presses **Ready**, and Mr. Stubbs guesses. Choose **Let’s play! Sound on** or **Play quietly**. The glove then taps the **Free play** ticket, shows a newcomer which hand to drag in the first game and taps **Ready** once the pose has changed. **How to play** replays the demo.
+The community hall is one actor short, and a canvas stage weight is covering the part. Pose the understudy so Mr. Stubbs can guess what it is doing.
 
-The community hall is one actor short. A canvas stage weight is covering the part. Pose the understudy so someone can guess what it is doing.
+1. **Read the cue.** The curtain comes down and the cue hangs in front of it in big letters.
+2. **Pose the puppet.** Drag a hand, a knee or the head. Pick from nine props, ten faces and seven hand shapes in the dressing room beside the stage; on a phone it docks to the bottom as four tabs.
+3. **Press Ready.** Stubbs sees only a frozen picture and gets five looks a round. Judge Monitor prints the ruling on a slip.
 
-[Open the live AI booth](https://bad-actors-shi.app.space/room?play=draw). Sign in and pick a night for tonight’s show: five acts, each on that night’s clock. Each act opens behind the house curtain with its cue in big letters. Once the curtain parts, the cue hangs over the stage on a plank tied to an old boot. Mr. Stubbs, a ticket punch in the front row, gets five looks per act. Strike the pose, then press **Ready! Guess, Stubbs**. He never looks at a half-made pose. The clock pauses while he thinks. He raises a glove and gives his guess. Judge Monitor prints the ruling from a window in the right wing. **What Stubbs saw** keeps the pictures and the exact guesses for the current round.
-
-A hit brings streamers, a shower of used tickets and a front row of six spectators who clap out of time. A miss gets one half-hearted party horn and a heckle from the cheap seats. Turn on **Stage sound** to hear the judge’s bell or buzzer and the puppet’s squeaking joints. In the signed-in game Stubbs reads his line aloud in an ElevenLabs voice; without a recording he mutters in tinny syllables. **Pit band** plays an original music-hall tune, arranged differently for each night, and dips whenever Stubbs speaks. **Room tone** controls the backstage fan separately. Props pop into the hand, faces boing, the curtain swishes open on a snare roll and a “ta-da”, and each night's trouble has its own noises. The clock ticks only during acting time, doubles up at ten seconds and rings at zero. [Listen to the 11-second sound check](public/stage-soundcheck.mp3) You can try both reactions for free in the opening phone puzzle. Enter `phone call` for applause, or reload the opening and enter `baking bread` to meet the heckler.
-
-The deck has 30 cues over five nights, and every night goes wrong in its own way. The curtain's board carries each act's director's note, and on a night's first act it warns what will go wrong. Stubbs's lines take on the night's mood.
+**Free play** takes any of the 30 cues with no clock. The **timed show** deals five acts from one night, on that night's clock, and every night goes wrong in its own way. Guess three acts to open the next night. After the last act, the **curtain call** shows each frozen pose, what Stubbs said, stars for quick hits and his review of the night.
 
 | Night | What goes wrong |
 | --- | --- |
@@ -80,17 +122,21 @@ The deck has 30 cues over five nights, and every night goes wrong in its own way
 | **Blackout Matinee** · hitchhiking, a bright idea, covering your ears… | **Lights out.** The hall keeps going dark. Only the actor's eyes glow while the electrician apologises. |
 | **Heckler’s Gala** · a rose proposal, a banana phone, a rubber chicken… | **Heckler.** 30-second acts and a man in the balcony shouting wrong answers. |
 
-A night opens once the night before it has had a show with three acts guessed. After the last act, the **curtain call** shows each frozen pose, what Stubbs said, stars for quick hits, your best score and his review of that night. During a game, **Hint** shows how to strike the pose and **Change cue** reopens the deck in free play.
+With **Stage sound** on, Stubbs reads his lines in an ElevenLabs voice, the pit band plays each night's arrangement of an original music-hall tune, and every prop, face and joint makes its own noise. [Listen to the 11-second sound check](public/stage-soundcheck.mp3)
 
-The prop tray, expressions, hand shapes and foot turns share one dressing room beside the stage, so the actor stays in view while you dress it. On a phone the dressing room docks to the bottom of the screen as four tabs: Prop, Face, Hands and Feet.
+## How it works
 
-Try the two phone cues back to back. For a call, tuck the phone against an ear. For a selfie, drag the phone itself high and to one side. The wrist follows, the screen turns toward the actor and its eyes follow the phone. Give the empty hand a peace sign. Nine props (phone, cup, tray, microphone, umbrella, book, rose, banana and a rubber chicken) can all be picked up, carried and passed to the other hand. Ten faces run from Deadpan to Smitten, and each hand has seven shapes, including Point, Thumbs up and Rock on.
+### One look, two calls
 
-![The hanging cue above the actor, with Mr. Stubbs watching from the left front row and Judge Monitor in the right stage wing.](docs/verification/stubbs-delivery/stage-1440.jpg)
-
-[Watch Stubbs guess and the judge print a ruling in a local browser test](docs/verification/stubbs-delivery/stubbs-speaks.gif) · [Six poses made on the stage](docs/verification/six-poses-2026-11-23/six-poses.png) · [Five-second cup and hand take](docs/sandbag-take.gif) · [Watch a foot pull the actor off balance](docs/leg-recoil.gif)
-
-## How the AI booth works
+```mermaid
+flowchart LR
+    stage["Player's stage<br/>a frozen picture"] -->|signed in| worker["Worker<br/>/api/stage-ai"]
+    worker --> ledger[("Look ledger<br/>Durable Object · SQLite")]
+    ledger -->|picture only| vision["Claude Haiku 5.5<br/>Stubbs guesses"]
+    vision -->|plain guess| judge["Claude Haiku 4.5<br/>Judge Monitor rules"]
+    judge -->|verdict| ledger
+    ledger -->|his line| voice["ElevenLabs<br/>Stubbs's voice"]
+```
 
 Anyone can pose the actor and guess the opening puzzle. In the signed-in AI game, Mr. Stubbs sends a frozen picture of the actor and prop to DeepSpace’s managed Claude Haiku 5.5. His brief gives him a character, describes the puppet’s anatomy and asks for two lines: a plain guess and one remark in character. It names no cue. After a miss, the next look reminds him which guesses that round were ruled out, as a performer would shake their head. Judge Monitor makes a separate text-only request to Claude Haiku 4.5 at temperature 0 with the cue and the plain guess to check their meaning. With **Stage sound** on, ElevenLabs reads his remark aloud. Each look gets at most one clip, which the server keeps for repeat requests. The server allows five looks per round. This checkout budgets 60 daily looks per signed-in visitor and 240 shared across visitors. Setting STAGE_OWNER_OPEN_REHEARSAL to true removes the daily cap for the verified owner alone. The owner’s observations are accounted separately. A deployment applies this setting to the hosted game. Replay reads the saved guess.
 
@@ -102,9 +148,22 @@ Two integrations, on purpose. Speech-to-text would turn silent charades into a w
 
 In six independent blind calls on hand-posed frames, Claude Haiku 4.5 recognized the selfie and mistook the phone call for another selfie. It also read the covered eyes as a heavy load. [Six images and original model answers](docs/verification/managed-vision-2026-11-23.json) On the same frames, the shipped brief on Haiku 5.5 named the phone call, the covered eyes (as peekaboo), the surrender and the tray (as a baking dish), and the referee accepted all four. Across the prompt drafts, Haiku 5.5 read the surrender as stretching in 2 of 8 calls. [Every call, answer and cost](docs/verification/stubbs-haiku55-2026-11-23.json) · [Local Worker verification](docs/verification/hosted-stage-local.json)
 
-[Verification and receipts](docs/VERIFICATION.md) · [Implementation guide](docs/Bad_Actors_Codex_Plan.md)
+[Verification and receipts](docs/VERIFICATION.md) · [My first build plan](docs/PLAN.md)
 
-## Racing a friend
+### Racing a friend
+
+```mermaid
+flowchart LR
+    host["Host's stage"] -->|raceStart| referee["Server actions<br/>the referee"]
+    friend["Friend's stage"] -->|raceFinish| referee
+    referee -->|was it really guessed?| ledger[("Look ledger")]
+    referee -->|writes| records[("DeepSpace collections<br/>races · race_players · race_results")]
+    records -->|live useQuery| host
+    records -->|live useQuery| friend
+    host <-.->|presence| friend
+```
+
+<p align="center"><img src="docs/images/race-lobby.jpg" alt="The race lobby: room code HCHR in a dashed ticket stub, Shi (host) and Alex both online and Ready, and the host's Start the race button." width="560"></p>
 
 Charades is a party game, so the signed-in stage has a third ticket: **Race a friend**. It opens a room with a four-letter code, the way Jackbox and Kahoot rooms work. The code uses consonants only, so it can't spell a word. Two to six signed-in players join by link or code and watch the roster fill in. The host deals, and every stage gets the same cue at the same moment; the curtain is the countdown. While you act, the board shows each rival's progress live, as TypeRacer does ("Stubbs is looking · look 2"). The first player to make Stubbs say the cue wins, with ties going to fewer looks. After the results, the host deals the next round.
 
@@ -122,7 +181,7 @@ I built Bad Actors by directing coding agents, and every change went through me.
 **Choosing the project.** My first build for this task was a meetup app I called Plan B. I built it, but it was a familiar forms-and-lists app that would have been hard to show: nothing in it a reviewer would remember. On November 23 I set it aside and started Bad Actors. I'd rather change course early than polish an idea that can't show what I can do.
 
 **What I did**
-- Wrote the first plan ([the implementation guide](docs/Bad_Actors_Codex_Plan.md)). Codex turned it into the first version of the code, adjusting details along the way.
+- Wrote the first plan ([docs/PLAN.md](docs/PLAN.md)). Codex turned it into the first version of the code, adjusting details along the way.
 - Designed the game and its world: a sandbag understudy in a community hall, Mr. Stubbs in the front row and Judge Monitor in the wings. I chose every reference above.
 - Grew the game a request at a time. I asked for:
   - nine props, ten faces and seven hand shapes;
@@ -183,34 +242,32 @@ npm run test:stage
 
 Deploy with `npx deepspace deploy`. `STAGE_AI_PROVIDER = "anthropic"` in `wrangler.toml` turns on the hosted booth.
 
-## Design notes
+## Repository layout
 
-### Where the actor came from
+```text
+.
+├── src/
+│   ├── rehearsal/     the stage: curtain, Stubbs, Judge Monitor, race board, sound and music
+│   ├── puppet/        the jointed sandbag: rig, physics and drag handles
+│   ├── server/        the AI booth: routes, the look ledger, model prompts
+│   ├── actions/       server actions: the race referee
+│   ├── schemas/       DeepSpace collections and their per-row rules
+│   ├── pages/         routes: / (public stage), /room (signed in), /race
+│   ├── components/    the DeepSpace scaffold's UI kit
+│   ├── deck.ts        30 cues over five nights
+│   └── race.ts        race rules shared by browser and server
+├── tests/             Playwright: stage specs (practice server) and DeepSpace specs (two real users)
+├── practice/          the offline practice server
+├── scripts/           the local AI rehearsal and the paid probe tools
+├── public/            art, fonts and sounds
+├── docs/
+│   ├── images/        pictures for this README
+│   ├── verification/  receipts: model answers, costs and screenshots
+│   ├── VERIFICATION.md
+│   ├── DESIGN.md      why it looks, moves and sounds the way it does
+│   └── PLAN.md        my first build plan
+├── worker.ts          the Cloudflare Worker entry
+└── AGENTS.md          instructions for coding agents, from the DeepSpace skill
+```
 
-Canvas weights steady lighting stands and scenery. That gave the understudy its job, its lopsided shape and its predicament. The one thing employed to keep a stage steady can barely stay upright. The taped flats and single work light belong to the same community hall. [PRG’s stage weights](https://www.prg.com/-/media/Files/Australia/Stage-Fabrics/Shotbags_and_Sandbags.pdf) · [Theatre Calgary’s guide to *The Play That Goes Wrong*](https://www.theatrecalgary.com/assets/downloads/Play-Guides/The-Play-That-Goes-Wrong_TCPlay-Guide.pdf)
-
-The five-second take gives the actor one ordinary job. Let it finish taking a sip before the other hand flies up. The still cup is how the audience can see the rest of the body struggling. That timing owes something to Jacques Tati’s determined postman and *Octodad*’s attempts at everyday tasks. [Criterion on *Jour de fête*](https://www.criterion.com/films/28114-jour-de-fete) · [Young Horses on *Octodad*](https://blog.playstation.com/?p=130022)
-
-The shoulders react first, the weight lands on a boot and the head finishes a beat late. The eyes and mouth remain quiet enough that the audience can read the effort in the silhouette. [National Theatre’s puppet lesson on weight](https://www.youtube.com/watch?v=vXT3gPef8zo) · [Disney’s guide to follow-through](https://a.dolimg.com/media/en-US/disneyeducationalproductions/noma/pdf/DE1775_NOMA_TG.pdf)
-
-### The printed programme
-
-The title keeps its hand-cut letters. Coral and carmine ink fill BAD, turquoise and petrol blue fill ACTORS, and one amber spray mark catches the falling S. The lettering references New York wall pieces and the layered print marks in the Spider-Verse titles. Sony Pictures Imageworks’ breakdown of the hand-drawn lines in *Into the Spider-Verse* shaped the two short ink strokes a sharp pull leaves behind the moving grip. The lighting keys for Miles’s scenes in *Across the Spider-Verse* informed the stage light. The curtain and cardboard flats share an original image-generated backdrop. The articulated actor and its prop are separate from the scenery for dragging and for clean visual observations. [The Wild Style mural](https://www.mcny.org/event/new-york-film-wild-style) · [Spider-Verse title design](https://www.seojinbang.com/Spider-Man-Into-the-Spider-Verse) · [Pollock’s toy theatres](https://www.pollockstoymuseum.co.uk/post/toy-theatre-and-puppetry/)
-
-Stubbs prints the model's own words in his speech balloon, one letter at a time. The lever on his brass jaw opens with the line and closes on a comma. After the last letter, he punches his ticket or hides behind his programme. The performance works silently. With Stage sound on in the signed-in game, his glove stays up for up to four seconds while his recording arrives, then the letters keep pace with his voice. [A real ElevenLabs line](docs/verification/stubbs-voice-sample.mp3) With reduced motion enabled, the full line appears immediately. [Pixar’s Luxo Jr.](https://www.pixar.com/luxo-jr) · [Jackbox’s Drawful](https://www.jackboxgames.com/games/the-jackbox-party-pack-1/drawful)
-
-Patrick Hand sets the body copy, controls and stage clock. Kalam Bold supplies the programme headings, fly cue, acting notes and Stubbs’s dialogue. Both handwritten fonts and their licenses ship with the game. [Kalam from the Indian Type Foundry](https://github.com/itfoundry/kalam)
-
-### On stage
-
-Bad Actors plays like a draw-and-guess party game with a puppet instead of a pencil. The battle stage of *Paper Mario: The Thousand-Year Door* gave it the front row: you can see who is watching, and the actor’s hands and feet are never hidden behind the seats. *Mystery Science Theater 3000* creator Joel Hodgson describes keeping his front-row silhouettes small enough to leave the movie visible, which set the height of ours. [Nintendo's stage](https://www.nintendo.com/us/whatsnew/join-mario-and-a-cast-of-oddballs-in-one-of-his-strangest-and-epic-est-rpg-adventures/) · [Hodgson on the seats](https://gizmodo.com/creator-joel-hodgson-on-the-return-of-mystery-science-t-1793682355)
-
-*Papers, Please* pointed the referee another way: let the verdict come out of a machine. Judge Monitor, the hall’s old computer, prints its ruling on a little slip. When Stubbs guesses wrong he hides behind his programme, so each of them gets its own laugh. Lucas Pope's account of fitting a physical stamp desk into *Papers, Please* helped shape the slip. Andrew Stanton's account of finding WALL·E's expression in a pair of working binoculars suggested letting the machine's own parts do the acting. [Lucas Pope's illustrated development log](https://dukope.com/devlogs/papers-please/mobile/) · [Stanton's interview](https://freshairarchive.org/segments/animator-director-and-writer-andrew-stanton) · [A compact CRT in the Science Museum collection](https://collection.sciencemuseumgroup.org.uk/objects/co64022/apple-macintosh-personal-computer)
-
-Neither of them sits still between lines. Stubbs breathes, blinks behind brass lids, glances about and, left alone too long, yawns. He sweeps his opera glasses while he looks. A hit makes him hop with happy eyes; a miss leaves him shivering behind the programme with a bead of sweat. On the Big Feelings night a tear runs while he guesses, and at the Gala his eyes keep flicking up to the balcony. Judge Monitor's green face glows behind scanlines and a slow sweep. It blinks and glances, and shows typing dots and an amber light while it weighs a guess. A match makes it beam and sparkle, a miss glitches the screen red, a close call gets a question mark, and a ruling it can't make fills the screen with static. With reduced motion turned on, both keep their expressions but stay still.
-
-Every act starts behind a red house curtain, so the cue fills the whole stage before anyone poses. The stagehands lower it on a board of chasing bulbs as the house lights dim, the follow spot finds the board a beat late and overshoots, and a snare rolls. A notice pasted across the corner reads *Sold out · 1 seat* (the whole house is Stubbs), *Understudy on tonight* or *No refunds*. The curtain then swishes open to a “ta-da” and the board flies back up. Every so often the curtain sticks halfway and a stagehand shouts from the wings until it gives, one more failure in the spirit of *The Play That Goes Wrong*. A click on the curtain, or the player's first move, opens it at once. Stubbs keeps his seat in front of it all, and the act's clock and his first look wait until the curtain is up. With reduced motion the board simply appears and the curtain clears.
-
-The fly loft delivers the cue on a crooked board. One end catches up with the other, then the writing stays still while the player poses. A mismatched bit of rigging gives the gag a physical cause, like the failing scenery in *The Play That Goes Wrong*. Stubbs sits downstage left with a clear view of the performer. His raised glove claims the next line and the balloon tail leads back to him. [Playbill's prop close-ups](https://playbill.com/article/get-up-close-with-the-props-behind-the-mayhem-of-the-play-that-goes-wrong) · [Blambot's illustrated lettering guide](https://blambot.com/pages/comic-book-grammar-tradition)
-
-The cue card takes the idea behind Pixar’s color scripts: its color tells you whose turn it is. It reads warm yellow while the actor has the cue and turns pale green when the opening answer is revealed. The six exercise pictures double as a pose sheet: check the distance from a prop to the face, the line from shoulder to wrist and the actor’s balance. These decisions drew on Pixar’s use of color across story beats, Disney’s Mirabel pose drawings and the way the Hawkeye title artists separated arms and props to make a silhouette legible. [Lou Romano on the Incredibles color script](https://www.moma.org/audio/playlist/192/2575) · [Disney visual development](https://www.disneyanimation.com/process/visual-development/) · [Hawkeye title design interview](https://beforesandafters.com/2022/01/21/how-the-main-titles-of-hawkeye-helped-tell-the-story-of-kate-and-clint/)
+More reading: [design notes](docs/DESIGN.md) · [verification log](docs/VERIFICATION.md) · [my first build plan](docs/PLAN.md)

@@ -2,7 +2,7 @@
 
 The community hall is one actor short. A canvas stage weight is covering the part. Pose the understudy so someone can guess what it is doing.
 
-Choose **Play with AI** and a stagehand lowers your cue on a plank tied to an old boot. You get 45 seconds to act it out. Mr. Stubbs, a ticket punch in the front row, gets five looks. Pose the understudy and hold still. The clock pauses while he thinks. He raises a glove and gives his guess. Judge Monitor prints the ruling from a window in the right wing. **What Stubbs saw** keeps the pictures and the exact guesses for the current round.
+[Open the live AI booth](https://bad-actors-shi.app.space/room?play=draw). Sign in to draw a cue. A stagehand lowers your cue on a plank tied to an old boot. You get 45 seconds to act it out. Mr. Stubbs, a ticket punch in the front row, gets five looks. Pose the understudy and hold still. The clock pauses while he thinks. He raises a glove and gives his guess. Judge Monitor prints the ruling from a window in the right wing. **What Stubbs saw** keeps the pictures and the exact guesses for the current round.
 
 A hit brings streamers, a shower of used tickets and two spectators who clap out of time. A miss gets one half-hearted party horn and a heckle from the cheap seats. Turn on **Crowd sound** at the stage desk to hear them. You can try both reactions for free in the opening phone puzzle. Enter `phone call` for applause, or reload the opening and enter `baking bread` to meet the heckler.
 
@@ -55,13 +55,15 @@ npm run build:practice
 
 ### Project status
 
-The single-player AI game runs locally through the configured third-party OpenAI-compatible service. In actual referee calls, Sol accepted both “make a call” and “call sombody” for the phone cue. The opening audience puzzle uses a fixed practice cue. In an earlier blind test Sol described the eye-covering pose as “Rubbing both eyes,” which prompted separate open-palm and fist controls. Hosted multiplayer and voice remain pending.
+The local rehearsal can also use the configured third-party OpenAI-compatible service. In actual referee calls, Sol accepted both “make a call” and “call sombody” for the phone cue. The opening audience puzzle uses a fixed practice cue. In an earlier blind test Sol described the eye-covering pose as “Rubbing both eyes,” which prompted separate open-palm and fist controls. Hosted multiplayer and voice remain pending.
 
 ### Publish from this Mac
 
 Open **Publish-Bad-Actors.command** from the project folder. It uses your DeepSpace login, checks the source against the Bad Actors GitHub repository, registers the application and deploys it. If registration has already succeeded, the launcher uses that ID. If the platform reports the app limit, the launcher first identifies the owner's existing Plan B by its permanent ID. Only the owner's interactive confirmation takes Plan B offline and discards its hosted room data. The launcher then prints the URL returned by DeepSpace and checks the public page at that URL.
 
-With the checked-in configuration, visitors can pose the actor, play the opening guessing game and pass the screen to a friend. Hosted model calls are off until the owner chooses a provider. The prepared managed Anthropic adapter requires `STAGE_AI_PROVIDER=anthropic` on the server, a signed-in player and DeepSpace's managed billing credentials. In this configuration the same model makes two separate calls: a blind image guess and a text-only ruling. The server limits each round to five looks, each player to 12 per UTC day and the app to 24 per UTC day. The local Sol profile stays on the operator's computer. [Local Worker verification](docs/verification/hosted-stage-local.json)
+Anyone can pose the actor, guess the opening puzzle, or pass the screen to a friend. In the signed-in AI game, Mr. Stubbs sends a frozen picture of the actor and prop to DeepSpace’s managed Claude Haiku 4.5. Judge Monitor makes a separate text-only request with the cue and guess to check their meaning. The server allows five looks per round, 12 per player per UTC day, and 24 across the app per UTC day. Replay reads the saved guess. The local Sol profile stays on the operator’s computer.
+
+In six independent blind calls on hand-posed frames, Claude recognized the selfie and mistook the phone call for another selfie. It also misread the covered eyes. [Six images and original model answers](docs/verification/managed-vision-2026-11-23.json) · [Local Worker verification](docs/verification/hosted-stage-local.json)
 
 [Verification and receipts](docs/VERIFICATION.md) · [Implementation guide](docs/Bad_Actors_Codex_Plan.md)
 

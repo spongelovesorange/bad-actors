@@ -22,9 +22,21 @@ function httpFailure(status: number) {
   return new ProviderFailure(status >= 500 ? 'http_server' : 'http_request')
 }
 
+function spokenGuess(raw: string): string {
+  const [first, ...rest] = raw.trim().split(/\r?\n/).map(line => line.trim()).filter(Boolean)
+  const isHeading = /^#{1,6}\s+/
+  const guess = first.replace(isHeading, '').replace(/^(\*\*|__|`|"|')(.+)\1$/, '$2').trim()
+  // The model sometimes follows its headline with a prose explanation. A
+  // second headline or an explicit alternative cannot be read as one guess.
+  if (!/[A-Za-z]/.test(guess) || guess.length > 200 || guess.split(/\s+/).length > 12 ||
+      /\bor\b/i.test(guess) || rest.some(line => isHeading.test(line) || /^or\b/i.test(line)) ||
+      (rest.length && !isHeading.test(first))) return 'unclear'
+  return guess
+}
+
 /** Called after the game has authenticated the player and reserved their observation. */
 export function createStageProvider(env: StageBindings): StageProvider {
-  async function complete(body: Record<string, unknown>): Promise<Completion> {
+  async function complete(kind: 'vision' | 'referee', body: Record<string, unknown>): Promise<Completion> {
     if (!stageProviderEnabled(env)) throw new ProviderFailure('http_auth')
     const signal = AbortSignal.timeout(25_000)
     let response: Response
@@ -59,11 +71,11 @@ export function createStageProvider(env: StageBindings): StageProvider {
     if (data.stop_reason === 'max_tokens') throw new ProviderFailure('output_limit', details)
     if (data.stop_reason === 'refusal') throw new ProviderFailure('refused', details)
     if (data.stop_reason !== 'end_turn' && data.stop_reason !== 'stop_sequence') throw new ProviderFailure('invalid_response', details)
-    const text = data.content.filter(block => block?.type === 'text' && typeof block.text === 'string')
-      .map(block => block.text).join(' ').trim()
-    if (!text) throw new ProviderFailure('empty_output', details)
-    if (text.length > 200) throw new ProviderFailure('invalid_response', details)
-    return { ...details, text }
+    const raw = data.content.filter(block => block?.type === 'text' && typeof block.text === 'string')
+      .map(block => block.text).join(kind === 'vision' ? '\n' : ' ').trim()
+    if (!raw) throw new ProviderFailure('empty_output', details)
+    if (raw.length > (kind === 'vision' ? 2048 : 200)) throw new ProviderFailure('invalid_response', details)
+    return { ...details, text: kind === 'vision' ? spokenGuess(raw) : raw }
   }
 
   return {
@@ -71,13 +83,13 @@ export function createStageProvider(env: StageBindings): StageProvider {
     judgeModel: stageModel,
     async guess(image) {
       if (!image.startsWith(pngPrefix)) throw new ProviderFailure('http_request')
-      return complete({ max_tokens: 80, messages: [{ role: 'user', content: [
+      return complete('vision', { max_tokens: 80, messages: [{ role: 'user', content: [
         { type: 'image', source: { type: 'base64', media_type: 'image/png', data: image.slice(pngPrefix.length) } },
         { type: 'text', text: visionPrompt },
       ] }] })
     },
     async judge(cue, guess) {
-      const result = await complete({ max_tokens: 24, system: refereePrompt,
+      const result = await complete('referee', { max_tokens: 24, system: refereePrompt,
         messages: [{ role: 'user', content: JSON.stringify({ assignedAction: cue, guess }) }] })
       return scoreVerdict(result)
     },

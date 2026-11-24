@@ -1,0 +1,96 @@
+{
+  "method": "Six independent metered DeepSpace CLI requests to anthropic/chat-completion. Each request contained one 560 × 560 stage PNG and the same open-ended prompt, without the cue, filename, answer options or chat history. One call per image. Durations include CLI startup and network time. Cues and human assessments were attached after capture. This is a provider check, not a signed-in round or an accuracy estimate for player-created poses.",
+  "config": {
+    "model": "claude-haiku-4-5",
+    "temperature": 0,
+    "maxTokens": 80,
+    "prompt": "You are watching silent charades. What physical action is the performer acting out? Give one best guess as a short English phrase, at most twelve words. If the action is unclear, say \"unclear\"."
+  },
+  "reportedTotalUsd": 0.003367,
+  "results": [
+    {
+      "frame": "1.png",
+      "imageSha256": "5985d0fef59e8cfe35c149abe6c28e1fd2ebd806b40adf617f8cdda042f0588b",
+      "cueForEvaluationOnly": "Carrying a tray",
+      "startedAt": "2026-11-24T02:40:20.165134+00:00",
+      "elapsedSeconds": 8.555,
+      "model": "claude-haiku-4-5-20251001",
+      "responseText": "# Carrying a casserole dish\n\nThe figure appears to be holding and presenting a rectangular dish, suggesting they're carrying or serving food.",
+      "inputTokens": 452,
+      "outputTokens": 32,
+      "costUsd": 0.000612,
+      "humanActionAssessment": "action-match",
+      "note": "The actor carries and presents a dish. The specific dish differs."
+    },
+    {
+      "frame": "2.png",
+      "imageSha256": "d3266da742795928f3c973cc289d42561e1ca1bd2939cf795047d2d99493e56f",
+      "cueForEvaluationOnly": "Talking on the phone",
+      "startedAt": "2026-11-24T02:40:28.721923+00:00",
+      "elapsedSeconds": 5.741,
+      "model": "claude-haiku-4-5-20251001",
+      "responseText": "# Taking a selfie",
+      "inputTokens": 452,
+      "outputTokens": 8,
+      "costUsd": 0.000492,
+      "humanActionAssessment": "miss",
+      "note": "The phone is at the ear. The model calls the pose a selfie."
+    },
+    {
+      "frame": "3.png",
+      "imageSha256": "a19a8a05f5fbe8dbbcb944bdc6b1d571eeae4925b9f7d0405b17f4d24f318471",
+      "cueForEvaluationOnly": "Covering your eyes",
+      "startedAt": "2026-11-24T02:40:34.465309+00:00",
+      "elapsedSeconds": 4.352,
+      "model": "claude-haiku-4-5-20251001",
+      "responseText": "# Carrying a heavy load\n\nThe performer is holding their arms out horizontally while supporting something above their head, suggesting they're carrying or holding something heavy.",
+      "inputTokens": 452,
+      "outputTokens": 35,
+      "costUsd": 0.000627,
+      "humanActionAssessment": "miss",
+      "note": "The model describes carrying an object instead of covering the eyes."
+    },
+    {
+      "frame": "4.png",
+      "imageSha256": "5772b88368c84c7da8c4e7ed02d5b7a2d116fe971691140bca788ea69a20dc64",
+      "cueForEvaluationOnly": "Drinking water",
+      "startedAt": "2026-11-24T02:40:38.819897+00:00",
+      "elapsedSeconds": 5.664,
+      "model": "claude-haiku-4-5-20251001",
+      "responseText": "# Drinking coffee",
+      "inputTokens": 452,
+      "outputTokens": 7,
+      "costUsd": 0.000487,
+      "humanActionAssessment": "action-match",
+      "note": "The action of drinking is visible. The contents of the cup are unspecified by the image."
+    },
+    {
+      "frame": "5.png",
+      "imageSha256": "87e81cbccd28035271758ee1feb457569ba147f1bd7ba928f3d8165e1724bd2a",
+      "cueForEvaluationOnly": "Surrendering",
+      "startedAt": "2026-11-24T02:40:44.486086+00:00",
+      "elapsedSeconds": 6.445,
+      "model": "claude-haiku-4-5-20251001",
+      "responseText": "# Hands up\n\nor\n\n# I give up",
+      "inputTokens": 452,
+      "outputTokens": 14,
+      "costUsd": 0.000522,
+      "humanActionAssessment": "action-match",
+      "note": "Both phrases describe the raised-hands surrender gesture. An automatic referee did not score this test."
+    },
+    {
+      "frame": "6.png",
+      "imageSha256": "b29a3716fc58ed4293f796f082753bb7106cf547bd6ea482cd9e38efed2eb408",
+      "cueForEvaluationOnly": "Taking a selfie",
+      "startedAt": "2026-11-24T02:40:50.933167+00:00",
+      "elapsedSeconds": 4.483,
+      "model": "claude-haiku-4-5-20251001",
+      "responseText": "# Selfie\n\nThe performer is holding up a phone and making a peace sign while smiling, which is the classic pose for taking a selfie.",
+      "inputTokens": 452,
+      "outputTokens": 35,
+      "costUsd": 0.000627,
+      "humanActionAssessment": "action-match",
+      "note": "The answer explicitly identifies a selfie."
+    }
+  ]
+}

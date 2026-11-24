@@ -1,5 +1,15 @@
 # Bad Actors verification
 
+## Managed AI on the stage · November 23, 2026
+
+The first public release, `rel_01M85PMG8F9Z8GDJ3XB5SY6GVT`, served the home page and room at [Bad Actors](https://bad-actors-shi.app.space/). A fresh Chrome session completed the opening phone puzzle. The guest AI status on that release showed the booth was closed.
+
+Six separate developer-account calls sent Claude Haiku 4.5 one frozen stage PNG apiece, with the same prompt and no answer key. By manual assessment of the depicted action, four guesses fit: carrying a dish, drinking, surrendering and taking a selfie. Claude guessed a selfie for the phone at the ear and a heavy load for covering the eyes. The six calls cost $0.003367 in total. The measure covers these six frames; a game referee did not score them. [Images, exact answers, timings and costs](verification/managed-vision-2026-11-23.json)
+
+Three independent text-only calls used the game referee prompt and the phone-call cue. Claude accepted “make a call” and “call sombody” and rejected “texting a friend.” Their total reported cost was $0.000710. Vision and referee tests together cost $0.004077. [Exact referee outputs and costs](verification/managed-referee-2026-11-23.json)
+
+The vision adapter strips Markdown headings and explanatory paragraphs from replies before Stubbs speaks. If the provider supplies multiple alternatives, Stubbs says “unclear.” For example, a human can read both “Hands up” and “I give up” as surrender, but the live adapter treats two alternatives as undecided.
+
 ## Hosted game preparation · November 23, 2026
 
 The owner's DeepSpace CLI listed one active, deployed application, `planb-meet-qs26`, owned by the signed-in account. Bad Actors still had an unregistered placeholder when this checkout was prepared. The Mac launcher checks that exact old app and presents the platform's destructive confirmation if a quota refusal requires freeing its slot. Its release URL comes from the successful deployment receipt.

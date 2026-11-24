@@ -38,6 +38,19 @@ describe('hosted Anthropic stage audience', () => {
   })
 
   it.each([
+    ['# Taking a selfie', 'Taking a selfie'],
+    ['# Selfie\n\nThe performer is holding up a phone and making a peace sign.', 'Selfie'],
+    ['# Carrying a casserole dish\n\n' + 'The performer is serving food. '.repeat(8), 'Carrying a casserole dish'],
+    ['**Taking a sip.**', 'Taking a sip.'],
+    ['# Hands up\n\nor\n\n# I give up', 'unclear'],
+    ['# Drinking water\n# Eating cereal', 'unclear'],
+    ['Using a phone or taking a picture', 'unclear'],
+  ])('speaks one short guess from the returned text (%#)', async (output, expected) => {
+    const { provider } = booth(() => Response.json(message(output)))
+    await expect(provider.guess(frame)).resolves.toMatchObject({ text: expected, tokens: 87 })
+  })
+
+  it.each([
     [() => new Response('sensitive service details', { status: 429 }), 'http_limit'],
     [() => new Response('unauthorized', { status: 403 }), 'http_auth'],
     [() => Response.json({ success: false, code: 'insufficient_credits' }), 'http_limit'],

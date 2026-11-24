@@ -1,0 +1,55 @@
+{
+  "scope": "Real text-only calls through the authenticated DeepSpace developer CLI. Hosted player authentication and the game UI are outside this probe.",
+  "sourceCommit": "c2648a6835263c3663aeacff17a55664ebf29175",
+  "endpoint": "anthropic/chat-completion",
+  "requestedModel": "claude-haiku-4-5",
+  "assignedAction": "Talking on the phone",
+  "temperature": 0,
+  "maxTokens": 24,
+  "systemPromptSha256": "ff8aaf712e8da9581bdcacd697bb901e0e5ab1345d10b49813ce47cf25ddd32c",
+  "cases": [
+    {
+      "guess": "make a call",
+      "expected": "correct",
+      "rawVerdict": "CORRECT",
+      "normalizedVerdict": "correct",
+      "passed": true,
+      "model": "claude-haiku-4-5-20251001",
+      "startedAtUtc": "2026-11-24T02:41:54.078Z",
+      "completedAtUtc": "2026-11-24T02:41:59.689Z",
+      "durationMs": 5610,
+      "inputTokens": 211,
+      "outputTokens": 5,
+      "costUsd": 0.000236
+    },
+    {
+      "guess": "call sombody",
+      "expected": "correct",
+      "rawVerdict": "CORRECT",
+      "normalizedVerdict": "correct",
+      "passed": true,
+      "model": "claude-haiku-4-5-20251001",
+      "startedAtUtc": "2026-11-24T02:41:59.690Z",
+      "completedAtUtc": "2026-11-24T02:42:04.932Z",
+      "durationMs": 5241,
+      "inputTokens": 212,
+      "outputTokens": 5,
+      "costUsd": 0.000237
+    },
+    {
+      "guess": "texting a friend",
+      "expected": "incorrect",
+      "rawVerdict": "INCORRECT",
+      "normalizedVerdict": "incorrect",
+      "passed": true,
+      "model": "claude-haiku-4-5-20251001",
+      "startedAtUtc": "2026-11-24T02:42:04.932Z",
+      "completedAtUtc": "2026-11-24T02:42:09.440Z",
+      "durationMs": 4508,
+      "inputTokens": 212,
+      "outputTokens": 5,
+      "costUsd": 0.000237
+    }
+  ],
+  "totalReportedCostUsd": 0.00071
+}

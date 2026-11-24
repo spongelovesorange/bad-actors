@@ -16,9 +16,49 @@
 | **Integrations** | Anthropic through DeepSpace handles the picture-only guess and the text-only referee. ElevenLabs gives Stubbs his voice. Speech-to-text was left out on purpose, because this is silent charades. |
 | **Main tradeoff** | Each look costs two model calls: a blind guess, then a referee. That way Stubbs never sees the answer, and paraphrases are judged the same way every time. |
 | **On DeepSpace** | Auth; the integration proxy; collections with per-row rules and live queries for race rooms, rosters, results and each player's best shows; a presence room per race; server actions as the race referee; a Durable Object as the ledger for paid looks. [Racing a friend](#racing-a-friend) |
-| **Built with** | Codex wrote the first version from a written plan. Claude Code built the AI booth, voice, five nights, races, art, music, sound and tests. I directed both and tested the releases. [How it was built](#how-it-was-built) |
+| **Built with** | I chose the project (dropping my first one), wrote the first plan, designed the game, chose every reference, tested every screen and button by hand and approved every commit and deploy. Coding agents (Codex, then Claude Code) wrote most of the code and the automated tests under my direction. [How it was built](#how-it-was-built) |
 | **Checked** | 227 unit tests, 44 Chromium stage tests, 12 DeepSpace tests on the local Worker (three with two real test accounts) and paid real-model checks. The latest covered the 12 new cues for $0.012. |
 | **Not built** | Spectators, chat and a party mode where friends guess each other's poses. [What I’d do next](#not-built-and-what-id-do-next) |
+
+## The feel I was going for
+
+I play a lot of games, and I wanted Bad Actors to feel like one: something you want to poke, not a tidy app you put up with. That taste decided most of what you see.
+
+- **Everything answers back.** A prop pops into the hand, a face boings, and a joint squeaks and wobbles when you tug it. The clock ticks only while you act. A hit brings streamers, a shower of used tickets and six spectators who clap out of time. A miss gets one half-hearted party horn.
+- **Show, don't explain.** Like the hand demos before a party game, a silent glove plays a whole round before you read a word, then taps the way in.
+- **Characters, not widgets.** The AI has a face and a voice I picked by ear. Stubbs breathes, yawns, hops on a hit and sweats on a miss. Judge Monitor beams, glitches red or fills with static.
+- **Failure is part of the show.** Every night something goes wrong on purpose: stage fright, flying props, blackouts, a heckler, a curtain that sticks.
+- **Handmade, not a dashboard.** Paper flats, hand-lettered type, ink and spray stand in for cards and grey buttons. Two big tickets replace a menu, and the cue arrives on a board of chasing bulbs after a drum roll.
+
+## Where the ideas come from
+
+The idea, the design and every reference below are mine. The agents built from them.
+
+**Theatre**
+- *The Play That Goes Wrong* gave the game its running joke: every night something on stage fails. The crooked fly board, the curtain that sticks, the blackout electrician and the flung props all come from it.
+- [Pollock's paper toy theatres](https://www.pollockstoymuseum.co.uk/post/toy-theatre-and-puppetry/) set the look: cut-out flats, a paper proscenium and a printed programme.
+- The understudy is a canvas stage weight, the thing that keeps a stage steady and can barely stay upright itself. The National Theatre's puppetry lesson on weight shaped how it moves: the shoulders react first and the head lands a beat late.
+
+**Games**
+- Draw-and-guess party games and Jackbox's *Drawful* gave the core loop: one player makes a picture, someone else guesses. Here the pencil is a puppet.
+- *Paper Mario: The Thousand-Year Door* gave the front row: the audience sits in view, and the actor's hands and feet are never hidden behind the seats.
+- *Papers, Please* put the verdict in a machine. Judge Monitor prints its ruling on a slip, as Lucas Pope's stamp desk does.
+- *Octodad* showed how funny a body struggling at an everyday task can be.
+- *红蓝大作战*, a two-player iPad party game, gave the silent how-to-play demo: a hand shows you where to touch before you read a word.
+- Jackbox and Kahoot rooms, TypeRacer, Mario Kart and chess sites shaped the race: a room code to read out, a roster that fills in live, the same prompt for everyone, a countdown (here, the curtain) and one button for a rematch.
+
+**Comics and lettering**
+- Comic speech balloons give Stubbs his voice on the page: a balloon whose tail leads back to him, hand-lettered type and a line printed one letter at a time. [Blambot's lettering guide](https://blambot.com/pages/comic-book-grammar-tradition) set the rules.
+- The *Wild Style* mural and New York wall pieces gave the hand-cut BAD ACTORS wordmark its colours and its spray mark.
+
+**Film and animation**
+- *Spider-Man: Into the Spider-Verse* and *Across the Spider-Verse* gave the layered print marks in the title, the two ink strokes a sharp drag leaves behind and the stage light.
+- Pixar's colour scripts, after Lou Romano's work on *The Incredibles*, made the cue card's colour say whose turn it is. *Luxo Jr.* showed a machine body can act.
+- *WALL·E*, and Andrew Stanton's account of finding its face in a pair of binoculars, let Judge Monitor act with its own parts.
+- Disney's pose drawings for Mirabel and its guide to follow-through shaped the pose sheet and the actor's weight.
+- Jacques Tati's postman in *Jour de fête* set the timing: finish the sip before the other hand flies up.
+- *Mystery Science Theater 3000* kept the front-row silhouettes small enough to leave the show in view.
+- The *Hawkeye* title sequence showed how separating arms and props makes a silhouette readable.
 
 ## The game
 
@@ -77,17 +117,32 @@ The race is built from DeepSpace's own parts:
 
 ## How it was built
 
-I planned the game, had coding agents write it, and checked their work at each step.
+I built Bad Actors by directing coding agents, and every change went through me. I wrote the first plan, made every product decision, tested every screen and button by hand, and approved every commit and all 16 deploys. Every commit is in my name, and 17 of them also credit Claude as co-author. The agents wrote most of the code and the automated tests.
 
-- **Codex** wrote the first version from a written plan ([the plan](docs/Bad_Actors_Codex_Plan.md)): the jointed puppet, the stage and the local practice mode.
-- **Claude Code** built the hosted AI booth, the prompts and the referee, Stubbs’s voice, the five nights and 30 cues, the races, the art and animation, the synthesized music and sound, and the tests. It also kept [the verification log](docs/VERIFICATION.md).
-- **What I decided and checked myself:**
-  - I chose the idea and the references the look is built from, and I played changes locally before approving each deploy. After the last release I played the signed-in game on the live site.
-  - I picked Stubbs’s voice by ear from five ElevenLabs voices. I judged the music and sound effects by ear too, because the agent cannot hear them.
-  - A friend couldn’t tell where to start, so I asked for the silent how-to-play demo, modelled on the hand demos in an iPad party game. When the cue was still easy to miss, I asked for the opening curtain.
-  - We compared the build with DeepSpace's example apps. All three keep their data in collections with live queries and test with two users, and Bad Actors did neither. I proposed racing the same cue, and asked for it to follow how established party games run their rooms.
-  - I approved each paid model check. One showed Claude Haiku 4.5 reading the phone call as a selfie, which moved the guesser to Haiku 5.5. Another tried the 12 newest cues (9 right on the first look) and led to three fixes.
-  - I caught a wrong fix. The agent’s first Safari fix blamed `connect()`, and my Safari was still silent after it shipped. A sound check I then ran in my own Safari disproved that cause, and the shipped notes were corrected.
+**Choosing the project.** My first build for this task was a meetup app I called Plan B. I built it, but it was a familiar forms-and-lists app that would have been hard to show: nothing in it a reviewer would remember. On November 23 I set it aside and started Bad Actors. I'd rather change course early than polish an idea that can't show what I can do.
+
+**What I did**
+- Wrote the first plan ([the implementation guide](docs/Bad_Actors_Codex_Plan.md)). Codex turned it into the first version of the code, adjusting details along the way.
+- Designed the game and its world: a sandbag understudy in a community hall, Mr. Stubbs in the front row and Judge Monitor in the wings. I chose every reference above.
+- Grew the game a request at a time. I asked for:
+  - nine props, ten faces and seven hand shapes;
+  - five nights that each go wrong in their own way;
+  - the pit band and the sound effects;
+  - characters that breathe and react between lines;
+  - the silent demo, the opening curtain and the race.
+- Tested every screen, button and flow by hand, on desktop and phone, before approving each deploy, and played the signed-in game on the live site. That is how I found:
+  - returning players getting no sound;
+  - a silent Safari tab;
+  - a cue that was easy to miss;
+  - the tutorial glove hidden behind the race ticket.
+- Made the calls an agent can't: I picked Stubbs's voice by ear from five ElevenLabs voices and judged the music and sound by ear.
+- Compared the build with DeepSpace's example apps. Every one keeps its data in collections and tests with two users, so I proposed racing the same cue, run the way established party games run their rooms.
+- Approved every paid model check and kept them small.
+- Caught the agents' mistakes. Their first Safari "fix" blamed `connect()`; a sound check I ran in my own Safari disproved that, and the shipped notes were corrected.
+
+**What the agents did**
+- Codex wrote the first version of the code from my plan.
+- Claude Code wrote most of the later code under my direction, including the hosted AI booth, the race, the art and animation, and the synthesized music and sound. It also wrote the automated tests (227 unit, 44 browser and 12 DeepSpace) and kept [the verification log](docs/VERIFICATION.md).
 
 ## Not built, and what I’d do next
 

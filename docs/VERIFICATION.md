@@ -28,6 +28,7 @@
     - The referee refused the friend's unearned finish (`not_finished`) and their deal (`not_host`).
     - No model calls were made. The room stays in the live data, but nobody can reach it without its code.
     - The live entry, stage, race page, race client and room files matched the local build byte for byte.
+    - After release #15 the player found the tutorial glove half hidden: it hangs below the Free play ticket, and the new race ticket underneath painted over it. Release #16 raises the beckoning ticket above its neighbours. Screenshots at 1280 and 390 pixels show the whole glove, and all 44 stage tests still pass. The same screenshot showed Free play promising "Any of 18 cues"; it now reads the deck's size, 30.
     - Release #14 shipped while two scratch test files sat in `tests/`. They weren't in the bundle, but the release was marked as built from uncommitted changes, so #15 redeployed the same commit from a clean tree.
 - 227 unit tests, the typecheck, lint, both builds, all 44 stage tests and 12 DeepSpace tests pass.
 

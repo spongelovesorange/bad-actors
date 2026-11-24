@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createCrowdAudio, crowdSampleRate, renderCrowdReaction } from './crowd-audio'
+import { createCrowdAudio, crowdSampleRate, renderCrowdReaction, renderStageEffect } from './crowd-audio'
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -34,8 +34,8 @@ describe('the audience in the cheap seats', () => {
       close = close
       resume = async () => { this.state = 'running'; resumed() }
       createBuffer = () => ({ copyToChannel: fill })
-      createGain = () => ({ connect: vi.fn(), disconnect: vi.fn(), gain: { setTargetAtTime: vi.fn() } })
-      createBufferSource = () => ({ context: this, start, stop, disconnect: vi.fn(), connect: (node: unknown) => node })
+      createGain = () => ({ connect: vi.fn(), disconnect: vi.fn(), gain: { cancelScheduledValues: vi.fn(), setTargetAtTime: vi.fn() } })
+      createBufferSource = () => ({ context: this, start, stop, playbackRate: { value: 1 }, disconnect: vi.fn(), connect: (node: unknown) => node })
     }
     vi.stubGlobal('window', { AudioContext: TestAudioContext })
     const house = createCrowdAudio()
@@ -44,9 +44,10 @@ describe('the audience in the cheap seats', () => {
     expect(await house.enable()).toBe(true)
     expect(resumed).toHaveBeenCalledOnce()
     expect(start).not.toHaveBeenCalled()
-    expect(fill).toHaveBeenCalledTimes(2)
+    expect(fill).not.toHaveBeenCalled()
     house.play('correct')
     house.play('incorrect')
+    expect(fill).toHaveBeenCalledTimes(2)
     expect(start).toHaveBeenCalledTimes(2)
     expect(stop).toHaveBeenCalledTimes(1)
     house.dispose()
@@ -54,6 +55,65 @@ describe('the audience in the cheap seats', () => {
     expect(stop).toHaveBeenCalledTimes(2)
     expect(close).toHaveBeenCalledOnce()
     expect(start).toHaveBeenCalledTimes(2)
+  })
+
+  it('paces the jaw and joints, pauses clock sounds, and resumes only the room on return', async () => {
+    let now = 0
+    const starts: { loop: boolean; duration: number }[] = []
+    const stops = vi.fn(), ducks = vi.fn()
+    class Audio {
+      state = 'running'
+      get currentTime() { return now }
+      destination = {}
+      createBuffer = (_channels: number, length: number) => ({ duration: length / crowdSampleRate, copyToChannel: vi.fn() })
+      createGain = () => ({ connect: vi.fn(), disconnect: vi.fn(), gain: { cancelScheduledValues: vi.fn(), setTargetAtTime: ducks } })
+      createBufferSource() {
+        return { context: this, loop: false, buffer: { duration: 0 }, playbackRate: { value: 1 }, disconnect: vi.fn(),
+          connect: (next: unknown) => next, start() { starts.push({ loop: this.loop, duration: this.buffer.duration }) }, stop: stops }
+      }
+      close = vi.fn().mockResolvedValue(undefined)
+    }
+    vi.stubGlobal('window', { AudioContext: Audio })
+    const desk = createCrowdAudio()
+    desk.setRoom(true)
+    desk.tug('waist', 20, 16)
+    desk.speak('A')
+    expect(starts).toHaveLength(0)
+    await desk.enable()
+    desk.setRoom(true)
+    expect(starts).toEqual([{ loop: true, duration: 8 }])
+    desk.speak('a'); desk.speak('b')
+    desk.tug('leftKnee', 2, 16); desk.tug('leftKnee', 4, 16); desk.tug('leftKnee', 10, 16)
+    expect(starts.map(sound => sound.duration)).toEqual([8, .081, .11])
+    expect(ducks).toHaveBeenCalledWith(.25, 0, .02)
+    now = 1
+    desk.clock({ seconds: 11, mode: 'running' })
+    desk.clock({ seconds: 10, mode: 'running' })
+    desk.clock({ seconds: 10, mode: 'paused' })
+    desk.clock({ seconds: 10, mode: 'running' })
+    desk.clock({ seconds: 3, mode: 'running' })
+    desk.clock({ seconds: 0, mode: 'expired' })
+    expect(starts.slice(3).map(sound => sound.duration)).toEqual([.06, .37, .44, .68])
+    desk.setOnstage(false)
+    desk.speak('x'); desk.tug('head', 20, 10)
+    desk.setOnstage(true)
+    expect(starts).toHaveLength(8)
+    expect(starts.at(-1)?.loop).toBe(true)
+    desk.setRoom(false)
+    desk.setOnstage(false); desk.setOnstage(true)
+    expect(starts).toHaveLength(8)
+    desk.dispose()
+    expect(stops).toHaveBeenCalled()
+  })
+
+  it('renders each stage effect with bounded, finite samples', () => {
+    for (const effect of ['paper','wood','punch','mutter','squeak','spring','shoe','tick','doubleTick','lastTicks','bell','room'] as const) {
+      const pcm = renderStageEffect(effect)
+      const peak = pcm.reduce((max, v) => Math.max(max, Math.abs(v)), 0)
+      expect(peak).toBeGreaterThan(.01)
+      expect(peak).toBeLessThan(.4)
+      expect(Math.abs(pcm[0] - pcm[pcm.length - 1])).toBeLessThan(.001)
+    }
   })
 
   it('leaves the stage usable without a browser audio device', async () => {

@@ -23,7 +23,8 @@ export class StageAudience {
     if (!input || Array.isArray(input) || typeof input !== 'object')
       return asJson(failure(400, 'invalid_request', 'Send a JSON object.'))
     const body = input as Record<string, unknown>
-    const game = this.game ??= new StageGame(this.state.storage, createStageProvider(this.env))
+    const game = this.game ??= new StageGame(this.state.storage, createStageProvider(this.env), Date.now,
+      this.env.STAGE_OWNER_OPEN_REHEARSAL === 'true' ? this.env.OWNER_USER_ID : undefined)
     if (path === '/rounds') return asJson(game.start(user, body))
     if (!request.headers.get('accept')?.split(',').some(type => type.trim() === 'application/x-ndjson'))
       return asJson(await game.observe(user, body))

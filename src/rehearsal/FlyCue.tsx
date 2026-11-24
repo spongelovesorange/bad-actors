@@ -26,7 +26,7 @@ export function FlyCue({ title, covered, reveal, draw, headingRef }: FlyCueProps
       </svg>
       <div className="ba-fly-plank">
         <div className="ba-fly-paper">
-          <h2 className="ba-fly-cue-title" id="ba-cue-heading" ref={headingRef} tabIndex={-1}>{title}</h2>
+          <h2 key={title} className="ba-fly-cue-title" id="ba-cue-heading" ref={headingRef} tabIndex={-1}>{title}</h2>
         </div>
       </div>
       <svg className="ba-fly-boot" viewBox="0 0 40 43" fill="none" aria-hidden="true">

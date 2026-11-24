@@ -17,7 +17,7 @@ export class StageGame {
   private readonly sql: SqlStorage
 
   constructor(private storage: Pick<DurableObjectStorage, 'sql' | 'transactionSync'>,
-    private provider: StageProvider, private now: () => number = Date.now) {
+    private provider: StageProvider, private now: () => number = Date.now, private openRehearsalOwner?: string) {
     this.sql = storage.sql
     this.sql.exec(`CREATE TABLE IF NOT EXISTS stage_seats (
       user TEXT PRIMARY KEY, round TEXT NOT NULL, cue INTEGER NOT NULL, opened INTEGER NOT NULL,
@@ -101,10 +101,13 @@ export class StageGame {
         return failure(409, 'same_pose', 'Change the pose before asking for another look.', used)
       if (seat.lastLook && at - seat.lastLook < 4_000) return failure(429, 'cooldown', 'Give the audience four seconds between looks.', used)
       const today = Math.floor(at / day)
-      const counters = this.sql.exec<{ personal: number; total: number }>(
-        'SELECT count(CASE WHEN user=? THEN 1 END) personal, count(*) total FROM stage_looks WHERE day=?', user, today).one()
-      if (counters.personal >= 12 || counters.total >= 24)
-        return failure(429, 'daily_limit', 'The daily audience allowance has been used.', used)
+      if (user !== this.openRehearsalOwner) {
+        const counters = this.sql.exec<{ personal: number; total: number }>(
+          'SELECT count(CASE WHEN user=? THEN 1 END) personal, count(*) total FROM stage_looks WHERE day=? AND user<>?',
+          user, today, this.openRehearsalOwner || '').one()
+        if (counters.personal >= 60) return failure(429, 'player_daily_limit', 'Your 60 daily looks have been used.', used)
+        if (counters.total >= 240) return failure(429, 'house_daily_limit', 'The audience has used its 240 shared daily looks.', used)
+      }
       this.sql.exec('INSERT INTO stage_looks (round,id,user,day,hash,used) VALUES (?,?,?,?,?,?)', seat.round, id, user, today, hash, used + 1)
       this.sql.exec('UPDATE stage_seats SET lastLook=? WHERE user=? AND round=?', at, user, seat.round)
       return used + 1

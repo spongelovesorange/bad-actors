@@ -24,6 +24,7 @@ export default defineConfig({
   retries: 0,
   use: {
     baseURL: BASE_URL,
+    storageState: { cookies: [], origins: [{ origin: BASE_URL, localStorage: [{ name: 'bad-actors:handbook:1', value: 'seen' }] }] },
     headless: true,
     launchOptions: chromiumLaunchOptions(),
   },

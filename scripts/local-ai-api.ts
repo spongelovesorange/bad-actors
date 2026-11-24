@@ -60,7 +60,7 @@ export function localAudiencePlugin(project: string, profile?: string): Plugin {
           provider = readOwnProvider(profile)
           const dir = join(project, '.local')
           mkdirSync(dir, { recursive: true, mode: 0o700 })
-          quota = openObservationQuota(join(dir, 'audience-quota.sqlite'))
+          quota = openObservationQuota(join(dir, 'audience-quota.sqlite'), process.env.BAD_ACTORS_OPEN_REHEARSAL === '1')
         } catch {
           provider = undefined
           server.config.logger.warn('The local audience could not open its AI profile or quota ledger. Rehearsal is available.')

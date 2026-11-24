@@ -9,12 +9,13 @@ type DeliveryProps = {
   mood: CriticMood
   observationId?: string
   referee: RefereeMood
+  onVoiceBeat: (glyph: string) => void
   onDelivered: (id: string) => void
   animate: boolean
 }
 
 /** A new utterance mounts a fresh performance. The announcement lives outside it. */
-export function CriticDelivery({ line, mood, observationId, referee, onDelivered, animate }: DeliveryProps) {
+export function CriticDelivery({ line, mood, observationId, referee, onVoiceBeat, onDelivered, animate }: DeliveryProps) {
   const { words, beats } = useMemo(() => scoreLine(line), [line])
   const [count, setCount] = useState<number | null>(null)
   useLayoutEffect(() => {
@@ -30,6 +31,8 @@ export function CriticDelivery({ line, mood, observationId, referee, onDelivered
       return
     }
     const reveal = (visible: number) => {
+      const beat = beats[visible - 1]
+      if (beat.jaw !== 'closed') onVoiceBeat(beat.glyph)
       setCount(visible)
       tick = setTimeout(() => {
         if (visible === beats.length) finish()
@@ -49,7 +52,7 @@ export function CriticDelivery({ line, mood, observationId, referee, onDelivered
       document.removeEventListener('visibilitychange', onVisibility)
       preference.removeEventListener('change', onPreference)
     }
-  }, [animate, beats, observationId, onDelivered])
+  }, [animate, beats, observationId, onDelivered, onVoiceBeat])
 
   const performing = count !== null && animate
   const visible = performing ? count : beats.length

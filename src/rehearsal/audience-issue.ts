@@ -35,6 +35,10 @@ export function audienceIssue(error: unknown, step: 'start' | 'capture' | 'obser
         ? 'This look was counted. Change the pose for another look.' : 'This look was counted.' }
     case 'stale_round':
       return { issue: 'This round has ended.', message: 'Restart this cue to keep the pose you just made.' }
+    case 'player_daily_limit':
+      return { issue: 'You’ve used your 60 AI looks today.', message: 'Your next 60 arrive at 00:00 UTC.' }
+    case 'house_daily_limit':
+      return { issue: 'The house has used today’s 240 shared looks.', message: 'The audience is back at 00:00 UTC. You can still play with a friend.' }
     case 'daily_limit':
       return { issue: 'We’ve used today’s AI looks.', message: 'Looks reset at 00:00 UTC. You can keep posing for a friend.' }
     case 'round_finished':

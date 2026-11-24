@@ -1,5 +1,13 @@
 # Bad Actors verification
 
+## Local preview · November 23, 2026 · Handwritten handbook and stage sound
+
+The loopback AI rehearsal returned HTTP 200 at the drinking-water exercise. Its status reported `gpt-6.2-sol` for both roles. No live model request was sent during this regression. The sample recording uses the same original synthesis functions as the game. [11-second sound check](../public/stage-soundcheck.mp3)
+
+TypeScript, 176 unit tests, ESLint, the practice build and the production build passed. In a separate DOM integration run, the first visit opened the three-panel handbook, quiet entry dismissed it, a revisit kept it closed, and How to play reopened it. A timed round waited for the handbook to close. Choosing the cup and pressing **Guess it, Stubbs!** once submitted exactly the authored actor artwork. The camera and model were controlled for this check. Separate checks observed the room loop, the three UI sounds, mute, the jaw and joint gates, countdown pause and the final bell. A physical speaker audition and rendered desktop/mobile screenshots are pending: the available Mac browser launchers exited before either viewport opened.
+
+On SQLite with a model double, the verified owner completed 65 initial looks and one additional look after four other players had exhausted all 240 shared looks. Each visitor reached 60; the next visitor was denied, and a new UTC day reopened play. The five-look round limit and replay protection remain active. The private loopback ledger accepted 80 consecutive reservations on one day. Hosted quota changes in this checkout await publication.
+
 ## Managed AI on the stage · November 23, 2026
 
 The first public release, `rel_01M85PMG8F9Z8GDJ3XB5SY6GVT`, served the home page and room at [Bad Actors](https://bad-actors-shi.app.space/). A fresh Chrome session completed the opening phone puzzle. The guest AI status on that release showed the booth was closed.

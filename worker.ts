@@ -88,6 +88,7 @@ export interface Env extends DOBindings<typeof __DO_MANIFEST__> {
   ASSETS: Fetcher
   /** Only an explicit provider selection enables billed observations on the hosted stage. */
   STAGE_AI_PROVIDER?: string
+  STAGE_OWNER_OPEN_REHEARSAL?: string
   /**
    * Platform service binding in production; deepspace dev supplies the URL
    * fallback. Standard app files use the platform's shared, app-scoped R2

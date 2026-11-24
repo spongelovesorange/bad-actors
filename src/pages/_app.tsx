@@ -14,6 +14,7 @@
  * so it's safe to mount here for every page.
  */
 
+import { StageSoundProvider } from '../rehearsal/StageSound'
 import { Suspense } from 'react'
 import { Outlet, useRouteError } from 'react-router-dom'
 import { ErrorScreen } from '../components/ErrorScreen'
@@ -21,7 +22,7 @@ import { ToastProvider, TooltipProvider } from '@/components/ui'
 
 export default function App() {
   return (
-    <ToastProvider>
+    <StageSoundProvider><ToastProvider>
       {/* The single TooltipProvider: owns the hover delay for every Tooltip
           and groups them so adjacent triggers switch instantly. Tune delay
           here — per-Tooltip providers would shadow it (see ui/Tooltip.tsx). */}
@@ -35,7 +36,7 @@ export default function App() {
           </Suspense>
         </div>
       </TooltipProvider>
-    </ToastProvider>
+    </ToastProvider></StageSoundProvider>
   )
 }
 

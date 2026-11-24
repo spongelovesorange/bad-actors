@@ -10,7 +10,7 @@ const frames = Array.from({ length: 6 }, (_, index) => 'data:image/png;base64,' 
 const databases: DatabaseSync[] = []
 afterEach(() => { for (const db of databases.splice(0)) db.close() })
 
-function fixture() {
+function fixture(owner?: string) {
   const db = new DatabaseSync(':memory:')
   databases.push(db)
   const sql = { exec(query: string, ...args: string[]) {
@@ -28,7 +28,7 @@ function fixture() {
     judge: vi.fn<StageProvider['judge']>(async () => ({ model: 'judge', verdict: 'incorrect' })),
   }
   let now = Date.UTC(2026, 0, 1)
-  function reboot() { return new StageGame(storage, provider, () => now) }
+  function reboot() { return new StageGame(storage, provider, () => now, owner) }
   const game = reboot()
   const draw = (user: string, cue = 2) => game.start(user, { cue }).body.roundId as string
   const frame = (roundId: string, index: number) => ({ roundId, image: frames[index], observationId: randomUUID() })
@@ -82,16 +82,23 @@ describe('hosted stage durable reservations', () => {
   })
 
   it('caps each round at five, enforces per-user and app-wide limits across rounds and restarts, and resets at UTC midnight', async () => {
-    const { game, reboot, provider, draw, frame, tick } = fixture()
-    for (const user of ['a', 'b']) {
-      const first = draw(user)
-      for (let i = 0; i < 5; i++) { expect((await game.observe(user, frame(first, i))).body.used).toBe(i+1); tick() }
-      expect((await game.observe(user, frame(first, 5))).body.error).toBe('round_limit')
-      for (let i = 0; i < 7; i++) expect((await reboot().observe(user, frame(draw(user), 0))).status).toBe(200)
-      expect((await game.observe(user, frame(draw(user), 0))).body.error).toBe('daily_limit')
+    const { game, reboot, provider, draw, frame, tick } = fixture('owner')
+    for (const user of ['owner','a','b','c','d']) {
+      const rounds = user === 'owner' ? 13 : 12
+      for (let n = 0; n < rounds; n++) {
+        const id = draw(user)
+        for (let i = 0; i < 5; i++) {
+          expect((await game.observe(user, frame(id, i))).status).toBe(200)
+          tick()
+        }
+        expect((await game.observe(user, frame(id, 5))).body.error).toBe('round_limit')
+      }
+      if (user !== 'owner')
+        expect((await reboot().observe(user, frame(draw(user), 0))).body.error).toBe('player_daily_limit')
     }
-    expect((await reboot().observe('c', frame(draw('c'), 0))).body.error).toBe('daily_limit')
-    expect(provider.guess).toHaveBeenCalledTimes(24)
+    expect((await reboot().observe('visitor', frame(draw('visitor'), 0))).body.error).toBe('house_daily_limit')
+    expect((await reboot().observe('owner', frame(draw('owner'), 0))).status).toBe(200)
+    expect(provider.guess).toHaveBeenCalledTimes(306)
     tick(86_400_000)
     expect((await reboot().observe('a', frame(draw('a'), 0))).status).toBe(200)
   })

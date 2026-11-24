@@ -30,6 +30,7 @@ run_worker_first = ["/api/*", "/ws/*", "/internal/*", "/v1/*", "/_deepspace/*", 
 DEEPSPACE_APP_ID = "app_01M85PC7Z0MJR7KDXE2Y1T6X03"
 APP_NAME = "bad-actors-shi"
 STAGE_AI_PROVIDER = "anthropic"
+STAGE_OWNER_OPEN_REHEARSAL = "true"
 # Exact comma-separated native callback URIs. Set this before deploying an
 # Expo client, for example: "myapp://auth/callback".
 NATIVE_AUTH_REDIRECT_URIS = ""

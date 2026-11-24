@@ -57,6 +57,17 @@ describe('AI audience at the stage', () => {
     expect(b.observe).toHaveBeenCalledTimes(1)
   })
 
+  it('shows an already posed actor once, even if the free round start needs a retry', async () => {
+    const b = booth()
+    b.stage.image = 'cup at the mouth'
+    b.start.mockRejectedValueOnce(new TypeError('offline'))
+    await b.round.start(true)
+    expect(b.observe).not.toHaveBeenCalled()
+    b.round.ask()
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(b.observe.mock.calls.map(([frame]) => frame.image)).toEqual(['cup at the mouth'])
+  })
+
   it('drops a frame if the player moves while it is being encoded', async () => {
     const b = booth()
     const encoding = deferred<string>()

@@ -6,7 +6,7 @@ import { CriticDelivery } from './CriticDelivery'
 import { refereeLabels, type RefereeMood } from './BoothReferee'
 import { FrontRowRail } from './FrontRowRail'
 import { StageVerdictEffects } from './StageVerdictEffects'
-import { createCrowdAudio } from './crowd-audio'
+import { useStageSound } from './StageSound'
 import { AudienceRound, localAudience, quietAudience, type AudienceState, type AudienceClient, type Verdict } from './audience-round'
 import { photographActor } from './audience-frame'
 import { modelIssue } from './audience-issue'
@@ -17,10 +17,11 @@ type Availability = 'checking' | Awaited<ReturnType<AudienceClient['status']>>
 type SeatProps = {
   children: ReactNode; clock: ReactNode; flyCue: ReactNode
   client?: AudienceClient; publicEntry: boolean; requestedPlay?: PlayMode
+  firstLook: boolean; paused: boolean
   openingVerdict?: 'correct' | 'incorrect'
   mode: PlayMode | null; canRehearse: boolean; cue: number; pose: PuppetPose
   player: RefObject<HTMLDivElement | null>; stage: RefObject<PuppetStageApi | null>
-  onStart: (mode: PlayMode) => void; onLeave: () => void; onNext: () => void
+  onStart: (mode: PlayMode, fromRoomLink?: boolean) => void; onLeave: () => void; onNext: () => void
   onClock: (reading: ClockReading | null) => void
 }
 
@@ -28,7 +29,7 @@ const reaction: Record<Verdict, CriticMood> = {
   correct: 'hit', incorrect: 'miss', uncertain: 'guess', unjudged: 'guess',
 }
 
-export function AudienceSeat({ children, clock, flyCue, openingVerdict, client = localAudience, publicEntry, requestedPlay, mode, canRehearse, cue, pose, stage, player, onStart, onLeave, onNext, onClock }: SeatProps) {
+export function AudienceSeat({ firstLook, paused, children, clock, flyCue, openingVerdict, client = localAudience, publicEntry, requestedPlay, mode, canRehearse, cue, pose, stage, player, onStart, onLeave, onNext, onClock }: SeatProps) {
   const active = mode !== null
   const [availability, setAvailability] = useState<Availability>('checking')
   const [statusCheck, setStatusCheck] = useState(0)
@@ -38,31 +39,9 @@ export function AudienceSeat({ children, clock, flyCue, openingVerdict, client =
     && ['127.0.0.1', 'localhost', '[::1]'].includes(window.location.hostname)
   const [state, setState] = useState<AudienceState>(quietAudience)
   const [heardObservation, setHeardObservation] = useState<string>()
-  const crowdAudio = useRef<ReturnType<typeof createCrowdAudio> | null>(null)
-  const [crowdSound, setCrowdSound] = useState<'off' | 'on' | 'unavailable'>('off')
+  const { audio, mode: crowdSound, setPower, roomTone, setRoom } = useStageSound()
   const lastCrowdCue = useRef<string | null>(null)
   const [playingCrowdCue, setPlayingCrowdCue] = useState<string | null>(null)
-  useEffect(() => () => {
-    crowdAudio.current?.dispose()
-    crowdAudio.current = null
-  }, [])
-  async function toggleCrowdSound() {
-    if (crowdAudio.current) {
-      crowdAudio.current.dispose()
-      crowdAudio.current = null
-      setCrowdSound('off')
-      return
-    }
-    const speaker = createCrowdAudio()
-    crowdAudio.current = speaker
-    const enabled = await speaker.enable()
-    if (speaker !== crowdAudio.current) return
-    if (!enabled) {
-      crowdAudio.current = null
-      speaker.dispose()
-    }
-    setCrowdSound(enabled ? 'on' : 'unavailable')
-  }
   const lastHeard = useRef<{ id: string; at: number } | null>(null)
   const markDelivered = useCallback((id: string) => {
     if (lastHeard.current?.id === id) return
@@ -70,6 +49,8 @@ export function AudienceSeat({ children, clock, flyCue, openingVerdict, client =
     setHeardObservation(id)
   }, [])
   const round = useRef<AudienceRound | null>(null)
+  const pausedRef = useRef(paused)
+  useLayoutEffect(() => { pausedRef.current = paused; round.current?.schedule() }, [paused])
   const lastPose = useRef(pose)
   const latestPose = useRef(pose)
   useLayoutEffect(() => { latestPose.current = pose }, [pose])
@@ -88,10 +69,10 @@ export function AudienceSeat({ children, clock, flyCue, openingVerdict, client =
   }, [client, hosted, localServer, statusCheck])
 
   useEffect(() => {
-    if (!requestedPlay || availability !== 'live' || opened.current || active) return
+    if (paused || !requestedPlay || availability !== 'live' || opened.current || active) return
     opened.current = true
-    onStart(requestedPlay)
-  }, [active, availability, requestedPlay, onStart])
+    onStart(requestedPlay, true)
+  }, [active, availability, requestedPlay, onStart, paused])
 
   useLayoutEffect(() => {
     setState(quietAudience)
@@ -100,19 +81,19 @@ export function AudienceSeat({ children, clock, flyCue, openingVerdict, client =
     lastPose.current = latestPose.current
     const controller = new AudienceRound(
       cue, client, () => stage.current?.isSettled() === true,
-      () => photographActor(player.current), setState, () => !document.hidden, mode === 'draw' ? onClock : undefined,
+      () => photographActor(player.current), setState, () => !document.hidden && !pausedRef.current, mode === 'draw' ? onClock : undefined,
       id => lastHeard.current?.id === id ? lastHeard.current.at : undefined,
     )
     round.current = controller
     const visibility = () => controller.schedule()
     document.addEventListener('visibilitychange', visibility)
-    void controller.start()
+    void controller.start(firstLook)
     return () => {
       document.removeEventListener('visibilitychange', visibility)
       controller.dispose()
       round.current = null
     }
-  }, [mode, cue, stage, player, onClock, client])
+  }, [mode, cue, stage, player, onClock, client, firstLook])
   useEffect(() => {
     if (lastPose.current !== pose) {
       lastPose.current = pose
@@ -147,16 +128,16 @@ export function AudienceSeat({ children, clock, flyCue, openingVerdict, client =
   useEffect(() => {
     if (!performanceKey || !crowdVerdict) {
       setPlayingCrowdCue(null)
-      crowdAudio.current?.stop()
+      audio.stopVerdict()
       return
     }
     if (lastCrowdCue.current === performanceKey) return
     lastCrowdCue.current = performanceKey
     if (!document.hidden) {
       setPlayingCrowdCue(performanceKey)
-      crowdAudio.current?.play(crowdVerdict)
+      audio.play(crowdVerdict)
     }
-  }, [performanceKey, crowdVerdict])
+  }, [performanceKey, crowdVerdict, audio])
   const referee: RefereeMood = ruling ?? (observation && !state.issue ? 'listening' : 'idle')
   let mood: CriticMood = verdict ? reaction[verdict] : observation ? 'guess' : 'idle'
   let speech = observation?.guess ?? (active ? 'My squint is ready.' : 'I’ll take a guess.')
@@ -182,7 +163,7 @@ export function AudienceSeat({ children, clock, flyCue, openingVerdict, client =
       </span>
       <CriticDelivery key={JSON.stringify([cue, mode, observation?.observationId, speech])}
         line={speech} mood={mood} observationId={observation?.observationId}
-        referee={referee} onDelivered={markDelivered}
+        referee={referee} onVoiceBeat={audio.speak} onDelivered={markDelivered}
         animate={(publicEntry || availability !== 'checking') && (Boolean(observation) || (!state.issue && state.phase !== 'error'))} />
     </div>
     <FrontRowRail />
@@ -194,11 +175,12 @@ export function AudienceSeat({ children, clock, flyCue, openingVerdict, client =
       <h2>Stage controls</h2>
       <span>{active ? `${state.used} / ${state.limit} looks` : offline ? 'Booth closed' : publicEntry && readyToStart ? 'AI booth' : availability === 'live' ? 'AI audience ready' : 'Checking connection…'}</span>
     </header>
-    <button className="ba-crowd-sound" type="button" aria-label="Crowd sound" aria-pressed={crowdSound === 'on'} onClick={toggleCrowdSound}>
+    <button className="ba-crowd-sound" type="button" aria-label="Stage sound" aria-pressed={crowdSound === 'on'} data-sound-power onClick={() => setPower(crowdSound !== 'on')}>
       {crowdSound === 'on' ? <Volume2 size={16} aria-hidden="true" /> : <VolumeX size={16} aria-hidden="true" />}
-      Crowd sound <span>{crowdSound === 'on' ? 'On' : 'Off'}</span>
+      Stage sound <span>{crowdSound === 'on' ? 'On' : 'Off'}</span>
     </button>
-    {crowdSound === 'unavailable' && <span role="status" className="ba-audience-message">Crowd sound couldn’t start in this browser.</span>}
+    {crowdSound === 'on' && <button className="ba-room-tone" type="button" aria-pressed={roomTone} onClick={() => setRoom(!roomTone)}>Room tone <span>{roomTone ? 'On' : 'Off'}</span></button>}
+    {crowdSound === 'unavailable' && <span role="status" className="ba-audience-message">Stage sound couldn’t start in this browser.</span>}
     {timeUp && <p className="ba-audience-message" role="status">Time! Draw another cue to play again.</p>}
     {state.issue && observation && <p className="ba-audience-message" role="status">{state.issue}</p>}
     {state.message && <p className="ba-audience-message" role="status">{state.message}</p>}
@@ -212,11 +194,13 @@ export function AudienceSeat({ children, clock, flyCue, openingVerdict, client =
           setAvailability('checking')
           setStatusCheck(check => check + 1)
         }}>Recheck connection</button>}</>
-        : <button type="button" className="ba-audience-call" onClick={() => onStart('draw')} disabled={!readyToStart}>
-          {!readyToStart ? 'Checking the booth…' : publicEntry ? 'Visit AI booth' : 'Play with AI'} <ArrowRight size={17} aria-hidden="true" />
-        </button>}
-      {readyToStart && canRehearse && <button type="button" className="ba-audience-rehearse"
-        onClick={() => onStart('rehearse')}>Try this cue with AI</button>}
+        : <>
+          <button type="button" className="ba-audience-call" onClick={() => onStart(canRehearse ? 'rehearse' : 'draw')} disabled={!readyToStart}>
+            {!readyToStart ? 'Checking the booth…' : canRehearse ? 'Guess it, Stubbs!' : 'Cue Roulette · 45s'} <ArrowRight size={17} aria-hidden="true" />
+          </button>
+          {readyToStart && canRehearse && <button type="button" className="ba-audience-rehearse"
+            onClick={() => onStart('draw')}>Cue Roulette · 45s</button>}
+        </>}
     </div> : <>
       <div className="ba-audience-footer">
         {finished && !finishingLine

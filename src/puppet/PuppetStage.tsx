@@ -20,6 +20,7 @@ type Props = {
   pose: PuppetPose
   onPoseChange?: (pose: PuppetPose) => void
   onPosePreview?: (pose: PuppetPose) => void
+  onTug?: (handle: StageHandle, travel: number, milliseconds: number) => void
   onGrabChange?: (grabbed: boolean) => void
   interactive?: boolean
   stageRef?: Ref<PuppetStageApi>
@@ -50,7 +51,7 @@ function scaleFor(svg: SVGSVGElement) {
   const m = svg.getScreenCTM()
   return m ? Math.hypot(m.a, m.b) || 1 : 1
 }
-export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, interactive = true, stageRef, bodyFollow = true }: Props) {
+export function PuppetStage({ pose, onPoseChange, onPosePreview, onTug, onGrabChange, interactive = true, stageRef, bodyFollow = true }: Props) {
   const svg = useRef<SVGSVGElement>(null)
   const help = useId()
   const [active, setActive] = useState<StageHandle | null>(null)
@@ -76,10 +77,10 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
   const handleCenter = (handle: StageHandle) => rigPoint(rig, handle)
   const settled = !active && motion === stillMotion
   const visible = useRef<PuppetSnapshot>({ pose: rendered, motion })
-  const handlers = useRef({ onPoseChange, onPosePreview, onGrabChange, reduced, bodyFollow })
+  const handlers = useRef({ onPoseChange, onPosePreview, onTug, onGrabChange, reduced, bodyFollow })
   useLayoutEffect(() => {
     visible.current = grip ? { pose: rendered, motion, grip } : { pose: rendered, motion }
-    handlers.current = { onPoseChange, onPosePreview, onGrabChange, reduced, bodyFollow }
+    handlers.current = { onPoseChange, onPosePreview, onTug, onGrabChange, reduced, bodyFollow }
   })
   useImperativeHandle(stageRef, () => ({
     freeze: () => structuredClone(visible.current),
@@ -137,6 +138,7 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
     }
   }
   function drive(handle: StageHandle, delta: Point, milliseconds: number, holder: Hand | null = null) {
+    handlers.current.onTug?.(handle, Math.hypot(delta.x, delta.y), milliseconds)
     if (!handlers.current.bodyFollow || handlers.current.reduced) return
     const now = performance.now()
     // A fresh pull after an event-loop stall starts now, not at the previous paint.
@@ -144,7 +146,7 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
     tug(engine.current, handle, delta, milliseconds, holder)
   }
   function reactToTurn(handle: TurnHandle, degrees: number) {
-    if (!degrees || !Number.isFinite(degrees) || !handlers.current.bodyFollow || handlers.current.reduced) return
+    if (!degrees || !Number.isFinite(degrees)) return
     // A 12-degree toe flick and a quarter-turn of a small prop turn a short lever.
     const travel = degrees * (handle === 'prop' ? 0.32 : 0.75)
     drive(handle, { x: travel, y: travel * 0.30 }, 16, visible.current.pose.holder)

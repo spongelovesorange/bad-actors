@@ -5,7 +5,7 @@ const appLimit = 24
 
 // Each row reserves one observation and its single referee call. Keeping the receipt
 // across restarts also counts timeouts and a process exit after the provider was called.
-export function openObservationQuota(path: string) {
+export function openObservationQuota(path: string, openRehearsal = false) {
   const ledger = new DatabaseSync(path)
   ledger.exec('PRAGMA busy_timeout = 2000; CREATE TABLE IF NOT EXISTS reservations (day TEXT NOT NULL, session TEXT NOT NULL)')
   const clear = ledger.prepare('DELETE FROM reservations WHERE day != ?')
@@ -18,8 +18,8 @@ export function openObservationQuota(path: string) {
       ledger.exec('BEGIN IMMEDIATE')
       try {
         clear.run(day)
-        const { total, personal } = count.get(sessionId, day)!
-        const allowed = Number(total) < appLimit && Number(personal) < sessionLimit
+        const usage = openRehearsal ? null : count.get(sessionId, day)!
+        const allowed = !usage || (Number(usage.total) < appLimit && Number(usage.personal) < sessionLimit)
         if (allowed) insert.run(day, sessionId)
         ledger.exec('COMMIT')
         return allowed

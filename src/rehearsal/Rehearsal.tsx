@@ -1,10 +1,9 @@
-import { memo, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { memo, useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import {
   ArrowDownToLine,
   ArrowRight,
   BookOpen,
   CornerDownLeft,
-  ClipboardList,
   Eye,
   EyeOff,
   Hand,
@@ -34,6 +33,8 @@ import { Phone } from '../puppet/Phone'
 import { ActorFace } from '../puppet/ActorFace'
 import { isJoint, stageHandles } from '../puppet/geometry'
 import { footAngle, turnFoot } from '../puppet/joints'
+import { useStageSound } from './StageSound'
+import { CastComic } from './CastComic'
 import { AudienceSeat } from './AudienceSeat'
 import { createAudience, type AudienceClient } from './audience-round'
 import { StageClock } from './StageClock'
@@ -75,8 +76,10 @@ type RehearsalSession = {
   pose: PuppetPose
   correct?: boolean
   cueHidden?: boolean
+  askOnReturn?: boolean
 }
-type DialogKind = 'help' | 'account'
+type DialogKind = 'welcome' | 'help' | 'account'
+const handbookKey = 'bad-actors:handbook:1'
 
 function restoreSession(): RehearsalSession | null {
   try {
@@ -177,20 +180,30 @@ function PlayDialog({
   bodyFollow: boolean
   onBodyFollow: (follow: boolean) => void
 }) {
+  const { setPower } = useStageSound()
+  const leaving = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const [closing, setClosing] = useState(false)
+  function dismiss() {
+    if (leaving.current !== undefined) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { close(); return }
+    setClosing(true)
+    leaving.current = setTimeout(close, 125)
+  }
   const ref = useRef<HTMLDialogElement>(null)
   useEffect(() => {
     const node = ref.current
     node?.showModal()
-    return () => node?.close()
+    node?.querySelector<HTMLElement>('h2[tabindex]')?.focus({ preventScroll: true })
+    return () => { clearTimeout(leaving.current); node?.close() }
   }, [])
   return (
     <dialog
-      ref={ref}
-      className="ba-dialog"
+      ref={ref} data-closing={closing || undefined}
+      className={kind === 'account' ? 'ba-dialog' : 'ba-dialog ba-comic-book'}
       aria-labelledby="ba-dialog-title"
       onCancel={(event) => {
         event.preventDefault()
-        close()
+        dismiss()
       }}
       onClick={(event) => {
         if (event.target === event.currentTarget) {
@@ -201,31 +214,16 @@ function PlayDialog({
             event.clientY < r.top ||
             event.clientY > r.bottom
           )
-            close()
+            dismiss()
         }
       }}
     >
-      <button type="button" className="ba-dialog-x" aria-label="Close" onClick={close}>
+      <button type="button" className="ba-dialog-x" aria-label="Close" onClick={dismiss}>
         <X size={19} />
       </button>
-      <div className="ba-stamp">{kind === 'help' ? <ClipboardList /> : <LogIn />}</div>
-      <h2 id="ba-dialog-title">{kind === 'help' ? 'How to play' : 'Local rehearsal'}</h2>
-      {kind === 'help' ? (
-        <>
-          <p>
-            Choose <strong>Play with AI</strong> to draw a cue. You get 45 seconds to act and Mr. Stubbs gets five looks. Hold still so he can guess. Judge Monitor prints the verdict. The clock waits for both of them.
-          </p>
-          <ul>
-            <li>For a friend, select <strong>Your turn</strong>, pose the actor and hide the cue before passing the screen.</li>
-            <li>
-              Drag any joint on the actor. Lift a shoulder, bend a knee or pull a foot forward.
-              Drag the chest or head rotation point to turn it.
-            </li>
-            <li>Drag a held prop to move its hand. To pass it, put it down and drag it to the other palm.</li>
-            <li>
-              Use Tab to reach a stage handle. Arrow keys move it and Shift makes a larger step. On a foot, R and Shift+R turn it in opposite directions.
-            </li>
-          </ul>
+      {kind === 'account' ? <><div className="ba-stamp"><LogIn /></div><h2 id="ba-dialog-title">Local rehearsal</h2></> : <CastComic />}
+      {kind === 'help' && <details className="ba-technical-notes"><summary>Keyboard, friends &amp; movement</summary>
+        <p>Tab to a joint and use the arrow keys. Shift takes a bigger step. On a foot, R and Shift+R turn the shoe. To play with a friend, hide the cue and pass the screen.</p>
           {compareMotion && (
             <fieldset className="ba-motion">
               <legend>Compare the feel</legend>
@@ -244,13 +242,15 @@ function PlayDialog({
               </label>
             </fieldset>
           )}
-        </>
-      ) : (
-        <p>The practice stage works here. Sign-in and live rooms need a connected Bad Actors app.</p>
-      )}
-      <button type="button" className="ba-dark-button" onClick={close}>
-        Back to the stage <ArrowRight size={16} />
-      </button>
+      </details>}
+      {kind === 'account' && <p>The practice stage works here. Sign-in and live rooms need a connected Bad Actors app.</p>}
+      {kind === 'welcome' && <p className="ba-opening-tip">On the opening stage, guess the sample or grab a joint to take over.</p>}
+      <div className="ba-book-actions">
+        {kind === 'welcome' ? <>
+          <button type="button" className="ba-dark-button" data-sound-power onClick={() => { setPower(true); dismiss() }}>Places! Sound on <ArrowRight size={17} /></button>
+          <button className="ba-quiet-entry" type="button" data-sound-power onClick={() => { setPower(false); dismiss() }}>Play quietly</button>
+        </> : <button type="button" className="ba-dark-button" onClick={dismiss}>Back to the stage <ArrowRight size={16}/></button>}
+      </div>
     </dialog>
   )
 }
@@ -332,18 +332,33 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
   const [resetMessage, setResetMessage] = useState('')
   const [grabbing, setGrabbing] = useState(false)
   const [bodyFollow, setBodyFollow] = useState(true)
+  const { audio: houseAudio } = useStageSound()
+  const [introChecked, setIntroChecked] = useState(false)
+  const [firstLook, setFirstLook] = useState(false)
+  const parkedLook = useRef<number | null>(null)
+  const restored = useRef(false)
   const stage = useRef<PuppetStageApi>(null)
   const player = useRef<HTMLDivElement>(null)
   const [solo, setSolo] = useState<PlayMode | null>(null)
   const [clock, setClock] = useState<ClockReading | null>(null)
+  const updateClock = useCallback((reading: ClockReading | null) => {
+    houseAudio.clock(reading)
+    setClock(reading)
+  }, [houseAudio])
   const compareMotion = import.meta.env.DEV || !accountAvailable
   const helpTrigger = useRef<HTMLElement | null>(null)
   const cueHeading = useRef<HTMLHeadingElement>(null)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (compareMotion && params.get('direct') === '1') setBodyFollow(false)
+    if (restored.current) return
+    restored.current = true
+    try { if (localStorage.getItem(handbookKey) !== 'seen') setDialog('welcome') }
+    catch { setDialog('welcome') }
+    setIntroChecked(true)
     const saved = restoreSession()
     if (saved) {
+      parkedLook.current = saved.askOnReturn && saved.phase === 'practice' ? saved.cue : null
       setPose(saved.pose)
       setPhase(saved.phase)
       setCue(saved.cue)
@@ -363,9 +378,9 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
       }
     }
   }, [compareMotion])
-  const parkPose = () => {
+  const parkPose = (askOnReturn = false) => {
     try {
-      sessionStorage.setItem(sessionKey, JSON.stringify({ pose, phase, cue, correct, cueHidden }))
+      sessionStorage.setItem(sessionKey, JSON.stringify({ pose, phase, cue, correct, cueHidden, askOnReturn }))
     } catch {
       /* Practice still works in memory. */
     }
@@ -375,8 +390,11 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
     setDialog(kind)
   }
   function dismissDialog() {
+    if (dialog === 'welcome') {
+      try { localStorage.setItem(handbookKey, 'seen') } catch { /* Dismiss for this visit. */ }
+    }
     setDialog(null)
-    requestAnimationFrame(() => helpTrigger.current?.focus({ preventScroll: true }))
+    requestAnimationFrame(() => (helpTrigger.current ?? cueHeading.current)?.focus({ preventScroll: true }))
   }
   function yourTurn() {
     setPhase('practice')
@@ -388,9 +406,9 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
     requestAnimationFrame(() => cueHeading.current?.focus({ preventScroll: true }))
   }
   const publicEntry = accountAvailable && !hostedAudience
-  function playWithAudience(mode: PlayMode) {
+  function playWithAudience(mode: PlayMode, fromRoomLink = false) {
     if (publicEntry) {
-      parkPose()
+      parkPose(mode === 'rehearse')
       const query = new URLSearchParams({ play: mode, cue: String(cue + 1) })
       window.location.assign('/room?' + query)
       return
@@ -410,9 +428,12 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
     }
     setCueHidden(false)
     setNoteOpen(false)
+    setFirstLook(mode === 'rehearse' && (!fromRoomLink || parkedLook.current === cue))
+    parkedLook.current = null
     setSolo(mode)
   }
   function changeCue(index: number) {
+    setFirstLook(false)
     if (solo && index !== cue) setPose(initialPose())
     setCue(index)
     setNoteOpen(false)
@@ -466,7 +487,7 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
   const flyTitle = phase === 'guess' ? 'What’s the act?' : phase === 'revealed' ? 'Talking on the phone'
     : covered ? 'Guess the pose' : exercises[cue].title
   const account = accountControl ?? (accountAvailable ? (
-    <a className="ba-nav-room" href="/room" onClick={parkPose}>
+    <a className="ba-nav-room" href="/room" onClick={() => parkPose()}>
       Backstage <ArrowRight size={16} />
     </a>
   ) : (
@@ -492,9 +513,9 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
         <div className="ba-workspace ba-has-audience">
           <section className="ba-stage-block" aria-label="Rehearsal stage">
             <div className="ba-theater">
-              <AudienceSeat client={hostedAudience ?? (publicEntry ? publicAudience : undefined)} publicEntry={publicEntry} requestedPlay={requestedPlay} mode={solo} canRehearse={phase === 'practice' && !cueHidden} cue={cue + 1} pose={pose} stage={stage} player={player}
+              <AudienceSeat firstLook={firstLook} paused={!introChecked || dialog !== null} client={hostedAudience ?? (publicEntry ? publicAudience : undefined)} publicEntry={publicEntry} requestedPlay={requestedPlay} mode={solo} canRehearse={phase === 'practice' && !cueHidden} cue={cue + 1} pose={pose} stage={stage} player={player}
                 openingVerdict={phase === 'revealed' ? openingVerdict : undefined}
-                onStart={playWithAudience} onLeave={() => setSolo(null)} onClock={setClock}
+                onStart={playWithAudience} onLeave={() => setSolo(null)} onClock={updateClock}
                 onNext={() => solo === 'draw' ? playWithAudience('draw') : changeCue((cue + 1) % exercises.length)}
                 flyCue={<FlyCue title={flyTitle} covered={covered} reveal={phase === 'revealed'} headingRef={cueHeading}
                   draw={solo === 'draw' ? cue : undefined} />}
@@ -503,6 +524,7 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
                   <div className="ba-player" ref={player}>
                     <PuppetStage
                       stageRef={stage}
+                      onTug={houseAudio.tug}
                       pose={pose}
                       onPoseChange={inputPose}
                       bodyFollow={bodyFollow}

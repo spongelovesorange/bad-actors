@@ -41,6 +41,13 @@ function fixture(provider = fake()) {
 }
 
 describe('local AI observation and independent referee', () => {
+  it('keeps reserving looks across many private rehearsal rounds', () => {
+    const quota = openObservationQuota(':memory:', true)
+    try {
+      for (let i = 0; i < 80; i++) expect(quota.claim('private-player', Date.UTC(2026, 10, 23))).toBe(true)
+    } finally { quota.close() }
+  })
+
   it('sends only pixels to the spectator, then judges its original words and closes a correct round', async () => {
     const f = fixture()
     f.provider.judge.mockResolvedValue({ verdict: 'correct', model: 'referee' })

@@ -89,6 +89,7 @@ function matchesLook(guess: PendingGuess, frame: Frame, limit: number) {
 /** The player can keep acting while a look is in flight. Only the newest unsent pose is retained. */
 export class AudienceRound {
   private roundId?: string
+  private showOnStart = false
   private pending = false
   private revision = 0
   private readyAt = 0
@@ -132,15 +133,18 @@ export class AudienceRound {
     this.syncClock()
   }
 
-  async start() {
+  async start(showCurrentPose = this.showOnStart) {
     if (this.busy || this.abort.signal.aborted || this.roundId) return
     this.busy = true
+    this.showOnStart = showCurrentPose
     this.update({ phase: 'starting', issue: undefined, message: undefined })
     try {
       const result = await this.send.start(this.cue, this.abort.signal)
       if (this.abort.signal.aborted) return
       if (!result.roundId || result.limit !== 5) throw new Error('The audience booth returned an invalid round.')
       this.roundId = result.roundId
+      if (showCurrentPose) this.pending = true
+      this.showOnStart = false
       this.update({ phase: 'ready', limit: result.limit })
     } catch (error) {
       this.update({ phase: 'error', ...audienceIssue(error, 'start', this.state.limit, this.send.mode === 'hosted') })
@@ -266,7 +270,7 @@ export class AudienceRound {
       const used = known?.used ?? this.state.used
       if (frame && (known?.code === 'same_pose' || known?.code === 'vision_failed')) this.lastImage = frame.image
       const newPoseNeeded = known?.code === 'same_pose' || known?.code === 'vision_failed'
-      const recovery = known?.code === 'stale_round' ? 'restart' : known?.code === 'daily_limit' ? 'daily-limit' : newPoseNeeded ? 'change-pose' : undefined
+      const recovery = known?.code === 'stale_round' ? 'restart' : ['daily_limit','player_daily_limit','house_daily_limit'].includes(known?.code ?? '') ? 'daily-limit' : newPoseNeeded ? 'change-pose' : undefined
       const complete = (!this.unresolved && used >= this.state.limit) || known?.code === 'round_finished' || known?.code === 'round_limit'
       const spoken = this.unresolved ? this.state.pendingGuess : undefined
       this.update({

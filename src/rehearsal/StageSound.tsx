@@ -57,7 +57,11 @@ export function StageSoundProvider({children}: {children: ReactNode}) {
     setMusicState(band)
     const visibility = () => audio.setOnstage(!document.hidden)
     const activate = (event: Event) => {
-      if (!event.isTrusted || (event.target instanceof Element && event.target.closest('[data-sound-power]'))) return
+      if (!event.isTrusted) return
+      // Whoever clicks or types is looking at the page. Safari can load a page in the background and
+      // show it without saying so, which left the hall silent with Stage sound reading On.
+      audio.setOnstage(true)
+      if (event.target instanceof Element && event.target.closest('[data-sound-power]')) return
       if (restore.current) void setPower(true)
       // Sound is on but the browser paused it (Safari can, after sleep or a long while away).
       else audio.wake()

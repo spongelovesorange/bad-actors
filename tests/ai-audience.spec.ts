@@ -319,6 +319,44 @@ test.describe('opening the how-to-play demo', () => {
     await expect(still.locator('.ba-howto-hand')).toHaveCount(0)
     await expect(still.locator('[aria-current]')).toHaveCount(0)
   })
+
+  test('a click starts the sound even if the browser never said the page was shown', async ({ page }) => {
+    await mockAudience(page, () => ({ guess: 'Drinking.', verdict: 'correct' }))
+    // Count every sound that starts, and route all of it through a silent gain so nothing reaches the speakers.
+    await page.addInitScript(() => {
+      const record = window as unknown as { soundStarts: number }
+      record.soundStarts = 0
+      const start = AudioBufferSourceNode.prototype.start
+      AudioBufferSourceNode.prototype.start = function (this: AudioBufferSourceNode, ...args: Parameters<AudioBufferSourceNode['start']>) {
+        record.soundStarts++
+        start.apply(this, args)
+      }
+      const connect = AudioNode.prototype.connect as (this: AudioNode, ...args: unknown[]) => unknown
+      const hushes = new WeakMap<BaseAudioContext, GainNode>()
+      AudioNode.prototype.connect = function (this: AudioNode, ...args: unknown[]) {
+        const speakers = this.context.destination
+        if (args[0] !== speakers) return connect.apply(this, args)
+        let hush = hushes.get(this.context)
+        if (!hush) {
+          hush = this.context.createGain()
+          hush.gain.value = 0
+          connect.call(hush, speakers)
+          hushes.set(this.context, hush)
+        }
+        return connect.call(this, hush, ...args.slice(1))
+      } as typeof AudioNode.prototype.connect
+    })
+    await page.goto('/?cue=1')
+    // Safari can load a page in the background, then show it without a visibilitychange event.
+    await page.evaluate(() => {
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => true })
+      document.dispatchEvent(new Event('visibilitychange'))
+      delete (document as { hidden?: boolean }).hidden
+    })
+    await page.getByRole('dialog', { name: 'How to play' }).getByRole('button', { name: /Sound on/ }).click()
+    await expect(page.getByRole('button', { name: 'Stage sound' })).toHaveAttribute('aria-pressed', 'true')
+    await expect.poll(() => page.evaluate(() => (window as unknown as { soundStarts: number }).soundStarts)).toBeGreaterThanOrEqual(2)
+  })
 })
 
 test('the hint replaces the drag tip during free play, with the pose sheet for a classic cue', async ({ page }) => {

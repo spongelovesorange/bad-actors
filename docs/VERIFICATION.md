@@ -10,14 +10,21 @@
     - 17 sounds started and the level at the speakers peaked at 0.227.
     - The player heard every sound and a plain test beep.
 
-    The game's audio code works in a fresh Safari page. Why the live tab stayed silent is not confirmed. The likeliest causes are a muted tab or an audio context that Safari had paused.
-  - **What changed.** The split calls stay, since they cost nothing. If the browser pauses the audio while Stage sound is on, the next click or key press now resumes it, and the room tone and band come back once it runs. Unit tests cover the unchained `connect()` and both ways of waking.
+    The game's audio code works in a fresh Safari page.
+  - **On the live site.** After release #11 the player's long-open live tab was still silent. A brand-new Safari tab opened on the live site played sound. A stage test then recreated the player's exact symptom: the page was marked hidden and then shown again without a `visibilitychange` event, and after that Stage sound read On while no sound started at all.
+  - **What changed.**
+    - The split calls stay, since they cost nothing.
+    - Release #11: if the browser pauses the audio while Stage sound is on, the next click or key press resumes it, and the room tone and band come back once it runs.
+    - Any click or key press now also tells the sound desk the page is in front. The stage test failed before this change and passes after it.
+    - Unit tests cover the unchained `connect()` and both ways of waking.
+
+    It is still not confirmed whether the old tab missed that event, had been muted with Safari's speaker button, or held an audio context that Safari had paused.
 - **Stubbs and Judge Monitor act between lines.** The player asked for richer faces that move. The README describes what each of them does in each mood. Every mood was drawn close up in Chromium, and the animations running on each part were read back from the page:
   - Stubbs: breathing, blinking and glancing at rest, plus a yawn when idle with his jaw shut; the opera-glass sweep while looking; three hops on a hit; a shiver and a falling bead of sweat on a miss; a wobble and circling eyes on an error; a falling tear on the Big Feelings night; glances at the balcony on the Gala night.
   - Judge Monitor: a flicker and a slow scan bar in every mood; blinking and glancing eyes at rest; typing dots and a blinking amber light while it weighs a guess; a hop, a glow and sparkles for a match; a glitch and a red flash for a miss; one eye pondering beside a question mark for a close call; static snow when it can't rule.
   - A free-play round with scripted replies reached the opera glasses, then the programme and the Miss! slip.
   - Reduced motion turns every one of these animations off and keeps the expressions.
-- 214 unit tests, the typecheck, lint, both builds and all 42 stage tests pass.
+- 214 unit tests, the typecheck, lint, both builds and all 43 stage tests pass.
 
 ## The twelve new cues on the real models · November 24, 2026
 

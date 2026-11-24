@@ -1,5 +1,30 @@
 # Bad Actors verification
 
+## Racing a friend, and DeepSpace collections underneath · November 24, 2026
+
+- **Why.** Before submitting, the build was checked against the brief and against DeepSpace's three example apps (StoryNest, ThreadHunt, RunningMap). All three keep their data in collections with per-row rules and live queries, and all three test with two real users. Bad Actors used DeepSpace's auth and integration proxy but no collections, and had no two-user test. The player proposed racing the same cue and asked for it to follow how established party games run their rooms.
+- **What changed.**
+  - A race room per four-letter code: `races`, `race_players` and `race_results` collections, readable by signed-in players and written only by four server actions (create, join, deal, finish). A finish is accepted only when the AI booth's ledger shows the caller's round on this cue, opened after the deal and closed by a correct ruling (or five looks spent). The time runs from the deal to the winning look's Ready press, both on the server's clock.
+  - A presence room per race for who is online and what each stage is doing.
+  - Best timed shows per night move into a `show_bests` collection that only its owner can read or write, merged with any record already in the browser.
+  - The `/settings` and `/api-status` pages and their tests, left from the scaffold, are gone. `api.spec.ts` now checks that the booth turns signed-out visitors away. The hosted Playwright config no longer picks up the practice-server specs.
+- **How it was checked.**
+  - Unit tests for the referee with an in-memory record room: codes, joins, the six-player cap, host-only deals, a fresh cue each round, and every finish the referee must refuse (stranger, no round, a cue guessed before the deal, a different cue, not yet guessed, booth unreachable), the first time kept on a repeat, and "out" after five looks. The booth's standing report is tested on SQLite.
+  - `npx deepspace test run` against the local Worker, with two real test accounts in separate browsers:
+    - Each player gets their own booth round.
+    - The host opens a room from the ticket and the friend joins through the link. Both rosters fill in live, only the host can deal, both curtains show the same cue for round 1, and the friend's "Posing…" reaches the host's board. Using the friend's own session token, a finish claimed before Stubbs had guessed came back `not_finished` from the booth, and a deal came back `not_host`.
+    - A timed show whose five acts ran out of time without a look (no model calls) saved a best evening to the account. It came back after the browser's copy was deleted, and the other account still showed "Not played yet".
+  - Screenshots of the ticket, the lobby, the curtain, a race in progress, the results and round 2, at 1280 and 390 pixels. They led to two fixes: the race ticket's styles had been in a stylesheet that `/room` never loads, and during a round the Ready button now sits above the board on a phone.
+  - **A real round, with the player's approval.** Two test accounts raced on the local Worker with real model calls, in room ZZZB on the cue "Saluting".
+    - Each player changed the pose before every look and pressed Ready five times. Stubbs guessed neither, so both ran out of looks.
+    - The Worker log shows each action once: create, two joins, the deal, and two finishes, both accepted.
+    - Both boards showed both players "Out of looks" and the line "Nobody got it. Stubbs blames the lighting." The friend had no deal button.
+    - Both players then reopened the room, which made no new looks, and the host dealt round 2. Both stages got "Taking a selfie".
+    - The ten looks made 20 model calls, about $0.008 at the rate measured on November 24. The exact bill wasn't recorded. The check script waited for a Ready button that, correctly, never returns after a fifth look, so it stopped before writing its receipt.
+    - The results board highlighted the first row as the winner even when nobody had guessed. That is fixed.
+  - **Still not seen in a real game:** a round won by a correct ruling. The winning time (from the deal to the winning Ready press) is covered by the referee's unit tests only.
+- 227 unit tests, the typecheck, lint, both builds, all 44 stage tests and 12 DeepSpace tests pass.
+
 ## The house curtain · November 24, 2026
 
 - **What the player asked for.** The cue still didn't stand out. The player suggested a curtain that starts closed, shows the cue in big letters and then opens, done with some humour, and the same opening at the front of the how-to-play demo.

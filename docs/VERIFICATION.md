@@ -1,5 +1,22 @@
 # Bad Actors verification
 
+## Skipping a cue that has everyone stuck · November 24, 2026
+
+- **What the player found.** In a live race on release #19, nothing the player tried got Stubbs to say "Hiding behind a tray". A stuck round could only end when every player had spent all five looks, at about 4¢ each with the voice, or once the host had finished.
+- **What changed.**
+  - While a round is on and the host hasn't finished it, the race board gives the host **Skip this cue**. It deals the next round with a new cue for every stage, as a quiz host skips a question.
+  - The other players see "Stuck? (the host) can skip it."
+  - A skipped round counts only for a player who had already guessed it, so a skip can't take a win away.
+  - The server is unchanged: the deal action already let the host deal at any time, and a finish for the skipped cue is refused because the cue has changed.
+- **How it was checked.**
+  - Board tests cover three cases:
+    - the host sees Skip mid-round;
+    - another player sees who can skip;
+    - once the host has finished, the usual "Next round now" replaces it.
+  - The two-player DeepSpace race test now ends with the host skipping round 1. Both stages move to round 2 with a cue other than round 1's, and the friend never sees the button.
+  - Screenshots show the host's board at 1280 pixels and the friend's line at 390.
+- 236 unit tests, the typecheck, lint, both builds, all 44 stage tests and 13 DeepSpace tests pass.
+
 ## The race ticket's error, as a toast · November 24, 2026
 
 - **What changed.** When the race desk couldn't open a room, the stage showed a browser alert, the last one in the game. It now shows a toast, the same way the app reports a refused write: "Couldn’t open a race", followed by the desk's reason.

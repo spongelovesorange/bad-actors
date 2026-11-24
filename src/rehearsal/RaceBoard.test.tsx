@@ -8,17 +8,18 @@ const players = [{ code: 'KXTP', userId: 'ann', name: 'Ann' }, { code: 'KXTP', u
 const won = (round: number, userId: string, ms: number): RoundResult & { code: string } =>
   ({ code: 'KXTP', round, userId, name: userId === 'ann' ? 'Ann' : 'Bo', outcome: 'guessed', ms, looks: 1 })
 
-/** The board for Ann, the host, after `round` rounds of these finishes, with everyone done. */
-function board(finishes: ReturnType<typeof won>[], round: number) {
+/** The board as `me` sees it after `round` rounds of these finishes. Ann is the host. */
+function board(finishes: ReturnType<typeof won>[], round: number, me = 'ann') {
   const results = rankResults(finishes.filter(result => result.round === round))
+  const everyoneDone = players.every(player => results.some(result => result.userId === player.userId))
   const room = {
-    loading: false, missing: false, round, players, results,
+    loading: false, missing: false, round, players, results, everyoneDone,
     race: { code: 'KXTP', host: 'ann', hostName: 'Ann', round, cue: 1, startedAt: 0 },
-    mine: results.find(result => result.userId === 'ann'),
+    mine: results.find(result => result.userId === me),
     online: () => true, progressOf: () => undefined,
-    everyoneDone: true, match: scoreMatch(finishes, round, true),
+    match: scoreMatch(finishes, round, everyoneDone),
   } as ReturnType<typeof useRaceRoom>
-  return renderToStaticMarkup(<RaceBoard room={room} code="KXTP" me="ann" busy={false} onDeal={() => {}} onLeave={() => {}} />)
+  return renderToStaticMarkup(<RaceBoard room={room} code="KXTP" me={me} busy={false} onDeal={() => {}} onLeave={() => {}} />)
 }
 
 describe('the race board keeps the match score', () => {
@@ -39,5 +40,25 @@ describe('the race board keeps the match score', () => {
     expect(html).toContain('data-champion="true"')
     expect(html).toContain('>New match<')
     expect(html).not.toContain('>Next round<')
+  })
+})
+
+describe('a cue that has everyone stuck', () => {
+  it('lets the host skip it mid-round', () => {
+    const html = board([won(1, 'ann', 20_000), won(1, 'bo', 30_000)], 2)
+    expect(html).toContain('Skip this cue')
+    expect(html).not.toContain('Next round')
+  })
+
+  it('tells everyone else the host can skip it', () => {
+    const html = board([won(1, 'ann', 20_000), won(1, 'bo', 30_000)], 2, 'bo')
+    expect(html).toContain('Stuck? Ann can skip it.')
+    expect(html).not.toContain('Skip this cue')
+  })
+
+  it('swaps the skip for the usual deal once the host has finished the round', () => {
+    const html = board([won(1, 'ann', 20_000), won(1, 'bo', 30_000), won(2, 'ann', 9_000)], 2)
+    expect(html).toContain('>Next round now<')
+    expect(html).not.toContain('Skip this cue')
   })
 })

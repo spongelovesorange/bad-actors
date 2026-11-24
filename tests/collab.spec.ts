@@ -104,6 +104,17 @@ test('two players race the same cue: a room code, a live roster, and one deal fo
   expect(await claim('raceFinish')).toMatchObject({ success: false, code: 'not_finished' })
   expect(await claim('raceStart')).toMatchObject({ success: false, code: 'not_host' })
   await expect(hostBoard).not.toContainText(/\d:\d\d\.\d/)
+
+  // A cue that stumps everyone: only the host can skip it, and both stages get a new cue for round 2.
+  await expect(friendBoard.getByRole('button', { name: 'Skip this cue' })).toHaveCount(0)
+  await expect(friendBoard).toContainText('can skip it')
+  await hostBoard.getByRole('button', { name: 'Skip this cue' }).click()
+  for (const user of [host, friend]) {
+    await expect(user.page.getByTestId('race-board')).toHaveAttribute('data-round', '2', { timeout: 15_000 })
+    const curtain = user.page.getByTestId('act-curtain')
+    await expect(curtain).toContainText('Race · round 2', { timeout: 15_000 })
+    await expect(curtain.locator('.ba-cue-sign-title')).not.toHaveText(titles[0])
+  }
 })
 
 test('a race the desk can’t open says why in a toast, not a browser alert', async ({ users }) => {

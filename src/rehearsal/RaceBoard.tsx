@@ -1,5 +1,5 @@
 import { useId, useState, type FormEvent } from 'react'
-import { ArrowRight, Copy, Flag, LogOut, Trophy } from 'lucide-react'
+import { ArrowRight, Copy, Flag, LogOut, SkipForward, Trophy } from 'lucide-react'
 import { formatMatchScore, formatRaceTime, matchWins, maxRacers, minRacers, readRaceCode } from '../race'
 import type { useRaceRoom } from './race-client'
 import './race.css'
@@ -68,13 +68,16 @@ export function RaceBoard({ room, code, me, busy, error, onDeal, onLeave }: {
   if (!round) line = host
     ? players.length < minRacers ? `Send the code to a friend. Up to ${maxRacers} can race.` : `Everyone here? Deal the first cue. ${rule}`
     : `Waiting for ${hostName} to deal the first cue. ${rule}`
-  else if (!mine) line = 'Same cue for everyone. First to make Stubbs say it wins.'
+  else if (!mine) line = 'Same cue for everyone. First to make Stubbs say it wins.' + (host ? '' : ` Stuck? ${hostName} can skip it.`)
   else if (!everyoneDone) line = mine.outcome === 'guessed' ? `You got it in ${formatRaceTime(mine.ms)}! Waiting for the others.` : 'Out of looks. Cheer on the others.'
   else if (champion) line = `${champion} the match, ${score}!`
   else line = (winner ? `${winner.userId === me ? 'You win' : winner.name + ' wins'} round ${round}!` : 'Nobody got it. Stubbs blames the lighting.')
     + ` Match score ${score}, first to ${matchWins}.`
   // Like a Kahoot lobby, the host's start button is there from the start, waiting for a second player.
   const canDeal = host && (!round || Boolean(mine))
+  // A cue can stump everyone. Like a quiz host skipping a question, the host can deal a new one
+  // mid-round; the skipped round counts only for a player who had already guessed it.
+  const canSkip = host && round > 0 && !mine
   const waiting = !round && players.length < minRacers
   async function copy() {
     try {
@@ -111,6 +114,9 @@ export function RaceBoard({ room, code, me, busy, error, onDeal, onLeave }: {
     <div className="ba-race-actions">
       {canDeal && <button type="button" className="ba-race-deal" disabled={busy || waiting} onClick={onDeal}>
         {!round ? 'Start the race' : champion ? 'New match' : everyoneDone ? 'Next round' : 'Next round now'}
+      </button>}
+      {canSkip && <button type="button" className="ba-race-skip" disabled={busy} onClick={onDeal}>
+        <SkipForward size={14} aria-hidden="true" /> Skip this cue
       </button>}
       <button type="button" className="ba-race-leave" onClick={onLeave}><LogOut size={14} aria-hidden="true" /> Leave race</button>
     </div>

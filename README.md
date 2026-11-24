@@ -20,7 +20,7 @@
   <img alt="Built on DeepSpace" src="https://img.shields.io/badge/built%20on-DeepSpace-2f3c34">
   <img alt="AI: Claude Haiku 5.5 and 4.5" src="https://img.shields.io/badge/AI-Claude%20Haiku%205.5%20%2B%204.5-df5139">
   <img alt="Voice: ElevenLabs" src="https://img.shields.io/badge/voice-ElevenLabs-2c241c">
-  <img alt="Tests: 233 unit and 56 browser" src="https://img.shields.io/badge/tests-233%20unit%20%C2%B7%2056%20browser-4d9a5b">
+  <img alt="Tests: 233 unit and 57 browser" src="https://img.shields.io/badge/tests-233%20unit%20%C2%B7%2057%20browser-4d9a5b">
 </p>
 
 <p align="center">
@@ -61,7 +61,7 @@
 | **Main tradeoff** | Each look costs two model calls: a blind guess, then a referee. That way Stubbs never sees the answer, and paraphrases are judged the same way every time. |
 | **On DeepSpace** | Auth; the integration proxy; collections with per-row rules and live queries for race rooms, rosters, results and each player's best shows; a presence room per race; server actions as the race referee; a Durable Object as the ledger for paid looks. [Racing a friend](#racing-a-friend) |
 | **Built with** | I chose the project (dropping my first one), set the direction, made the product decisions, played each release by hand and approved each commit and deploy. Coding agents wrote almost all of the code and the automated tests: Codex the first version, from a plan I drafted with ChatGPT, then Claude Code. [How it was built](#how-it-was-built) |
-| **Checked** | 233 unit tests, 44 Chromium stage tests, 12 DeepSpace tests on the local Worker (three with two real test accounts) and paid real-model checks. The latest covered the 12 new cues for $0.012. I also raced two of my own accounts for six rounds on the live site. |
+| **Checked** | 233 unit tests, 44 Chromium stage tests, 13 DeepSpace tests on the local Worker (three with two real test accounts) and paid real-model checks. The latest covered the 12 new cues for $0.012. I also raced two of my own accounts for six rounds on the live site. |
 | **Not built** | Spectators, chat and a party mode where friends guess each other's poses. [What I’d do next](#not-built-and-what-id-do-next) |
 | **SDK feedback** | Five things I ran into on DeepSpace SDK 0.44.2, with what I did about each. [Notes for the DeepSpace team](#notes-for-the-deepspace-team) |
 
@@ -175,7 +175,7 @@ I built Bad Actors by directing coding agents. I set the direction, made the pro
 
 **What the agents did**
 - Codex wrote the first version of the code from the plan I drafted with ChatGPT.
-- Claude Code wrote almost all of the later code under my direction, including the hosted AI booth, the race, the art and animation, and the synthesized music and sound. It also wrote the automated tests (233 unit, 44 browser and 12 DeepSpace) and kept [the verification log](docs/VERIFICATION.md).
+- Claude Code wrote almost all of the later code under my direction, including the hosted AI booth, the race, the art and animation, and the synthesized music and sound. It also wrote the automated tests (233 unit, 44 browser and 13 DeepSpace) and kept [the verification log](docs/VERIFICATION.md).
 
 ## The feel I was going for
 

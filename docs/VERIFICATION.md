@@ -1,5 +1,13 @@
 # Bad Actors verification
 
+## The race ticket's error, as a toast · November 24, 2026
+
+- **What changed.** When the race desk couldn't open a room, the stage showed a browser alert, the last one in the game. It now shows a toast, the same way the app reports a refused write: "Couldn’t open a race", followed by the desk's reason.
+- **How it was checked.**
+  - A new DeepSpace test signs a player in and makes the race desk refuse. The toast appears with the desk's reason, no browser dialog opens, and the player stays on the stage.
+  - Screenshots at 1280 and 390 pixels show the toast at the bottom right on a computer and along the bottom on a phone.
+- 233 unit tests, the typecheck, lint, both builds, all 44 stage tests and 13 DeepSpace tests pass.
+
 ## A real race on the live site, and a finish line · November 24, 2026
 
 - **The race.** On release #18 the player raced two of their own accounts in room TTXM for six rounds, with real model calls on every look.

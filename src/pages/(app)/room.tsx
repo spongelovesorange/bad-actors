@@ -9,6 +9,7 @@ import { raceName } from '../../race'
 import type { Best } from '../../rehearsal/show'
 import type { LevelId } from '../../deck'
 import { useSearchParams } from 'react-router-dom'
+import { useToast } from '@/components/ui'
 import '../../rehearsal/rehearsal.css'
 
 const hostedAudience = createAudience('hosted', getAuthToken)
@@ -47,15 +48,16 @@ export default function RoomEntry() {
   }
   const ready = Boolean(APP_ID)
   const accountBest = useAccountBest()
+  const toast = useToast()
   const [opening, setOpening] = useState(false)
-  /** Opens a race room with a fresh code and takes the host there. */
+  /** Opens a race room with a fresh code and takes the host there. If the race desk can't, a toast says why. */
   async function openRace() {
     if (opening) return
     setOpening(true)
     const reply = await raceAction<{ code: string }>('raceCreate', { name: raceName(user?.firstName || user?.fullName) })
     if (reply.ok) { window.location.assign(`/race?code=${reply.data.code}&from=room`); return }
     setOpening(false)
-    window.alert(reply.error)
+    toast.error('Couldn’t open a race', reply.error)
   }
   const signIn = <button className="ba-dark-button" type="button" data-testid="nav-sign-in-button" ref={trigger} onClick={() => setShowAuth(true)}>Sign in <ArrowRight size={16}/></button>
   if (ready && isLoaded && isSignedIn) {

@@ -1,5 +1,5 @@
 /**
- * Two signed-in players, two browser contexts, one worker.
+ * Signed-in players, each in their own browser context, on one worker.
  *
  * `users(2)` takes any two accounts from this machine's pool, so the spec runs
  * on a fresh app once two test accounts exist:
@@ -104,6 +104,24 @@ test('two players race the same cue: a room code, a live roster, and one deal fo
   expect(await claim('raceFinish')).toMatchObject({ success: false, code: 'not_finished' })
   expect(await claim('raceStart')).toMatchObject({ success: false, code: 'not_host' })
   await expect(hostBoard).not.toContainText(/\d:\d\d\.\d/)
+})
+
+test('a race the desk can’t open says why in a toast, not a browser alert', async ({ users }) => {
+  const [host] = await users(1)
+  await openStage(host)
+  await expect(host.page.getByTestId('ai-audience')).toHaveAttribute('data-service', 'live', { timeout: 15_000 })
+  await host.page.route('**/api/actions/raceCreate', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ success: false, code: 'closed', error: 'The race desk is closed for tea.' }),
+  }))
+  let dialogs = 0
+  host.page.on('dialog', dialog => { dialogs++; void dialog.dismiss() })
+  await host.page.getByRole('button', { name: /^Race a friend/ }).click()
+  const toast = host.page.getByRole('alert').filter({ hasText: 'The race desk is closed for tea.' })
+  await expect(toast).toBeVisible()
+  await expect(toast).toContainText('Couldn’t open a race')
+  expect(dialogs).toBe(0)
+  await expect(host.page).toHaveURL(/\/room$/)
 })
 
 test('a player’s best show is kept with their account, and nobody else sees it', async ({ users }) => {

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cueTitles, deck, levels } from '../deck'
 import { cues } from '../server/stage-protocol'
-import { actsPerShow, cuesInLevel, drawShow, levelOf, nextLevel, readBest, recordBest, reviewFor, scoreOf, starsFor, unlocked } from './show'
+import { actsPerShow, cuesInLevel, drawShow, levelOf, mergeBest, nextLevel, readBest, recordBest, reviewFor, scoreOf, starsFor, unlocked } from './show'
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -73,5 +73,13 @@ describe('the deck and five nights at the hall', () => {
     expect(nextLevel(1)).toBe(2)
     expect(nextLevel(4)).toBe(5)
     expect(nextLevel(5)).toBeUndefined()
+  })
+
+  it('merges this browser’s evenings with the account’s, night by night, keeping the better of each', () => {
+    const browser = { 1: { score: 3, stars: 7 }, 2: { score: 1, stars: 2 } }
+    const account = { 1: { score: 3, stars: 9 }, 2: { score: 0, stars: 0 }, 4: { score: 5, stars: 15 } }
+    expect(mergeBest(browser, account)).toEqual({ 1: { score: 3, stars: 9 }, 2: { score: 1, stars: 2 }, 4: { score: 5, stars: 15 } })
+    expect(mergeBest(account, browser)).toEqual(mergeBest(browser, account))
+    expect(mergeBest({}, {})).toEqual({})
   })
 })

@@ -101,12 +101,24 @@ export function readBest(): Best {
   } catch { return {} }
 }
 
+type Evening = { score: number; stars: number }
+/** More acts guessed wins; the same number of acts goes to more stars. */
+const beats = (now: Evening, old?: Evening) => !old || now.score > old.score || (now.score === old.score && now.stars > old.stars)
+
+/** The better evening of two records for every night, such as this browser's and the account's. */
+export function mergeBest(a: Best, b: Best): Best {
+  const merged: Best = { ...a }
+  for (const [key, entry] of Object.entries(b) as [string, Evening | undefined][]) {
+    const level = Number(key) as LevelId
+    if (entry && beats(entry, merged[level])) merged[level] = entry
+  }
+  return merged
+}
+
 /** Keeps the better of the old and new evening for this level. */
 export function recordBest(best: Best, level: LevelId, results: ActResult[]): Best {
   const now = scoreOf(results)
-  const old = best[level]
-  const better = !old || now.score > old.score || (now.score === old.score && now.stars > old.stars)
-  const next = better ? { ...best, [level]: now } : best
+  const next = beats(now, best[level]) ? { ...best, [level]: now } : best
   try { localStorage.setItem(bestKey, JSON.stringify(next)) } catch { /* Scores still show for this visit. */ }
   return next
 }

@@ -5,7 +5,8 @@ import { SCOPE_ID } from '../../constants'
 import { schemas } from '../../schemas'
 import { useToast } from '@/components/ui'
 
-function LegacyRecords({ children }: { children: ReactNode }) {
+/** The app's record room: race rooms, rosters and results, and each player's best shows, all live. */
+function Records({ children }: { children: ReactNode }) {
   const { error, warning } = useToast()
   return <RecordProvider allowAnonymous onWriteError={e => e.kind === 'permission' ? warning(e.title, e.detail) : error(e.title, e.detail)}>
     <RecordScope roomId={SCOPE_ID} schemas={schemas}>{children}</RecordScope>
@@ -15,5 +16,6 @@ function LegacyRecords({ children }: { children: ReactNode }) {
 export default function AppLayout() {
   const { pathname } = useLocation()
   const outlet = <Suspense fallback={<p role="status">Opening backstage…</p>}><Outlet/></Suspense>
-  return <DeepSpaceAuthProvider>{pathname === '/room' || pathname === '/home' ? outlet : <LegacyRecords>{outlet}</LegacyRecords>}</DeepSpaceAuthProvider>
+  // /home only redirects to /room, so it opens no socket.
+  return <DeepSpaceAuthProvider>{pathname === '/home' ? outlet : <Records>{outlet}</Records>}</DeepSpaceAuthProvider>
 }

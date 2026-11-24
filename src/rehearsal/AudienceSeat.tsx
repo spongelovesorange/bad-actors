@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
-import { ArrowRight, Drama, Eye, Timer, Volume2, VolumeX } from 'lucide-react'
+import { ArrowRight, Drama, Eye, Flag, Timer, Volume2, VolumeX } from 'lucide-react'
 import type { PuppetPose, PuppetStageApi } from '../puppet'
 import type { CriticMood } from './AudienceCritic'
 import type { TwistId } from '../deck'
@@ -38,6 +38,12 @@ type SeatProps = {
   onRoundEnd?: (result: RoundEnd) => void
   /** Whether this round is over, and whether Stubbs got it, in free play as in a show. */
   onRoundOver?: (end: { guessed: boolean } | null) => void
+  /** In a race the desk holds the race board, and the race deals the rounds: no tickets, no Next or Stop buttons. */
+  raceBoard?: ReactNode
+  /** Opens a race room: the third ticket, offered on the signed-in stage. */
+  onRace?: () => void
+  /** Whether Stubbs is looking and how many looks are spent, for the other racers' boards. */
+  onProgress?: (progress: { looking: boolean; looks: number }) => void
   client?: AudienceClient; publicEntry: boolean; requestedPlay?: PlayMode
   firstLook: boolean; paused: boolean
   openingVerdict?: 'correct' | 'incorrect'
@@ -54,7 +60,7 @@ const reaction: Record<Verdict, CriticMood> = {
   correct: 'hit', incorrect: 'miss', uncertain: 'guess', unjudged: 'guess',
 }
 
-export function AudienceSeat({ firstLook, paused, children, clock, flyCue, lobby, cueTools, beckon, opener, actSeconds = 45, night, actLabel, nextLabel, onRoundEnd, onRoundOver, openingVerdict, client = localAudience, publicEntry, requestedPlay, mode, cue, pose, stage, player, onStart, onLeave, onNext, onClock }: SeatProps) {
+export function AudienceSeat({ firstLook, paused, children, clock, flyCue, lobby, cueTools, beckon, opener, actSeconds = 45, night, actLabel, nextLabel, onRoundEnd, onRoundOver, raceBoard, onRace, onProgress, openingVerdict, client = localAudience, publicEntry, requestedPlay, mode, cue, pose, stage, player, onStart, onLeave, onNext, onClock }: SeatProps) {
   const active = mode !== null
   const [availability, setAvailability] = useState<Availability>('checking')
   const [statusCheck, setStatusCheck] = useState(0)
@@ -198,6 +204,7 @@ export function AudienceSeat({ firstLook, paused, children, clock, flyCue, lobby
     const shown = hit ?? state.history.at(-1)
     onRoundEnd({ guessed: Boolean(hit), looks: state.used, line: shown?.line ?? shown?.guess, image: shown?.image })
   }, [roundOver, onRoundEnd, state.history, state.used])
+  useEffect(() => { onProgress?.({ looking, looks: state.used }) }, [onProgress, looking, state.used])
   const beckonTicket = beckon === 'ticket' && !active && !offline && readyToStart
   const beckonReady = beckon === 'ready' && active && state.used === 0 && !looking && !finished && !timeUp
     && !finishingLine && !state.recovery && state.phase !== 'error'
@@ -264,7 +271,8 @@ export function AudienceSeat({ firstLook, paused, children, clock, flyCue, lobby
       {modelIssue('referee', scored?.judgeFailure)}{!finished && ' Change the pose for another look.'}
     </p>}
     {finished && state.used >= state.limit && last?.verdict !== 'correct' && <p className="ba-audience-message"><strong>Out of looks.</strong> Curtain down on this one.</p>}
-    {!active ? <div className={'ba-audience-footer ba-box-office' + (offline ? '' : ' ba-box-office-open')}>
+    {!active && raceBoard}
+    {raceBoard && !active ? null : !active ? <div className={'ba-audience-footer ba-box-office' + (offline ? '' : ' ba-box-office-open')}>
       {lobby}
       {offline ? <><span>{offlineDetail}</span>
         {(localServer || hosted) && <button type="button" className="ba-audience-rehearse" onClick={() => {
@@ -285,11 +293,16 @@ export function AudienceSeat({ firstLook, paused, children, clock, flyCue, lobby
             <span><b>Timed show · 5 acts</b><small>{readyToStart ? '45 seconds an act. Unlock the next level.' : 'Checking the booth…'}</small></span>
             <ArrowRight className="ba-show-arrow" size={22} aria-hidden="true" />
           </button>
+          {onRace && <button type="button" className="ba-show-ticket ba-show-race" onClick={onRace} disabled={!readyToStart}>
+            <Flag size={28} aria-hidden="true" />
+            <span><b>Race a friend</b><small>{readyToStart ? 'Same cue on two stages. First to make Stubbs say it wins.' : 'Checking the booth…'}</small></span>
+            <ArrowRight className="ba-show-arrow" size={22} aria-hidden="true" />
+          </button>}
         </div>}
     </div> : <>
       <div className="ba-audience-footer">
         {finished && !finishingLine
-          ? <button type="button" className="ba-audience-call ba-audience-next" onClick={onNext}>{nextLabel ?? (mode === 'draw' ? 'Draw another cue' : 'Play next cue')} <ArrowRight size={16} aria-hidden="true" /></button>
+          ? !raceBoard && <button type="button" className="ba-audience-call ba-audience-next" onClick={onNext}>{nextLabel ?? (mode === 'draw' ? 'Draw another cue' : 'Play next cue')} <ArrowRight size={16} aria-hidden="true" /></button>
           : <button type="button" className="ba-audience-call ba-guess-now" disabled={looking || finishingLine || state.recovery === 'daily-limit' || state.recovery === 'change-pose'} onClick={() => round.current?.ask()}
             data-beckon={beckonReady || undefined}>
             {state.recovery === 'restart' ? 'Restart this cue' : state.recovery === 'daily-limit' ? 'Daily looks used'
@@ -297,8 +310,9 @@ export function AudienceSeat({ firstLook, paused, children, clock, flyCue, lobby
                 : finishingLine ? 'Hearing Stubbs…' : looking ? (pending ? 'Waiting for the referee…' : 'In the booth…') : 'Ready! Guess, Stubbs'} <Eye size={18} aria-hidden="true" />
             {beckonReady && <GhostHand className="ba-beckon-hand" />}</button>}
         {cueTools}
-        <button type="button" className="ba-audience-leave" onClick={onLeave}>Stop AI</button>
+        {!raceBoard && <button type="button" className="ba-audience-leave" onClick={onLeave}>Stop AI</button>}
       </div>
+      {raceBoard}
       {state.history.length > 0 && <details className="ba-audience-log">
         <summary>What Stubbs saw ({state.history.length})</summary>
         <ol>{state.history.map((look) => <li key={look.observationId}>

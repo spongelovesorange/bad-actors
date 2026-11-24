@@ -16,6 +16,13 @@ export class StageAudience {
     const user = request.headers.get('x-stage-user')
     if (!user) return asJson(failure(401, 'sign_in_required', 'Sign in to play with the AI audience.'))
     const path = new URL(request.url).pathname
+    // The race actions ask where a player stands. Only the Worker holds this object's stub, and its
+    // public stage route forwards rounds, observe and voice alone, so no browser can reach this.
+    if (request.method === 'GET' && path === '/standing') {
+      const game = this.game ??= new StageGame(this.state.storage, createStageProvider(this.env), Date.now,
+        this.env.STAGE_OWNER_OPEN_REHEARSAL === 'true' ? this.env.OWNER_USER_ID : undefined)
+      return Response.json({ standing: game.standing(user) })
+    }
     if (request.method !== 'POST' || (path !== '/rounds' && path !== '/observe' && path !== '/voice'))
       return asJson(failure(404, 'not_found', 'Unknown stage action.'))
     let input: unknown

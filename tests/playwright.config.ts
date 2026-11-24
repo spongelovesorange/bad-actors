@@ -20,6 +20,9 @@ const BASE_URL = `http://127.0.0.1:${PORT}`
 export default defineConfig({
   testDir: '.',
   testMatch: '**/*.spec.ts',
+  // The stage specs script the loopback practice server's AI booth and run under
+  // playwright.stage.config.ts (`npm run test:stage`). The hosted app has no such booth.
+  testIgnore: /(ai-audience|puppet.*|fly-cue|theater-sightlines)\.spec\.ts$/,
   timeout: 30_000,
   retries: 0,
   use: {

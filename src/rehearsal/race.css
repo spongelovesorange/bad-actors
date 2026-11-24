@@ -1,0 +1,46 @@
+/* The race desk: a ticket-stock card on the control desk, with the room code printed like a stub. */
+.ba-race-board {
+  flex: 1 1 100%; display: grid; gap: 8px; min-width: 0; padding: 10px 12px 11px;
+  background: #f3e8d2; color: #2c241c; border: 2px solid #1d1915; border-radius: 6px 9px 7px 8px; box-shadow: 2px 3px 0 #15201d;
+}
+.ba-race-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.ba-race-label { display: inline-flex; align-items: center; gap: 5px; font: 800 13px/1 var(--ba-sign); letter-spacing: .12em; text-transform: uppercase; color: #ad3523; }
+.ba-race-code {
+  padding: 2px 10px 0; border: 2px dashed #1d1915; border-radius: 4px; background: #ffdf86;
+  font: 700 26px/1.1 var(--ba-voice); letter-spacing: .32em; text-indent: .16em;
+}
+.ba-app .ba-race-copy, .ba-app .ba-race-leave {
+  display: inline-flex; align-items: center; gap: 5px; min-height: 34px; padding: 4px 10px;
+  border: 2px solid #1d1915; border-radius: 6px; background: #fff9e9; color: #2c241c; font: 700 14px/1 var(--ba-sign); cursor: pointer;
+}
+.ba-race-copy { margin-left: auto; }
+.ba-race-roster { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.ba-race-roster li {
+  display: grid; grid-template-columns: 34px 12px minmax(0, 1fr) auto; align-items: center; gap: 8px;
+  padding: 5px 8px; border-radius: 5px; background: #fff9e9; border: 1.5px solid #d9c9a8;
+  font: 600 15px/1.2 var(--ba-sign);
+}
+.ba-race-roster li[data-me] { border-color: #1d1915; }
+.ba-race-roster li[data-place='1'] { background: #ffeaa9; border-color: #a5770c; }
+.ba-race-roster li[data-out] { opacity: .7; }
+.ba-race-roster b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 16px/1.2 var(--ba-voice); }
+.ba-race-roster small { font: 600 12.5px/1 var(--ba-sign); color: #6c5c47; }
+.ba-race-place { font: 800 13px/1 var(--ba-sign); color: #a5770c; text-align: center; }
+.ba-race-dot { width: 10px; height: 10px; border-radius: 50%; background: #b9ab90; }
+.ba-race-roster li[data-online] .ba-race-dot { background: #4d9a5b; box-shadow: 0 0 0 2px #4d9a5b40; }
+.ba-race-status { font-variant-numeric: tabular-nums; color: #4d4031; white-space: nowrap; }
+.ba-race-line { margin: 0; font: 700 16px/1.25 var(--ba-voice); }
+.ba-race-error { margin: 0; padding: 5px 8px; border-radius: 5px; background: #fbe1da; color: #7a2414; font: 650 14px/1.25 var(--ba-sign); }
+.ba-race-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ba-app .ba-race-deal {
+  min-height: 40px; padding: 6px 16px; border: 2px solid #1d1915; border-radius: 6px 10px 7px 9px;
+  background: #df5139; color: #fff7e8; box-shadow: 2px 3px 0 #15201d; font: 800 17px/1 var(--ba-sign); cursor: pointer;
+}
+.ba-app .ba-race-deal:disabled { opacity: .6; cursor: progress; }
+.ba-race-leave { margin-left: auto; }
+.ba-race-missing { display: grid; gap: 10px; justify-items: start; }
+@media (max-width: 600px) {
+  .ba-race-code { font-size: 22px; }
+  .ba-race-roster li { grid-template-columns: 28px 10px minmax(0, 1fr); }
+  .ba-race-status { grid-column: 3; font-size: 13.5px; }
+}

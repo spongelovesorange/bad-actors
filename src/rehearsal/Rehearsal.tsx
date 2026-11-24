@@ -43,7 +43,7 @@ import { StageClock } from './StageClock'
 import { FlyCue } from './FlyCue'
 import { type ClockReading, type PlayMode } from './acting-clock'
 import { deck, type Level, type LevelId } from '../deck'
-import { actsPerShow, drawShow, levelOf, nextLevel, readBest, recordBest, unlocked, type Best, type Show } from './show'
+import { actsPerShow, drawShow, levelOf, mergeBest, nextLevel, readBest, recordBest, unlocked, type Best, type Show } from './show'
 import { CurtainDialog, DeckDialog, ShowDialog } from './ShowDialogs'
 import { checkOpeningGuess } from './opening-guess'
 import { HandShapePicker, handShapeOptions } from './HandShapePicker'
@@ -322,14 +322,35 @@ function ExpressionPicker({ value, select }: { value: FaceShape; select: (shape:
 
 const publicAudience = createAudience('hosted')
 
+/** A round dealt by a race room: everyone in the room gets the same cue at the same moment. */
+export type RaceStage = {
+  round: number
+  /** The cue's number in the deck (index + 1). */
+  cue: number
+  /** The race board that takes the place of the tickets. */
+  board: ReactNode
+  /** The round is over for this player: Stubbs got it, or the five looks are spent. */
+  onFinished: (end: { guessed: boolean }) => void
+  onProgress: (progress: { looking: boolean; looks: number }) => void
+}
+
 type RehearsalProps = {
   accountAvailable?: boolean
   hostedAudience?: AudienceClient
   requestedPlay?: PlayMode
   accountControl?: ReactNode
+  race?: RaceStage
+  /** Offers the Race a friend ticket. */
+  onRace?: () => void
+  /** The player arrived from a page that already showed the how-to-play demo. */
+  skipDemo?: boolean
+  /** The signed-in player's best shows from their account, merged with this browser's. */
+  savedBest?: Best
+  /** A show beat the player's best on its night: keep it with their account. */
+  onBest?: (level: LevelId, evening: { score: number; stars: number }) => void
 }
 
-export default function Rehearsal({ accountAvailable = true, hostedAudience, requestedPlay, accountControl }: RehearsalProps) {
+export default function Rehearsal({ accountAvailable = true, hostedAudience, requestedPlay, accountControl, race, onRace, skipDemo, savedBest, onBest }: RehearsalProps) {
   const [pose, setPose] = useState<PuppetPose>(phoneSamplePose)
   const [phase, setPhase] = useState<Phase>('guess')
   const [cue, setCue] = useState(0)
@@ -388,11 +409,11 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
     // is the gesture that lets the hall make sound, so a returning player is never left in a silent
     // theatre. A ticket that brought the player here to play has already been past the demo.
     // Browser tests start past it too; players never set this key.
-    let skipBook = Boolean(requestedPlay)
+    let skipBook = Boolean(requestedPlay) || Boolean(skipDemo)
     try { skipBook ||= localStorage.getItem('bad-actors:handbook:skip') === '1' } catch { /* Private browsing shows it. */ }
     if (!skipBook) setDialog('welcome')
     setIntroChecked(true)
-    setBest(readBest())
+    setBest(current => mergeBest(readBest(), current))
     const saved = restoreSession()
     if (saved) {
       posed.current = saved.phase === 'practice'
@@ -414,7 +435,7 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
         setPose(initialPose())
       }
     }
-  }, [compareMotion, requestedPlay])
+  }, [compareMotion, requestedPlay, skipDemo])
   const parkPose = (askOnReturn = false) => {
     try {
       sessionStorage.setItem(sessionKey, JSON.stringify({ pose, phase, cue, correct, askOnReturn }))
@@ -509,6 +530,24 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
     setSolo('rehearse')
     enterGame()
   }
+  /** A race deals a round: the curtain comes down and goes up on the room's cue, with a fresh actor. */
+  function startRaceRound(index: number, round: number) {
+    setDialog(null)
+    setShow(null)
+    setPose(initialPose())
+    stageAct(index, `Race · round ${round}`, true, lastNight.current !== deck[index].level)
+    setCue(index)
+    setPhase('practice')
+    setNoteOpen(false)
+    setResetMessage('')
+    setFirstLook(false)
+    setSolo('rehearse')
+    enterGame()
+  }
+  const dealRef = useRef(startRaceRound)
+  dealRef.current = startRaceRound
+  const raceRound = race?.round ?? 0, raceCue = race?.cue ?? 0
+  useEffect(() => { if (raceRound && raceCue) dealRef.current(raceCue - 1, raceRound) }, [raceRound, raceCue])
   function beginAct(index: number, act: number, level: LevelId) {
     setCue(index)
     setPose(initialPose())
@@ -544,12 +583,21 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
     advancedFor.current = done
     if (done < actsPerShow) { beginAct(current.queue[done], done + 1, current.level); return }
     setSolo(null)
-    setBest(recordBest(best, current.level, current.results))
+    const next = recordBest(best, current.level, current.results)
+    setBest(next)
+    const evening = next[current.level]
+    if (evening && next !== best) onBest?.(current.level, evening)
     houseAudio.effect('fanfare')
     setDialog('curtain')
   }
+  // The account's record arrives after the page does; the better evening of the two shows.
+  useEffect(() => { if (savedBest) setBest(current => mergeBest(current, savedBest)) }, [savedBest])
   const advanceRef = useRef(advance)
   advanceRef.current = advance
+  // In a race, the end of this player's round goes to the referee, once per round.
+  const raceFinished = useRef(race?.onFinished)
+  raceFinished.current = race?.onFinished
+  useEffect(() => { if (roundEnd && raceRound) raceFinished.current?.(roundEnd) }, [roundEnd, raceRound])
   // The pit band plays the lobby tune between games and tonight's arrangement during one.
   const track: Track = solo ? nightTracks[deck[cue].level] : 'lobby'
   useEffect(() => { houseAudio.music(track) }, [houseAudio, track])
@@ -648,7 +696,7 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
     setResetMessage('Pose reset.')
   }
   const prop = pose.prop
-  const flyTitle = phase === 'guess' ? 'What’s the act?' : phase === 'revealed' ? 'Talking on the phone' : deck[cue].title
+  const flyTitle = race && !solo ? 'Get ready to race' : phase === 'guess' ? 'What’s the act?' : phase === 'revealed' ? 'Talking on the phone' : deck[cue].title
   const inShow = Boolean(show) && solo === 'draw'
   // Tonight's trouble follows the cue's level, in free play as in the show.
   const night = solo ? levelOf(deck[cue].level) : null
@@ -675,7 +723,7 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
     <button type="button" className="ba-audience-leave" aria-expanded={noteOpen} onClick={() => setNoteOpen(open => !open)}>
       <BookOpen size={14} aria-hidden="true" /> Hint
     </button>
-    {solo === 'rehearse' && <button type="button" className="ba-audience-leave" onClick={() => playWithAudience('rehearse')}>
+    {solo === 'rehearse' && !race && <button type="button" className="ba-audience-leave" onClick={() => playWithAudience('rehearse')}>
       <LayoutGrid size={14} aria-hidden="true" /> Change cue
     </button>}
   </>
@@ -708,7 +756,8 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
             <div className="ba-theater">
               <AudienceSeat firstLook={firstLook} paused={!introChecked || dialog !== null || curtain !== null} client={hostedAudience ?? (publicEntry ? publicAudience : undefined)} publicEntry={publicEntry} requestedPlay={requestedPlay} mode={solo} cue={cue + 1} pose={pose} stage={stage} player={player}
                 openingVerdict={phase === 'revealed' ? openingVerdict : undefined}
-                lobby={lobby} cueTools={cueTools}
+                lobby={race ? undefined : lobby} cueTools={cueTools}
+                raceBoard={race?.board} onRace={race ? undefined : onRace} onProgress={race?.onProgress}
                 beckon={guide === 'ticket' || guide === 'ready' ? guide : undefined}
                 opener={night?.opener} actSeconds={inShow && night ? night.seconds : 45} onRoundOver={setRoundEnd} night={twist}
                 actLabel={inShow ? `Act ${act} of ${actsPerShow}` : undefined}

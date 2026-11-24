@@ -34,7 +34,7 @@ export function CueSign({ kicker, title, quip, twist, sash, style, children }: {
         <span className="ba-cue-sign-kicker">{kicker}</span>
         <strong className="ba-cue-sign-title">{title}</strong>
         {quip && <em className="ba-cue-sign-quip">“{quip}” <small>— the director</small></em>}
-        {twist && <span className="ba-cue-sign-twist">Tonight: <b>{twist.name}</b>. {twist.line}</span>}
+        {twist && <span className="ba-cue-sign-twist">Tonight: <b>{twist.name}</b>{/[.!?]$/.test(twist.name) ? '' : '.'} {twist.line}</span>}
       </div>
     </div>
     {sash && <span className="ba-cue-sign-sash" aria-hidden="true">{sash}</span>}

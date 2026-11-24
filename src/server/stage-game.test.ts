@@ -57,6 +57,23 @@ describe('hosted stage durable reservations', () => {
     expect(provider.guess).toHaveBeenCalledTimes(1)
   })
 
+  it('tells the race referee where a player stands, with the winning Ready press as the finish', async () => {
+    const { game, provider, draw, frame, tick } = fixture()
+    expect(game.standing('alice')).toBeNull()
+    const opened = Date.UTC(2026, 0, 1)
+    const id = draw('alice', 7)
+    expect(game.standing('alice')).toEqual({ cue: 7, opened, lastLook: 0, guessed: false, looks: 0 })
+    tick(9000)
+    await game.observe('alice', frame(id, 0))
+    expect(game.standing('alice')).toMatchObject({ guessed: false, looks: 1, lastLook: opened + 9000 })
+    tick(6000)
+    provider.judge.mockResolvedValueOnce({ model: 'judge', verdict: 'correct' })
+    await game.observe('alice', frame(id, 1))
+    expect(game.standing('alice')).toEqual({ cue: 7, opened, lastLook: opened + 15_000, guessed: true, looks: 2 })
+    // Bob's seat is his own.
+    expect(game.standing('bob')).toBeNull()
+  })
+
   it('reminds Stubbs of guesses ruled out in this round only, and keeps his line with the words', async () => {
     const { game, provider, draw, frame, tick } = fixture()
     provider.guess.mockResolvedValueOnce({ model: 'mock', text: 'Taking a selfie', line: 'A selfie! Vanity, thy name is sandbag.' })

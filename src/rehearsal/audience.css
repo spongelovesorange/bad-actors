@@ -161,6 +161,9 @@
 .ba-app .ba-show-free { background: #ffdf86; color: #2c241c; transform: rotate(-.7deg); }
 .ba-app .ba-show-timed { background: #df5139; color: #fff7e8; transform: rotate(.7deg); }
 .ba-app .ba-show-free:hover:enabled { background: #ffeaa9; }
+/* The race ticket runs the width of the box office, under the two solo games. */
+.ba-app .ba-show-race { grid-column: 1 / -1; background: #f3e8d2; color: #2c241c; transform: rotate(-.3deg); }
+.ba-app .ba-show-race:hover:enabled { background: #fff3d9; }
 .ba-app .ba-show-timed:hover:enabled { background: #ea6249; }
 .ba-app .ba-show-ticket:is(:hover, :focus-visible):enabled { transform: translateY(-3px) rotate(0); box-shadow: 4px 7px 0 #15201d; animation: none; }
 .ba-app .ba-show-ticket:active:enabled { transform: translateY(1px); box-shadow: 1px 2px 0 #15201d; }

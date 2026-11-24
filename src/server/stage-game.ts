@@ -44,6 +44,19 @@ export class StageGame {
     return this.sql.exec<Seat>('SELECT round,cue,opened,lastLook,closed,starts FROM stage_seats WHERE user=?', user).toArray()[0]
   }
 
+  /**
+   * Where a player's current round stands, for the race referee: which cue, when it opened, when the
+   * last look was asked for, whether it was guessed and how many looks it took. Times are this
+   * server's clock. A round is closed only by a correct ruling, after which no look can follow, so
+   * `lastLook` is then the moment the winning pose was sent.
+   */
+  standing(user: string): { cue: number; opened: number; lastLook: number; guessed: boolean; looks: number } | null {
+    const seat = this.seat(user)
+    if (!seat) return null
+    const looks = this.sql.exec<{ n: number }>('SELECT COUNT(*) n FROM stage_looks WHERE round=?', seat.round).one().n
+    return { cue: seat.cue, opened: seat.opened, lastLook: seat.lastLook, guessed: seat.closed === 1, looks }
+  }
+
   start(user: string, input: Input): StageReply {
     const cue = input.cue
     if (typeof cue !== 'number' || !Number.isInteger(cue) || !cues[cue - 1] || Object.keys(input).length !== 1)

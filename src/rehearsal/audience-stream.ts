@@ -4,7 +4,7 @@ import type { Guess, PendingGuess } from './audience-round'
 type ErrorBody = { message?: string; error?: string; used?: number; visionFailure?: string }
 
 export function failedReply(status: number, body: ErrorBody | null) {
-  return new AudienceError(body?.message || 'The local AI game could not complete the request.', status,
+  return new AudienceError(body?.message || 'The AI audience could not complete the request.', status,
     body?.error, body?.used, body?.visionFailure)
 }
 

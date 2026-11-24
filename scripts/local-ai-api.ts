@@ -71,7 +71,7 @@ export function localAudiencePlugin(project: string, profile?: string): Plugin {
       server.middlewares.use(async (req, res, next) => {
         const path = req.url?.split('?')[0]
         if (!path?.startsWith(base)) return next()
-        const send = (reply: ReturnType<typeof failure>) => {
+        const send = (reply: LocalReply) => {
           res.statusCode = reply.status
           res.setHeader('Content-Type', 'application/json; charset=utf-8')
           res.setHeader('Cache-Control', 'no-store')

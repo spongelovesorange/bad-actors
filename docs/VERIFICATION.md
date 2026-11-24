@@ -1,5 +1,11 @@
 # Bad Actors verification
 
+## Hosted game preparation · November 23, 2026
+
+The owner's DeepSpace CLI listed one active, deployed application, `planb-meet-qs26`, owned by the signed-in account. Bad Actors still had an unregistered placeholder when this checkout was prepared. The Mac launcher checks that exact old app and presents the platform's destructive confirmation if a quota refusal requires freeing its slot. Its release URL comes from the successful deployment receipt.
+
+An isolated copy with a synthetic app identity built the production Worker, client and prerendered homepage. The local Worker served the homepage and room entry with HTTP 200. With no selected provider, its status returned `available:false`, and starting a model round returned 503 with zero outbound requests. In a separate isolated Worker with a test model service, native SQLite persisted round and quota state. A repeated observation replayed the stored result without another model call. Hosted login, a public deployment and the recognition rate of managed Claude on the six game poses still require separate checks. [Worker and model-double receipt](verification/hosted-stage-local.json)
+
 ## The fly cue, front row and verdict effects · November 23, 2026
 
 The player captured “Talking on the phone” extending below the plank. The old plank kept a fixed paint height when the title wrapped. The rebuilt paper and frame now grow together. Local Chromium measured the drawn text against the cut paper edge for all six exercises at 11 widths from 320 to 1440 pixels. The smallest clearance across the 66 combinations was 5.18 CSS pixels. The phone title had 5.94 pixels at 320 wide and 6.02 at 390 wide. [All 66 measurements](verification/stubbs-delivery/cue-ink.json)

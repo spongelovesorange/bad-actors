@@ -9,7 +9,7 @@ export function modelIssue(role: 'image model' | 'referee', reason?: string) {
   switch (reason) {
     case 'timeout': return name + ' took too long to reply.'
     case 'connection': return name + ' could not be reached.'
-    case 'http_auth': return name + ' rejected the local API credentials.'
+    case 'http_auth': return name + ' rejected the API credentials.'
     case 'http_limit': return name + ' reached its provider limit.'
     case 'http_server': return name + ' reported a service error.'
     case 'refused': return name + ' declined this request.'
@@ -17,10 +17,17 @@ export function modelIssue(role: 'image model' | 'referee', reason?: string) {
   }
 }
 
-export function audienceIssue(error: unknown, step: 'start' | 'capture' | 'observe', remaining: number) {
+export function audienceIssue(error: unknown, step: 'start' | 'capture' | 'observe', remaining: number, hosted = false) {
   const known = error instanceof AudienceError ? error : undefined
   if (step === 'capture') {
     return { issue: 'I couldn’t take a picture of the stage.', message: 'Try again to capture this pose. No look was used.' }
+  }
+  if (hosted && known?.status === 401)
+    return { issue: 'Your sign-in has expired.', message: 'Refresh this page and sign in to play again.' }
+  if (hosted && known?.code === 'unavailable')
+    return { issue: 'The AI audience is unavailable.', message: 'Try again later or keep practicing on the public stage.' }
+  if (hosted && (error instanceof TypeError || (error instanceof Error && error.name === 'TimeoutError'))) {
+    return { issue: 'The stage connection was interrupted.', message: step === 'start' ? 'Try again to open the cue. No look was used.' : 'Try again to check the same picture.' }
   }
   switch (known?.code) {
     case 'vision_failed':

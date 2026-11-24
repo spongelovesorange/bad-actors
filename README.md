@@ -55,7 +55,13 @@ npm run build:practice
 
 ### Project status
 
-The single-player AI game runs locally through the configured third-party OpenAI-compatible service. In actual referee calls, Sol accepted both “make a call” and “call sombody” for the phone cue. The opening audience puzzle uses a fixed practice cue. In an earlier blind test Sol described the eye-covering pose as “Rubbing both eyes,” which prompted separate open-palm and fist controls. Hosted multiplayer and voice remain pending. The first DeepSpace deployment is waiting for app quota.
+The single-player AI game runs locally through the configured third-party OpenAI-compatible service. In actual referee calls, Sol accepted both “make a call” and “call sombody” for the phone cue. The opening audience puzzle uses a fixed practice cue. In an earlier blind test Sol described the eye-covering pose as “Rubbing both eyes,” which prompted separate open-palm and fist controls. Hosted multiplayer and voice remain pending.
+
+### Publish from this Mac
+
+Open **Publish-Bad-Actors.command** from the project folder. It uses your DeepSpace login, checks the source against the Bad Actors GitHub repository, registers the application and deploys it. If registration has already succeeded, the launcher uses that ID. If the platform reports the app limit, the launcher first identifies the owner's existing Plan B by its permanent ID. Only the owner's interactive confirmation takes Plan B offline and discards its hosted room data. The launcher then prints the URL returned by DeepSpace and checks the public page at that URL.
+
+With the checked-in configuration, visitors can pose the actor, play the opening guessing game and pass the screen to a friend. Hosted model calls are off until the owner chooses a provider. The prepared managed Anthropic adapter requires `STAGE_AI_PROVIDER=anthropic` on the server, a signed-in player and DeepSpace's managed billing credentials. In this configuration the same model makes two separate calls: a blind image guess and a text-only ruling. The server limits each round to five looks, each player to 12 per UTC day and the app to 24 per UTC day. The local Sol profile stays on the operator's computer. [Local Worker verification](docs/verification/hosted-stage-local.json)
 
 [Verification and receipts](docs/VERIFICATION.md) · [Implementation guide](docs/Bad_Actors_Codex_Plan.md)
 

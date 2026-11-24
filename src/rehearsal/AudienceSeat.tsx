@@ -7,15 +7,16 @@ import { refereeLabels, type RefereeMood } from './BoothReferee'
 import { FrontRowRail } from './FrontRowRail'
 import { StageVerdictEffects } from './StageVerdictEffects'
 import { createCrowdAudio } from './crowd-audio'
-import { AudienceRound, localAudience, quietAudience, type AudienceState, type Verdict } from './audience-round'
+import { AudienceRound, localAudience, quietAudience, type AudienceState, type AudienceClient, type Verdict } from './audience-round'
 import { photographActor } from './audience-frame'
 import { modelIssue } from './audience-issue'
 import type { ClockReading, PlayMode } from './acting-clock'
 import './audience.css'
 
-type Availability = 'checking' | 'live' | 'offline'
+type Availability = 'checking' | Awaited<ReturnType<AudienceClient['status']>>
 type SeatProps = {
   children: ReactNode; clock: ReactNode; flyCue: ReactNode
+  client?: AudienceClient; publicEntry: boolean; requestedPlay?: PlayMode
   openingVerdict?: 'correct' | 'incorrect'
   mode: PlayMode | null; canRehearse: boolean; cue: number; pose: PuppetPose
   player: RefObject<HTMLDivElement | null>; stage: RefObject<PuppetStageApi | null>
@@ -27,10 +28,12 @@ const reaction: Record<Verdict, CriticMood> = {
   correct: 'hit', incorrect: 'miss', uncertain: 'guess', unjudged: 'guess',
 }
 
-export function AudienceSeat({ children, clock, flyCue, openingVerdict, mode, canRehearse, cue, pose, stage, player, onStart, onLeave, onNext, onClock }: SeatProps) {
+export function AudienceSeat({ children, clock, flyCue, openingVerdict, client = localAudience, publicEntry, requestedPlay, mode, canRehearse, cue, pose, stage, player, onStart, onLeave, onNext, onClock }: SeatProps) {
   const active = mode !== null
   const [availability, setAvailability] = useState<Availability>('checking')
   const [statusCheck, setStatusCheck] = useState(0)
+  const opened = useRef(false)
+  const hosted = client.mode === 'hosted'
   const localServer = typeof window !== 'undefined' && /^https?:$/.test(window.location.protocol)
     && ['127.0.0.1', 'localhost', '[::1]'].includes(window.location.hostname)
   const [state, setState] = useState<AudienceState>(quietAudience)
@@ -71,19 +74,24 @@ export function AudienceSeat({ children, clock, flyCue, openingVerdict, mode, ca
   const latestPose = useRef(pose)
   useLayoutEffect(() => { latestPose.current = pose }, [pose])
   useEffect(() => {
-    if (!localServer) {
+    if (!hosted && !localServer) {
       setAvailability('offline')
       return
     }
     const controller = new AbortController()
     const timer = setTimeout(() => { setAvailability('offline'); controller.abort() }, 5000)
-    fetch('/api/local-ai/status', { signal: controller.signal, credentials: 'same-origin', cache: 'no-store' })
-      .then(async (response) => response.ok && response.headers.get('content-type')?.includes('application/json') && (await response.json() as { available?: boolean }).available === true)
-      .then((live) => { if (!controller.signal.aborted) setAvailability(live ? 'live' : 'offline') })
+    client.status(controller.signal)
+      .then(result => { if (!controller.signal.aborted) setAvailability(result) })
       .catch(() => { if (!controller.signal.aborted) setAvailability('offline') })
       .finally(() => clearTimeout(timer))
     return () => { clearTimeout(timer); controller.abort() }
-  }, [localServer, statusCheck])
+  }, [client, hosted, localServer, statusCheck])
+
+  useEffect(() => {
+    if (!requestedPlay || availability !== 'live' || opened.current || active) return
+    opened.current = true
+    onStart(requestedPlay)
+  }, [active, availability, requestedPlay, onStart])
 
   useLayoutEffect(() => {
     setState(quietAudience)
@@ -91,7 +99,7 @@ export function AudienceSeat({ children, clock, flyCue, openingVerdict, mode, ca
     if (!mode) return
     lastPose.current = latestPose.current
     const controller = new AudienceRound(
-      cue, localAudience, () => stage.current?.isSettled() === true,
+      cue, client, () => stage.current?.isSettled() === true,
       () => photographActor(player.current), setState, () => !document.hidden, mode === 'draw' ? onClock : undefined,
       id => lastHeard.current?.id === id ? lastHeard.current.at : undefined,
     )
@@ -104,7 +112,7 @@ export function AudienceSeat({ children, clock, flyCue, openingVerdict, mode, ca
       controller.dispose()
       round.current = null
     }
-  }, [mode, cue, stage, player, onClock])
+  }, [mode, cue, stage, player, onClock, client])
   useEffect(() => {
     if (lastPose.current !== pose) {
       lastPose.current = pose
@@ -116,8 +124,17 @@ export function AudienceSeat({ children, clock, flyCue, openingVerdict, mode, ca
   const looking = state.phase === 'looking' || state.phase === 'starting'
   const finished = state.phase === 'complete'
   const timeUp = state.end === 'timeout'
-  const offline = availability === 'offline'
+  const offline = availability === 'offline' || availability === 'unconfigured' || (!publicEntry && availability === 'signin')
+  const readyToStart = availability === 'live' || (publicEntry && availability === 'signin')
   const localFile = offline && typeof window !== 'undefined' && window.location.protocol === 'file:'
+  let offlineDetail: ReactNode = 'Live guesses are available in the local AI rehearsal.'
+  if (hosted) {
+    offlineDetail = 'The AI booth is unavailable. Try the connection again.'
+    if (availability === 'signin') offlineDetail = 'Your sign-in has expired. Refresh to sign in again.'
+    if (availability === 'unconfigured') offlineDetail = 'Hosted AI hasn’t been enabled yet. You can still practice or guess with a friend.'
+  } else if (localFile || localServer) {
+    offlineDetail = <>For live guesses on this Mac, open <b>Play-Bad-Actors.command</b>.</>
+  }
   // The image reader can finish before the referee does. A retry keeps the words already heard.
   const pending = state.pendingGuess
   const scored = !pending && !looking && !state.issue && active && !timeUp && !offline ? last : undefined
@@ -166,7 +183,7 @@ export function AudienceSeat({ children, clock, flyCue, openingVerdict, mode, ca
       <CriticDelivery key={JSON.stringify([cue, mode, observation?.observationId, speech])}
         line={speech} mood={mood} observationId={observation?.observationId}
         referee={referee} onDelivered={markDelivered}
-        animate={availability !== 'checking' && (Boolean(observation) || (!state.issue && state.phase !== 'error'))} />
+        animate={(publicEntry || availability !== 'checking') && (Boolean(observation) || (!state.issue && state.phase !== 'error'))} />
     </div>
     <FrontRowRail />
     {crowdVerdict && performanceKey && playingCrowdCue === performanceKey &&
@@ -175,7 +192,7 @@ export function AudienceSeat({ children, clock, flyCue, openingVerdict, mode, ca
     <div className="ba-front-desk">
     <header className="ba-audience-head">
       <h2>Stage controls</h2>
-      <span>{active ? `${state.used} / ${state.limit} looks` : offline ? 'Booth closed' : availability === 'live' ? 'AI audience ready' : 'Checking connection…'}</span>
+      <span>{active ? `${state.used} / ${state.limit} looks` : offline ? 'Booth closed' : publicEntry && readyToStart ? 'AI booth' : availability === 'live' ? 'AI audience ready' : 'Checking connection…'}</span>
     </header>
     <button className="ba-crowd-sound" type="button" aria-label="Crowd sound" aria-pressed={crowdSound === 'on'} onClick={toggleCrowdSound}>
       {crowdSound === 'on' ? <Volume2 size={16} aria-hidden="true" /> : <VolumeX size={16} aria-hidden="true" />}
@@ -190,15 +207,15 @@ export function AudienceSeat({ children, clock, flyCue, openingVerdict, mode, ca
     </p>}
     {finished && state.used >= state.limit && last?.verdict !== 'correct' && <p className="ba-audience-message"><strong>Out of looks.</strong> Curtain down on this one.</p>}
     {!active ? <div className="ba-audience-footer ba-box-office">
-      {offline ? <><span>{localFile || localServer ? <>For live guesses on this Mac, open <b>Play-Bad-Actors.command</b>.</> : 'Live guesses are available in the local AI rehearsal.'}</span>
-        {localServer && <button type="button" className="ba-audience-rehearse" onClick={() => {
+      {offline ? <><span>{offlineDetail}</span>
+        {(localServer || hosted) && <button type="button" className="ba-audience-rehearse" onClick={() => {
           setAvailability('checking')
           setStatusCheck(check => check + 1)
         }}>Recheck connection</button>}</>
-        : <button type="button" className="ba-audience-call" onClick={() => onStart('draw')} disabled={availability !== 'live'}>
-          {availability === 'checking' ? 'Checking the booth…' : 'Play with AI'} <ArrowRight size={17} aria-hidden="true" />
+        : <button type="button" className="ba-audience-call" onClick={() => onStart('draw')} disabled={!readyToStart}>
+          {!readyToStart ? 'Checking the booth…' : publicEntry ? 'Visit AI booth' : 'Play with AI'} <ArrowRight size={17} aria-hidden="true" />
         </button>}
-      {availability === 'live' && canRehearse && <button type="button" className="ba-audience-rehearse"
+      {readyToStart && canRehearse && <button type="button" className="ba-audience-rehearse"
         onClick={() => onStart('rehearse')}>Try this cue with AI</button>}
     </div> : <>
       <div className="ba-audience-footer">

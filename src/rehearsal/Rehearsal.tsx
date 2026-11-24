@@ -35,6 +35,7 @@ import { ActorFace } from '../puppet/ActorFace'
 import { isJoint, stageHandles } from '../puppet/geometry'
 import { footAngle, turnFoot } from '../puppet/joints'
 import { AudienceSeat } from './AudienceSeat'
+import { createAudience, type AudienceClient } from './audience-round'
 import { StageClock } from './StageClock'
 import { FlyCue } from './FlyCue'
 import { drawAnotherCue, type ClockReading, type PlayMode } from './acting-clock'
@@ -309,7 +310,16 @@ function ExpressionPicker({ value, select }: { value: FaceShape; select: (shape:
   )
 }
 
-export default function Rehearsal({ accountAvailable = true }: { accountAvailable?: boolean }) {
+const publicAudience = createAudience('hosted')
+
+type RehearsalProps = {
+  accountAvailable?: boolean
+  hostedAudience?: AudienceClient
+  requestedPlay?: PlayMode
+  accountControl?: ReactNode
+}
+
+export default function Rehearsal({ accountAvailable = true, hostedAudience, requestedPlay, accountControl }: RehearsalProps) {
   const [pose, setPose] = useState<PuppetPose>(phoneSamplePose)
   const [phase, setPhase] = useState<Phase>('guess')
   const [cue, setCue] = useState(0)
@@ -377,7 +387,21 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
     setResetMessage('')
     requestAnimationFrame(() => cueHeading.current?.focus({ preventScroll: true }))
   }
+  const publicEntry = accountAvailable && !hostedAudience
   function playWithAudience(mode: PlayMode) {
+    if (publicEntry) {
+      parkPose()
+      const query = new URLSearchParams({ play: mode, cue: String(cue + 1) })
+      window.location.assign('/room?' + query)
+      return
+    }
+    if (hostedAudience) {
+      const url = new URL(window.location.href)
+      if (url.searchParams.has('play')) {
+        url.searchParams.delete('play')
+        window.history.replaceState(window.history.state, '', url)
+      }
+    }
     if (mode === 'draw') {
       const previous = phase === 'practice' ? cue : 1
       changeCue(drawAnotherCue(previous, exercises.length))
@@ -441,7 +465,7 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
   const covered = phase === 'practice' && cueHidden
   const flyTitle = phase === 'guess' ? 'What’s the act?' : phase === 'revealed' ? 'Talking on the phone'
     : covered ? 'Guess the pose' : exercises[cue].title
-  const account = accountAvailable ? (
+  const account = accountControl ?? (accountAvailable ? (
     <a className="ba-nav-room" href="/room" onClick={parkPose}>
       Backstage <ArrowRight size={16} />
     </a>
@@ -449,7 +473,7 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
     <button type="button" className="ba-nav-room" onClick={() => showDialog('account')}>
       Sign in <ArrowRight size={16} />
     </button>
-  )
+  ))
 
   return (
     <div className="ba-app" data-testid="static-landing">
@@ -468,7 +492,7 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
         <div className="ba-workspace ba-has-audience">
           <section className="ba-stage-block" aria-label="Rehearsal stage">
             <div className="ba-theater">
-              <AudienceSeat mode={solo} canRehearse={phase === 'practice' && !cueHidden} cue={cue + 1} pose={pose} stage={stage} player={player}
+              <AudienceSeat client={hostedAudience ?? (publicEntry ? publicAudience : undefined)} publicEntry={publicEntry} requestedPlay={requestedPlay} mode={solo} canRehearse={phase === 'practice' && !cueHidden} cue={cue + 1} pose={pose} stage={stage} player={player}
                 openingVerdict={phase === 'revealed' ? openingVerdict : undefined}
                 onStart={playWithAudience} onLeave={() => setSolo(null)} onClock={setClock}
                 onNext={() => solo === 'draw' ? playWithAudience('draw') : changeCue((cue + 1) % exercises.length)}

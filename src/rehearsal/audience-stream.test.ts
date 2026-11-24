@@ -37,13 +37,14 @@ it('preserves structured failures inside a stream before any guess', async () =>
 })
 
 it('requests streamed observations and accepts older local JSON responses', async () => {
-  const fetch = vi.fn(async () => Response.json(final))
+  const fetch = vi.fn<typeof globalThis.fetch>(async () => Response.json(final))
   vi.stubGlobal('fetch', fetch)
   const observed = vi.fn()
   const frame = { roundId: 'r', observationId: 'o', image: 'data:image/png;base64,...' }
   expect(await localAudience.observe(frame, new AbortController().signal, observed)).toEqual(final)
   expect(fetch).toHaveBeenCalledWith('/api/local-ai/observe', expect.objectContaining({
-    method: 'POST', headers: expect.objectContaining({ Accept: expect.stringContaining('application/x-ndjson') }),
+    method: 'POST',
   }))
+  expect(new Headers(fetch.mock.calls[0][1]?.headers).get('Accept')).toContain('application/x-ndjson')
   expect(observed).not.toHaveBeenCalled()
 })

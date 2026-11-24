@@ -22,6 +22,8 @@ import type { DOBindings, DOManifest, Job, JobContext } from 'deepspace/worker'
 import { tasks as cronTasks, runTask as runCronTask } from './src/cron.js'
 import { runJob } from './src/jobs.js'
 import { schemas } from './src/schemas.js'
+import { StageAudience } from './src/server/stage-audience.js'
+import { registerStageRoutes } from './src/server/stage-routes.js'
 import { registerActionRoutes } from './src/server/action-routes.js'
 import {
   registerAuthAndIntegrationRoutes,
@@ -39,6 +41,7 @@ export const __DO_MANIFEST__ = [
   { binding: 'PRESENCE_ROOMS', className: 'AppPresenceRoom', sqlite: true },
   { binding: 'CRON_ROOMS', className: 'AppCronRoom', sqlite: true },
   { binding: 'JOB_ROOMS', className: 'AppJobRoom', sqlite: true },
+  { binding: 'STAGE_AUDIENCE', className: 'AppStageAudience', sqlite: true },
 ] as const satisfies DOManifest
 
 export class AppRecordRoom extends RecordRoom<Env> {
@@ -46,6 +49,8 @@ export class AppRecordRoom extends RecordRoom<Env> {
     super(state, env, schemas, { ownerUserId: env.OWNER_USER_ID })
   }
 }
+
+export class AppStageAudience extends StageAudience {}
 
 export class AppYjsRoom extends YjsRoom<Env> {}
 export class AppCanvasRoom extends CanvasRoom<Env> {}
@@ -81,6 +86,8 @@ export class AppJobRoom extends JobRoom<Env> {
 
 export interface Env extends DOBindings<typeof __DO_MANIFEST__> {
   ASSETS: Fetcher
+  /** Only an explicit provider selection enables billed observations on the hosted stage. */
+  STAGE_AI_PROVIDER?: string
   /**
    * Platform service binding in production; deepspace dev supplies the URL
    * fallback. Standard app files use the platform's shared, app-scoped R2
@@ -131,6 +138,7 @@ app.use('*', async (c, next) => {
 
 // Auth, realtime and action routes must precede the static fallback.
 registerAuthAndIntegrationRoutes(app)
+registerStageRoutes(app, resolveAuth)
 registerRealtimeRoutes(app)
 registerActionRoutes(app, resolveAuth)
 registerPlatformProxyRoutes(app)

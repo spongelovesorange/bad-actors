@@ -1,0 +1,43 @@
+{
+  "at": "2026-11-24T02:30:21.721Z",
+  "runtime": "local workerd + SQLite durable object",
+  "auth": "fixed local bearer fixture",
+  "provider": "local service binding stub; zero real calls",
+  "signedOutStatus": {
+    "available": false,
+    "requiresLogin": true
+  },
+  "roundLimit": 5,
+  "events": [
+    "guess",
+    "result"
+  ],
+  "verdict": "correct",
+  "retrySameEvents": true,
+  "upstreamMockCalls": [
+    {
+      "path": "/api/integrations/anthropic/chat-completion",
+      "vision": true,
+      "authorized": true
+    },
+    {
+      "path": "/api/integrations/anthropic/chat-completion",
+      "vision": false,
+      "authorized": true
+    }
+  ],
+  "defaultOff": {
+    "envProviderUnset": true,
+    "anonStatus": {
+      "available": false,
+      "requiresLogin": false
+    },
+    "authenticatedFixtureStatus": {
+      "available": false,
+      "requiresLogin": false
+    },
+    "roundResponse": 503,
+    "lookResponse": 503,
+    "mockProviderRequests": 0
+  }
+}

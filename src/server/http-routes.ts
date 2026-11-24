@@ -182,8 +182,8 @@ export function registerAuthAndIntegrationRoutes(app: Hono<AppContext>): void {
     return stub.fetch(c.req.raw)
   })
 
-  // The rehearsal has no paid actions. Future game calls must go through
-  // server actions that check the round, membership, budget and idempotency.
+  // Stage observations reserve a look against the signed-in player and app.
+  // A generic browser proxy would let clients bypass those limits.
   app.all('/api/integrations/*', (c) => c.notFound())
 }
 

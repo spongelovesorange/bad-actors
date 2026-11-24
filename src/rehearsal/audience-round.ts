@@ -22,7 +22,9 @@ export type AudienceState = {
 }
 export const quietAudience: AudienceState = { phase: 'idle', used: 0, limit: 5, history: [] }
 
-async function post<T>(path: string, payload: unknown, signal: AbortSignal, stream?: (response: Response) => Promise<T>): Promise<T> {
+type AudienceFetch = (path: string, options: RequestInit) => Promise<Response>
+
+async function post<T>(fetchAudience: AudienceFetch, path: string, payload: unknown, signal: AbortSignal, stream?: (response: Response) => Promise<T>): Promise<T> {
   const request = new AbortController()
   const cancel = () => request.abort()
   if (signal.aborted) cancel()
@@ -30,19 +32,19 @@ async function post<T>(path: string, payload: unknown, signal: AbortSignal, stre
   // Vision and refereeing each have their own upstream timeout.
   const timer = setTimeout(cancel, 75_000)
   try {
-    const response = await fetch('/api/local-ai/' + path, {
-      method: 'POST', credentials: 'same-origin', signal: request.signal,
+    const response = await fetchAudience(path, {
+      method: 'POST', signal: request.signal,
       headers: { 'Content-Type': 'application/json', Accept: stream ? 'application/x-ndjson, application/json' : 'application/json' },
       body: JSON.stringify(payload),
     })
     const mediaType = response.headers.get('content-type')?.split(';')[0].trim().toLowerCase()
     if (stream && response.ok && mediaType === 'application/x-ndjson') return await stream(response)
     if (mediaType !== 'application/json')
-      throw new AudienceError('The local AI game is unavailable on this page.', response.status)
+      throw new AudienceError('The AI audience is unavailable on this page.', response.status)
     if (!response.ok) throw failedReply(response.status, await response.json())
     return await response.json() as T
   } catch (error) {
-    if (request.signal.aborted && !signal.aborted) throw new DOMException('The local game timed out.', 'TimeoutError')
+    if (request.signal.aborted && !signal.aborted) throw new DOMException('The audience took too long to reply.', 'TimeoutError')
     throw error
   } finally {
     clearTimeout(timer)
@@ -50,11 +52,33 @@ async function post<T>(path: string, payload: unknown, signal: AbortSignal, stre
   }
 }
 
-export const localAudience = {
-  start: (cue: number, signal: AbortSignal) => post<{ roundId: string; limit: number }>('rounds', { cue }, signal),
-  observe: (frame: Frame, signal: AbortSignal, onGuess: (guess: PendingGuess) => void) =>
-    post<Guess>('observe', frame, signal, response => readAudienceStream(response, onGuess)),
+export function createAudience(mode: 'local' | 'hosted', getToken?: () => Promise<string | null>) {
+  const prefix = mode === 'hosted' ? '/api/stage-ai/' : '/api/local-ai/'
+  const send: AudienceFetch = async (path, options) => {
+    const headers = new Headers(options.headers)
+    const token = getToken && await getToken()
+    if (token) headers.set('Authorization', 'Bearer ' + token)
+    return fetch(prefix + path, { ...options, headers, credentials: mode === 'hosted' && !getToken ? 'omit' : 'same-origin', redirect: 'error' })
+  }
+  return {
+    mode,
+    async status(signal: AbortSignal): Promise<'live' | 'offline' | 'signin' | 'unconfigured'> {
+      const response = await send('status', { cache: 'no-store', signal })
+      if (response.status === 401 && mode === 'hosted') return 'signin'
+      if (!response.ok || !response.headers.get('content-type')?.includes('application/json')) return 'offline'
+      const result = await response.json() as { available?: boolean; requiresLogin?: boolean }
+      if (result.requiresLogin && mode === 'hosted') return 'signin'
+      if (result.available === true) return 'live'
+      return result.available === false && mode === 'hosted' ? 'unconfigured' : 'offline'
+    },
+    start: (cue: number, signal: AbortSignal) => post<{ roundId: string; limit: number }>(send, 'rounds', { cue }, signal),
+    observe: (frame: Frame, signal: AbortSignal, onGuess: (guess: PendingGuess) => void) =>
+      post<Guess>(send, 'observe', frame, signal, response => readAudienceStream(response, onGuess)),
+  }
 }
+
+export const localAudience = createAudience('local')
+export type AudienceClient = ReturnType<typeof createAudience>
 
 function matchesLook(guess: PendingGuess, frame: Frame, limit: number) {
   return guess?.roundId === frame.roundId && guess.observationId === frame.observationId &&
@@ -80,7 +104,7 @@ export class AudienceRound {
 
   constructor(
     private cue: number,
-    private send: typeof localAudience,
+    private send: Pick<AudienceClient, 'start' | 'observe'> & { mode?: 'local' | 'hosted' },
     private settled: () => boolean,
     private capture: () => Promise<string>,
     private publish: (state: AudienceState) => void,
@@ -119,7 +143,7 @@ export class AudienceRound {
       this.roundId = result.roundId
       this.update({ phase: 'ready', limit: result.limit })
     } catch (error) {
-      this.update({ phase: 'error', ...audienceIssue(error, 'start', this.state.limit) })
+      this.update({ phase: 'error', ...audienceIssue(error, 'start', this.state.limit, this.send.mode === 'hosted') })
     } finally {
       this.busy = false
       this.schedule()
@@ -249,7 +273,7 @@ export class AudienceRound {
         phase: complete ? 'complete' : newPoseNeeded ? 'ready' : 'error',
         used, recovery, pendingGuess: spoken,
         ...(spoken ? { issue: 'The referee’s reply is missing.', message: 'Try again to check the score for this same picture.' }
-          : audienceIssue(error, frame ? 'observe' : 'capture', this.state.limit - used)),
+          : audienceIssue(error, frame ? 'observe' : 'capture', this.state.limit - used, this.send.mode === 'hosted')),
       })
     } finally {
       this.busy = false

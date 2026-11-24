@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNo
 import { ArrowRight, Drama, Eye, Flag, Timer, Volume2, VolumeX } from 'lucide-react'
 import type { PuppetPose, PuppetStageApi } from '../puppet'
 import type { CriticMood } from './AudienceCritic'
-import type { TwistId } from '../deck'
+import { deck, type TwistId } from '../deck'
 import { CriticDelivery } from './CriticDelivery'
 import { refereeLabels, type RefereeMood } from './BoothReferee'
 import { FrontRowRail } from './FrontRowRail'
@@ -284,7 +284,7 @@ export function AudienceSeat({ firstLook, paused, children, clock, flyCue, lobby
           <button type="button" className="ba-show-ticket ba-show-free" onClick={() => onStart('rehearse')} disabled={!readyToStart}
             data-beckon={beckonTicket || undefined}>
             <Drama size={28} aria-hidden="true" />
-            <span><b>Free play</b><small>{readyToStart ? 'Any of 18 cues. Strike a pose, no clock.' : 'Checking the booth…'}</small></span>
+            <span><b>Free play</b><small>{readyToStart ? `Any of ${deck.length} cues. Strike a pose, no clock.` : 'Checking the booth…'}</small></span>
             <ArrowRight className="ba-show-arrow" size={22} aria-hidden="true" />
             {beckonTicket && <GhostHand className="ba-beckon-hand" />}
           </button>

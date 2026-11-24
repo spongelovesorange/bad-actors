@@ -12,7 +12,8 @@
 
 /* After the demo the glove taps the way in, then the Ready button once a pose is struck. */
 .ba-app .ba-show-ticket[data-beckon], .ba-app .ba-audience-call.ba-guess-now[data-beckon] {
-  position: relative; box-shadow: 3px 4px 0 #15201d, 0 0 0 5px rgb(255 223 134 / .5);
+  /* Above its neighbours, so the glove hanging off its edge is never painted over by the ticket below. */
+  position: relative; z-index: 2; box-shadow: 3px 4px 0 #15201d, 0 0 0 5px rgb(255 223 134 / .5);
 }
 .ba-beckon-hand { right: 18px; bottom: -22px; width: 42px; }
 /* Scrolled into view with room for the glove, and above the dressing-room tray on a phone. */

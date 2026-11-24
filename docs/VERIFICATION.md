@@ -23,6 +23,12 @@
     - The ten looks made 20 model calls, about $0.008 at the rate measured on November 24. The exact bill wasn't recorded. The check script waited for a Ready button that, correctly, never returns after a fifth look, so it stopped before writing its receipt.
     - The results board highlighted the first row as the winner even when nobody had guessed. That is fixed.
   - **Still not seen in a real game:** a round won by a correct ruling. The winning time (from the deal to the winning Ready press) is covered by the referee's unit tests only.
+  - **On the deployed app (release #15).** Two test accounts opened, joined and dealt a race in room BPHW ("Carrying a tray").
+    - Both stages got the same cue, and the host's board showed the friend's progress live.
+    - The referee refused the friend's unearned finish (`not_finished`) and their deal (`not_host`).
+    - No model calls were made. The room stays in the live data, but nobody can reach it without its code.
+    - The live entry, stage, race page, race client and room files matched the local build byte for byte.
+    - Release #14 shipped while two scratch test files sat in `tests/`. They weren't in the bundle, but the release was marked as built from uncommitted changes, so #15 redeployed the same commit from a clean tree.
 - 227 unit tests, the typecheck, lint, both builds, all 44 stage tests and 12 DeepSpace tests pass.
 
 ## The house curtain · November 24, 2026

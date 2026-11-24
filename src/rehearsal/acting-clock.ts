@@ -8,13 +8,15 @@ export function drawAnotherCue(previous: number, count: number, random = Math.ra
 
 /** Only foreground time spent posing is charged. Timer callbacks may be delayed by the browser. */
 export class ActingClock {
-  private remaining = 45_000
+  private remaining: number
   private since: number | null = null
   private last?: ClockReading
   private timer?: ReturnType<typeof setTimeout>
   private stopped = false
 
-  constructor(private show: (reading: ClockReading) => void, private expired: () => void) {}
+  constructor(private show: (reading: ClockReading) => void, private expired: () => void, seconds = 45) {
+    this.remaining = seconds * 1000
+  }
 
   set(mode: 'running' | 'paused' | 'finished') {
     if (this.stopped) return

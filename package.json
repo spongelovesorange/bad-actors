@@ -25,6 +25,7 @@
     "test:smoke": "deepspace test run smoke",
     "test:api": "deepspace test run api",
     "test:e2e": "deepspace test run e2e",
+    "test:stage": "playwright test -c tests/playwright.stage.config.ts",
     "test:unit": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "validate": "tsc --noEmit && vitest run --passWithNoTests",

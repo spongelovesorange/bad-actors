@@ -15,9 +15,8 @@ const gestures: Gesture[] = [
   { handle: 'prop', move: [42, -28] }, { handle: 'prop', move: [-42, -28], loose: true },
 ]
 
-async function grabAndFlick(page: Page, gesture: Gesture, url = '/') {
+async function grabAndFlick(page: Page, gesture: Gesture, url = '/?cue=1') {
   await page.goto(url)
-  await page.getByRole('button', { name: 'Your turn' }).click()
   if (gesture.handle === 'prop') {
     await page.getByRole('button', { name: 'Cup', exact: true }).click()
     if (gesture.loose) await page.getByRole('button', { name: 'Put down' }).click()
@@ -89,7 +88,7 @@ for (const gesture of gestures) {
 for (const mode of ['direct', 'reduced'] as const) {
   test(`a foot drag stays steady in ${mode} motion mode`, async ({ page }) => {
     if (mode === 'reduced') await page.emulateMedia({ reducedMotion: 'reduce' })
-    const { stage, end } = await grabAndFlick(page, { handle: 'leftAnkle', move: [-18, -34] }, mode === 'direct' ? '/?direct=1' : '/')
+    const { stage, end } = await grabAndFlick(page, { handle: 'leftAnkle', move: [-18, -34] }, mode === 'direct' ? '/?cue=1&direct=1' : '/?cue=1')
     const sample = await afterRelease(stage)
     expect(sample.travel).toBeLessThan(0.1)
     expect(sample.settled).toBe('1')

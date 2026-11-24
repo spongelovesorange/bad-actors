@@ -1,3 +1,4 @@
+import { nightMoods } from './charades-provider'
 import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { DatabaseSync } from 'node:sqlite'
@@ -45,7 +46,8 @@ describe('hosted stage durable reservations', () => {
     provider.judge.mockResolvedValueOnce({ model: 'judge', verdict: 'correct' })
     const words = vi.fn(), scored = await game.observe('alice', shot, words)
     expect(scored.body).toMatchObject({ roundId: id, used: 1, verdict: 'correct' })
-    expect(provider.guess.mock.calls).toEqual([[shot.image, []]])
+    // Cue 2 belongs to opening night, so Stubbs hears that night's humour beside the picture.
+    expect(provider.guess.mock.calls).toEqual([[shot.image, [], nightMoods[1]]])
     expect(provider.judge.mock.calls).toEqual([['Talking on the phone', 'making a call']])
     expect(words.mock.calls[0][0]).not.toHaveProperty('verdict')
     const second = reboot(), replay = vi.fn()
@@ -145,6 +147,12 @@ describe('hosted stage durable reservations', () => {
     expect(provider.guess).toHaveBeenCalledTimes(306)
     tick(86_400_000)
     expect((await reboot().observe('a', frame(draw('a'), 0))).status).toBe(200)
+  })
+
+  it('accepts every cue in the eighteen-card deck and nothing beyond it', () => {
+    const { game } = fixture()
+    expect(game.start('a', { cue: 30 }).status).toBe(200)
+    for (const cue of [0, 31, 2.5]) expect(game.start('a', { cue }).body.error).toBe('invalid_cue')
   })
 
   it('does not score a superseded cue, spend on a malformed image, or store raw pixels', async () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Env } from '../../worker'
-import { drawAngle, providerFailureReason, refereeFailure, remarkAngles, visionPrompt, visionRequest } from './charades-provider'
+import { drawAngle, nightMood, nightMoods, providerFailureReason, refereeFailure, remarkAngles, visionPrompt, visionRequest } from './charades-provider'
 import { createStageProvider, judgeModel, stageProviderEnabled, visionModel } from './stage-provider'
 
 const frame = 'data:image/png;base64,c3RhZ2U='
@@ -45,6 +45,11 @@ describe('hosted Anthropic stage audience', () => {
   it('keeps every cue out of Stubbs’s brief and names only his own ruled-out guesses', async () => {
     expect(visionPrompt + visionRequest(['Waving'], remarkAngles.join('; '))).not.toMatch(/drink|sip|selfie|photo|surrender|phone|call|tray|carry|cover/i)
     expect(new Set(Array.from({ length: 8 }, (_, i) => drawAngle(i / 8)))).toEqual(new Set(remarkAngles))
+    // Each night's humour reaches him beside the picture, and none of it hints at a cue on the deck.
+    const cueWords = /\b(drink\w*|sip\w*|selfie|photo\w*|surrender\w*|phone|call\w*|tray|carry\w*|cover\w*|toast\w*|text\w*|wav\w*|shrug\w*|flex\w*|salut\w*|yawn\w*|karaoke|umbrella|rain\w*|book\w*|love\w*|tantrum|hitchhik\w*|point\w*|sky|ears?|rose|propos\w*|rock\w*|concert|banana|chicken|spill\w*|signal|hid\w*)\b/i
+    for (const mood of Object.values(nightMoods)) expect(mood).not.toMatch(cueWords)
+    expect(visionRequest([], 'mock outrage', nightMood(28))).toContain(nightMoods[5])
+    expect(nightMood('Shrugging')).toBe(nightMoods[3])
     const { provider, fetch } = booth(() => Response.json(message('GUESS: Answering a phone call\nLINE: A phone call! Not a selfie, you vain sandbag.')))
     const missed = ['Taking a selfie', 'Waving', 'Hailing a taxi', 'Stretching', 'Checking a message']
     await expect(provider.guess(frame, missed)).resolves.toMatchObject({ text: 'Answering a phone call' })

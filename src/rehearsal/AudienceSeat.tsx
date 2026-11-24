@@ -5,6 +5,7 @@ import type { CriticMood } from './AudienceCritic'
 import { CriticDelivery } from './CriticDelivery'
 import { refereeLabels, type RefereeMood } from './BoothReferee'
 import { FrontRowRail } from './FrontRowRail'
+import { GhostHand } from './GhostHand'
 import { StageVerdictEffects } from './StageVerdictEffects'
 import { useStageSound } from './StageSound'
 import { AudienceRound, localAudience, quietAudience, type AudienceState, type AudienceClient, type Verdict } from './audience-round'
@@ -14,8 +15,26 @@ import type { ClockReading, PlayMode } from './acting-clock'
 import './audience.css'
 
 type Availability = 'checking' | Awaited<ReturnType<AudienceClient['status']>>
+/** How a round ended, for the evening's running total. */
+export type RoundEnd = { guessed: boolean; looks: number; line?: string; image?: string }
 type SeatProps = {
   children: ReactNode; clock: ReactNode; flyCue: ReactNode
+  /** Shown above the tickets before a game, such as the opening guess. */
+  lobby?: ReactNode
+  /** Extra buttons beside the Ready button during a game. */
+  cueTools?: ReactNode
+  /** Where the tutorial glove taps: the Free play ticket, or Ready once a newcomer has posed. */
+  beckon?: 'ticket' | 'ready'
+  /** Stubbs's first words as a game begins. Each night has its own. */
+  opener?: string
+  /** Seconds per timed act. */
+  actSeconds?: number
+  /** "Act 2 of 5" during a show. */
+  actLabel?: string
+  nextLabel?: string
+  onRoundEnd?: (result: RoundEnd) => void
+  /** Whether this round is over, and whether Stubbs got it, in free play as in a show. */
+  onRoundOver?: (end: { guessed: boolean } | null) => void
   client?: AudienceClient; publicEntry: boolean; requestedPlay?: PlayMode
   firstLook: boolean; paused: boolean
   openingVerdict?: 'correct' | 'incorrect'
@@ -32,7 +51,7 @@ const reaction: Record<Verdict, CriticMood> = {
   correct: 'hit', incorrect: 'miss', uncertain: 'guess', unjudged: 'guess',
 }
 
-export function AudienceSeat({ firstLook, paused, children, clock, flyCue, openingVerdict, client = localAudience, publicEntry, requestedPlay, mode, cue, pose, stage, player, onStart, onLeave, onNext, onClock }: SeatProps) {
+export function AudienceSeat({ firstLook, paused, children, clock, flyCue, lobby, cueTools, beckon, opener, actSeconds = 45, actLabel, nextLabel, onRoundEnd, onRoundOver, openingVerdict, client = localAudience, publicEntry, requestedPlay, mode, cue, pose, stage, player, onStart, onLeave, onNext, onClock }: SeatProps) {
   const active = mode !== null
   const [availability, setAvailability] = useState<Availability>('checking')
   const [statusCheck, setStatusCheck] = useState(0)
@@ -42,7 +61,7 @@ export function AudienceSeat({ firstLook, paused, children, clock, flyCue, openi
     && ['127.0.0.1', 'localhost', '[::1]'].includes(window.location.hostname)
   const [state, setState] = useState<AudienceState>(quietAudience)
   const [heardObservation, setHeardObservation] = useState<string>()
-  const { audio, mode: crowdSound, setPower, roomTone, setRoom } = useStageSound()
+  const { audio, mode: crowdSound, setPower, roomTone, setRoom, music, setMusic } = useStageSound()
   const lastCrowdCue = useRef<string | null>(null)
   const [playingCrowdCue, setPlayingCrowdCue] = useState<string | null>(null)
   const lastHeard = useRef<{ id: string; at: number } | null>(null)
@@ -77,15 +96,18 @@ export function AudienceSeat({ firstLook, paused, children, clock, flyCue, openi
     onStart(requestedPlay, true)
   }, [active, availability, requestedPlay, onStart, paused])
 
+  const roundSerial = useRef(0)
+  const reportedSerial = useRef(0)
   useLayoutEffect(() => {
     setState(quietAudience)
+    roundSerial.current += 1
     if (mode !== 'draw') onClock(null)
     if (!mode) return
     lastPose.current = latestPose.current
     const controller = new AudienceRound(
       cue, client, () => stage.current?.isSettled() === true,
       () => photographActor(player.current), setState, () => !document.hidden && !pausedRef.current, mode === 'draw' ? onClock : undefined,
-      id => lastHeard.current?.id === id ? lastHeard.current.at : undefined,
+      id => lastHeard.current?.id === id ? lastHeard.current.at : undefined, true, actSeconds,
     )
     round.current = controller
     const visibility = () => controller.schedule()
@@ -96,7 +118,7 @@ export function AudienceSeat({ firstLook, paused, children, clock, flyCue, openi
       controller.dispose()
       round.current = null
     }
-  }, [mode, cue, stage, player, onClock, client, firstLook])
+  }, [mode, cue, stage, player, onClock, client, firstLook, actSeconds])
   useEffect(() => {
     if (lastPose.current !== pose) {
       lastPose.current = pose
@@ -162,9 +184,30 @@ export function AudienceSeat({ firstLook, paused, children, clock, flyCue, openi
   const clip = voiceId && voice?.id === voiceId ? voice.clip : undefined
   const awaitingVoice = Boolean(voiceId) && !(voice?.id === voiceId && voice?.settled)
   const startLine = useCallback(() => { if (clip) audio.speakLine(clip) }, [clip, audio])
+  // Report each finished round once, after Stubbs has had his say.
+  const roundOver = active && (finished || timeUp) && !finishingLine
+  const roundHit = roundOver && state.history.some(look => look.verdict === 'correct')
+  useEffect(() => { onRoundOver?.(roundOver ? { guessed: roundHit } : null) }, [roundOver, roundHit, onRoundOver])
+  useEffect(() => {
+    if (!roundOver || !onRoundEnd || reportedSerial.current === roundSerial.current) return
+    reportedSerial.current = roundSerial.current
+    const hit = state.history.find(look => look.verdict === 'correct')
+    const shown = hit ?? state.history.at(-1)
+    onRoundEnd({ guessed: Boolean(hit), looks: state.used, line: shown?.line ?? shown?.guess, image: shown?.image })
+  }, [roundOver, onRoundEnd, state.history, state.used])
+  const beckonTicket = beckon === 'ticket' && !active && !offline && readyToStart
+  const beckonReady = beckon === 'ready' && active && state.used === 0 && !looking && !finished && !timeUp
+    && !finishingLine && !state.recovery && state.phase !== 'error'
+  const picker = useRef<HTMLDivElement>(null)
+  // After the demo, bring the way in to where the glove can be seen.
+  useEffect(() => {
+    if (!beckonTicket) return
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    picker.current?.scrollIntoView({ block: 'nearest', behavior: still ? 'auto' : 'smooth' })
+  }, [beckonTicket])
   const referee: RefereeMood = ruling ?? (observation && !state.issue ? 'listening' : 'idle')
   let mood: CriticMood = verdict ? reaction[verdict] : observation ? 'guess' : 'idle'
-  let speech = observation?.line ?? observation?.guess ?? (active ? 'My squint is ready.' : 'I’ll take a guess.')
+  let speech = observation?.line ?? observation?.guess ?? (active ? opener ?? 'My squint is ready.' : 'I’ll take a guess.')
   if (looking && !observation) { mood = 'looking'; speech = state.phase === 'starting' ? 'My usual seat.' : squints[state.used % squints.length] }
   if (state.issue && !observation) { mood = 'error'; speech = state.issue }
   if (timeUp) { mood = 'miss'; speech = 'Was that the bell or my hearing aid?' }
@@ -198,15 +241,20 @@ export function AudienceSeat({ firstLook, paused, children, clock, flyCue, openi
     <div className="ba-front-desk">
     <header className="ba-audience-head">
       <h2>Stage controls</h2>
-      <span>{active ? `${state.used} / ${state.limit} looks` : offline ? 'Booth closed' : publicEntry && readyToStart ? 'AI booth' : availability === 'live' ? 'AI audience ready' : 'Checking connection…'}</span>
+      <span>{active ? `${actLabel ? actLabel + ' · ' : ''}${state.used} / ${state.limit} looks` : offline ? 'Booth closed' : publicEntry && readyToStart ? 'AI booth' : availability === 'live' ? 'AI audience ready' : 'Checking connection…'}</span>
     </header>
     <button className="ba-crowd-sound" type="button" aria-label="Stage sound" aria-pressed={crowdSound === 'on'} data-sound-power onClick={() => setPower(crowdSound !== 'on')}>
       {crowdSound === 'on' ? <Volume2 size={16} aria-hidden="true" /> : <VolumeX size={16} aria-hidden="true" />}
       Stage sound <span>{crowdSound === 'on' ? 'On' : 'Off'}</span>
     </button>
-    {crowdSound === 'on' && <button className="ba-room-tone" type="button" aria-pressed={roomTone} onClick={() => setRoom(!roomTone)}>Room tone <span>{roomTone ? 'On' : 'Off'}</span></button>}
+    {crowdSound === 'on' && <>
+      <button className="ba-room-tone" type="button" aria-pressed={music} onClick={() => setMusic(!music)}>Pit band <span>{music ? 'On' : 'Off'}</span></button>
+      <button className="ba-room-tone" type="button" aria-pressed={roomTone} onClick={() => setRoom(!roomTone)}>Room tone <span>{roomTone ? 'On' : 'Off'}</span></button>
+    </>}
     {crowdSound === 'unavailable' && <span role="status" className="ba-audience-message">Stage sound couldn’t start in this browser.</span>}
-    {timeUp && <p className="ba-audience-message" role="status">Time! Draw another cue to play again.</p>}
+    {active && !timeUp && !finished && !looking && state.used === 0 && !state.issue && !state.message &&
+      <p className="ba-audience-message ba-audience-direction">Strike the pose first. Stubbs looks only when you press <b>Ready</b>.</p>}
+    {timeUp && <p className="ba-audience-message" role="status">Time’s up for this act.</p>}
     {state.issue && observation && <p className="ba-audience-message" role="status">{state.issue}</p>}
     {state.message && <p className="ba-audience-message" role="status">{state.message}</p>}
     {verdict === 'unjudged' && <p className="ba-audience-message" role="status">
@@ -214,32 +262,38 @@ export function AudienceSeat({ firstLook, paused, children, clock, flyCue, openi
     </p>}
     {finished && state.used >= state.limit && last?.verdict !== 'correct' && <p className="ba-audience-message"><strong>Out of looks.</strong> Curtain down on this one.</p>}
     {!active ? <div className={'ba-audience-footer ba-box-office' + (offline ? '' : ' ba-box-office-open')}>
+      {lobby}
       {offline ? <><span>{offlineDetail}</span>
         {(localServer || hosted) && <button type="button" className="ba-audience-rehearse" onClick={() => {
           setAvailability('checking')
           setStatusCheck(check => check + 1)
         }}>Recheck connection</button>}</>
         // Two tickets are the way in: an untimed game with any cue, or the 45-second show.
-        : <div className="ba-show-picker" role="group" aria-label="Play with Stubbs">
-          <button type="button" className="ba-show-ticket ba-show-free" onClick={() => onStart('rehearse')} disabled={!readyToStart}>
+        : <div className="ba-show-picker" role="group" aria-label="Play with Stubbs" ref={picker}>
+          <button type="button" className="ba-show-ticket ba-show-free" onClick={() => onStart('rehearse')} disabled={!readyToStart}
+            data-beckon={beckonTicket || undefined}>
             <Drama size={28} aria-hidden="true" />
-            <span><b>Free play</b><small>{readyToStart ? 'Pick any cue, strike a pose. No clock.' : 'Checking the booth…'}</small></span>
+            <span><b>Free play</b><small>{readyToStart ? 'Any of 18 cues. Strike a pose, no clock.' : 'Checking the booth…'}</small></span>
             <ArrowRight className="ba-show-arrow" size={22} aria-hidden="true" />
+            {beckonTicket && <GhostHand className="ba-beckon-hand" />}
           </button>
           <button type="button" className="ba-show-ticket ba-show-timed" onClick={() => onStart('draw')} disabled={!readyToStart}>
             <Timer size={28} aria-hidden="true" />
-            <span><b>Timed show · 45s</b><small>{readyToStart ? 'A random cue. Beat the clock.' : 'Checking the booth…'}</small></span>
+            <span><b>Timed show · 5 acts</b><small>{readyToStart ? '45 seconds an act. Unlock the next level.' : 'Checking the booth…'}</small></span>
             <ArrowRight className="ba-show-arrow" size={22} aria-hidden="true" />
           </button>
         </div>}
     </div> : <>
       <div className="ba-audience-footer">
         {finished && !finishingLine
-          ? <button type="button" className="ba-audience-call ba-audience-next" onClick={onNext}>{mode === 'draw' ? 'Draw another cue' : 'Play next cue'} <ArrowRight size={16} aria-hidden="true" /></button>
-          : <button type="button" className="ba-audience-call" disabled={looking || finishingLine || state.recovery === 'daily-limit' || state.recovery === 'change-pose'} onClick={() => round.current?.ask()}>
+          ? <button type="button" className="ba-audience-call ba-audience-next" onClick={onNext}>{nextLabel ?? (mode === 'draw' ? 'Draw another cue' : 'Play next cue')} <ArrowRight size={16} aria-hidden="true" /></button>
+          : <button type="button" className="ba-audience-call ba-guess-now" disabled={looking || finishingLine || state.recovery === 'daily-limit' || state.recovery === 'change-pose'} onClick={() => round.current?.ask()}
+            data-beckon={beckonReady || undefined}>
             {state.recovery === 'restart' ? 'Restart this cue' : state.recovery === 'daily-limit' ? 'Daily looks used'
               : state.recovery === 'change-pose' ? 'Change your pose' : state.phase === 'error' ? 'Try again'
-                : finishingLine ? 'Hearing Stubbs…' : looking ? (pending ? 'Waiting for the referee…' : 'In the booth…') : 'Guess this pose'} <Eye size={15} aria-hidden="true" /></button>}
+                : finishingLine ? 'Hearing Stubbs…' : looking ? (pending ? 'Waiting for the referee…' : 'In the booth…') : 'Ready! Guess, Stubbs'} <Eye size={18} aria-hidden="true" />
+            {beckonReady && <GhostHand className="ba-beckon-hand" />}</button>}
+        {cueTools}
         <button type="button" className="ba-audience-leave" onClick={onLeave}>Stop AI</button>
       </div>
       {state.history.length > 0 && <details className="ba-audience-log">

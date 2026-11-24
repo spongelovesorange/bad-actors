@@ -1,3 +1,4 @@
+import { nightMood } from '../src/server/charades-provider'
 import { randomUUID } from 'node:crypto'
 import { cues, limit, uuid, imageHash, failure, type StageReply, type VisionGuess } from '../src/server/stage-protocol'
 import { providerFailureReason, refereeFailure, type OwnProvider } from './local-ai-provider'
@@ -25,7 +26,7 @@ export function createLocalAudience({ provider, claim, now = Date.now }: Options
       if (!provider) return failure(503, 'unavailable', 'The AI audience is offline.')
       const n = input.cue
       if (typeof n !== 'number' || !Number.isInteger(n) || !cues[n-1] || Object.keys(input).length !== 1) {
-        return failure(400, 'invalid_cue', 'Choose one of the six rehearsal cues.')
+        return failure(400, 'invalid_cue', 'Choose one of the rehearsal cues.')
       }
       const at = now()
       for (const [id, old] of sessions) if (!old.busy && at - old.activeAt > 3_600_000) sessions.delete(id)
@@ -77,7 +78,7 @@ export function createLocalAudience({ provider, claim, now = Date.now }: Options
       const slot = used + 1
       const vision = (async (): Promise<VisionGuess | LocalReply> => {
         try {
-          const read = await provider.guess(image, [...round.missed])
+          const read = await provider.guess(image, [...round.missed], nightMood(round.cue))
           if (session.round !== round) return staleRound()
           return { roundId: round.id, observationId, used: slot, limit, guess: read.text,
             ...(read.line && { line: read.line }), visionModel: read.model, visionTokens: read.tokens }

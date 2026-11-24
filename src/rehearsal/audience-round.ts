@@ -130,12 +130,16 @@ export class AudienceRound {
     private visible: () => boolean = () => true,
     showTime?: (reading: ClockReading) => void,
     private heardAt?: (observationId: string) => number | undefined,
+    /** When true, a changed pose waits for ask(): the player decides when the pose is finished. */
+    private waitForAsk = false,
+    /** Acting time for a timed act. The night sets it. */
+    seconds = 45,
   ) {
     if (showTime) this.clock = new ActingClock(showTime, () => {
       clearTimeout(this.timer)
       this.pending = false
       this.update({ phase: 'complete', end: 'timeout', issue: undefined, message: undefined })
-    })
+    }, seconds)
   }
 
   private syncClock() {
@@ -178,6 +182,8 @@ export class AudienceRound {
     if (this.state.recovery === 'change-pose') this.update({ recovery: undefined, issue: undefined, message: undefined })
     // After a connection failure, only the user can choose to retry.
     if (this.state.phase === 'error') return
+    // A half-made pose is not worth a look. The guess button sends the finished one.
+    if (this.waitForAsk) { this.syncClock(); return }
     this.pending = true
     this.readyAt = Date.now() + 700
     this.schedule()

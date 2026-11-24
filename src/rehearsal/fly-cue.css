@@ -16,7 +16,7 @@
 }
 .ba-fly-paper {
   position: relative; display: grid; place-items: center; box-sizing: border-box;
-  min-height: clamp(32px, 13cqw, 42px); padding: 6px clamp(8px, 3.5cqw, 12px);
+  min-height: clamp(32px, 13cqw, 42px); padding: 7px clamp(10px, 4.5cqw, 12px);
 }
 .ba-fly-paper::before {
   content: ''; position: absolute; inset: 0; background: var(--fly-board) url('/paper-stock.svg');

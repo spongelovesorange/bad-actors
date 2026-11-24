@@ -6,7 +6,7 @@ import { advanceMotion, computeRig, createMotion, displayPose, headAngle, motion
 import { pickTarget, stageTargets } from './hit'
 import { moveJoint, turnFoot, turnJoint } from './joints'
 import { defaultAnkle } from './legs'
-import { distance, dragHandle, isJoint, moveHandle, putDown, snapHand, turnProp, type Hand, type StageHandle, type Point, type PuppetPose } from './geometry'
+import { distance, dragHandle, isJoint, moveHandle, pickUp, propNames, putDown, snapHand, turnProp, type Hand, type StageHandle, type Point, type PuppetPose } from './geometry'
 import './puppet.css'
 
 export type PuppetSnapshot = { pose: PuppetPose; motion: PuppetMotion; grip?: Grip }
@@ -104,6 +104,16 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onTug, onGrabCh
     return () => { observer.disconnect(); media.removeEventListener('change', updateMotion) }
   }, [])
 
+  useEffect(() => {
+    const node = svg.current
+    if (!node) return
+    // Chrome ignores touch-action on the grip circles inside the SVG, so the stage's pan-y would turn a
+    // vertical drag into a page scroll and cancel the grab. While a joint is held, its moves are the actor's.
+    const hold = (event: TouchEvent) => { if (drag.current && event.cancelable) event.preventDefault() }
+    node.addEventListener('touchmove', hold, { passive: false })
+    return () => node.removeEventListener('touchmove', hold)
+  }, [])
+
   function step(now: number) {
     frame.current = 0
     const e = engine.current, current = drag.current
@@ -166,7 +176,7 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onTug, onGrabCh
     if (!revert && snap && current.handle === 'prop' && !finalPose.holder && svg.current) {
       const displayed = displayPose(finalPose, engine.current.value)
       const holder = snapHand(displayed, scaleFor(svg.current), current.candidate, true)
-      if (holder) finalPose = { ...moveHandle(finalPose, holder, displayed[holder]), holder }
+      if (holder) finalPose = pickUp(moveHandle(finalPose, holder, displayed[holder]), holder)
     }
     if (finalPose !== current.before || revert) handlers.current.onPoseChange?.(finalPose)
     const node = svg.current
@@ -320,7 +330,7 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onTug, onGrabCh
       event.preventDefault()
       const holder = snapHand(pose, scale, null, true)
       if (pose.holder) onPoseChange?.(putDown(pose))
-      else if (holder) onPoseChange?.({ ...pose, holder })
+      else if (holder) onPoseChange?.(pickUp(pose, holder))
       return
     }
     if (handle === 'prop' && event.key.toLowerCase() === 'r') {
@@ -379,7 +389,7 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onTug, onGrabCh
       return <g key={handle} className="ba-handle" data-selected={active === handle || undefined}
         data-hovered={hovered === handle || undefined} data-snap={preview === handle || undefined}>
         <circle data-handle={handle} className="ba-hit" cx={p.x} cy={p.y} r={touchRadius} tabIndex={0} role="button"
-          aria-label={handle === 'prop' ? 'Move ' + (rendered.prop === 'plate' ? 'tray' : rendered.prop) : handleNames[handle]}
+          aria-label={handle === 'prop' ? 'Move ' + (rendered.prop ? propNames[rendered.prop] : 'prop') : handleNames[handle]}
           aria-describedby={help} onKeyDown={event => key(event, handle)}/>
         {isJoint(handle) && <path className="ba-joint-stitch" aria-hidden="true" transform={`translate(${p.x} ${p.y})`}
           d={rotation ? 'M-4 1 A4 4 0 0 1 3-2 M3-4 V-1 H0' : 'M-2.2 1.2 L2.2-1.2'}/>}

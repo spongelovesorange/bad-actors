@@ -13,7 +13,7 @@ test('all joints can be posed together while hands, feet and expression keep the
     await expect(joint(name)).toBeEnabled()
   }
   await expect(page.getByRole('group', { name: 'Drag points' })).toHaveCount(0)
-  await page.getByRole('button', { name: 'Your turn' }).click()
+  await page.goto('/?cue=1')
 
   const shoulder = joint('Right shoulder')
   const shoulderStart = Number(await shoulder.getAttribute('cy'))
@@ -26,8 +26,8 @@ test('all joints can be posed together while hands, feet and expression keep the
   const fist = rightHand.getByRole('radio', { name: 'Fist' })
   const peace = rightHand.getByRole('radio', { name: 'Peace sign' })
   const rightPalm = stage.locator('[data-palm="right"]')
-  await expect(leftHand.getByRole('radio')).toHaveCount(4)
-  await expect(rightHand.getByRole('radio')).toHaveCount(4)
+  await expect(leftHand.getByRole('radio')).toHaveCount(7)
+  await expect(rightHand.getByRole('radio')).toHaveCount(7)
   await openPalm.check()
   await fist.check()
   await expect(stage.locator('[data-palm="left"]')).toHaveAttribute('data-palm-shape', 'open')

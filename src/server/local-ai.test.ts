@@ -1,3 +1,4 @@
+import { nightMoods } from './charades-provider'
 import { randomUUID } from 'node:crypto'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -55,7 +56,7 @@ describe('local AI observation and independent referee', () => {
     const request = f.input(0)
     const result = await f.game.observe(f.cookie, request)
     expect(result.body).toMatchObject({ guess: 'make a call', verdict: 'correct', used: 1, limit: 5, visionModel: 'vision', judgeModel: 'referee' })
-    expect(f.provider.guess.mock.calls).toEqual([[frames[0], []]])
+    expect(f.provider.guess.mock.calls).toEqual([[frames[0], [], nightMoods[1]]])
     expect(f.provider.judge).toHaveBeenCalledWith('Talking on the phone', 'make a call')
     expect(await f.game.observe(f.cookie, request)).toEqual(result)
     expect((await f.game.observe(f.cookie, f.input(1))).body.error).toBe('round_finished')

@@ -10,6 +10,7 @@ import {
 import { computeRig, stillMotion, type PuppetMotion, type PuppetRig, type SavedMotion } from './motion'
 import { ActorFace } from './ActorFace'
 import { Phone, phoneView } from './Phone'
+import { Banana, Microphone, OpenBook, Rose, RubberChicken, Umbrella } from './props'
 import type { Grip } from './contact'
 
 export { ActorFace } from './ActorFace'
@@ -90,6 +91,22 @@ const palmArt = {
   peace: {
     edge: 'M-8 12 Q-13 9-13 2 L-13-5 Q-12-9-8-9 Q-5-8-5-5 L-5-3 L-10-24 Q-11-29-8-30 Q-5-31-3-27 L2-12 L8-29 Q10-33 13-31 Q16-30 14-25 L9-6 Q14-9 16-6 Q19-4 16 1 L12 8 Q9 15 3 15Z',
     seam: 'M-11-2 L-6 2 Q-3 4-3 0 M-4 8 Q0 3 5 4 L10 0',
+  },
+  // The index finger up from the thumb side of a fist, three knuckles curled beside it, as when
+  // pointing at the sky or hailing a waiter. A finger raised from the middle would read as rude.
+  point: {
+    edge: 'M-11 6 L-12-3 Q-13-6-11.5-9 L-11.5-27 Q-11.5-31-8-31 Q-4.5-31-4.5-27 L-4.5-10 Q-2-12.5 1-10 Q4-12.5 7-9.5 Q10-12 12.5-8.5 Q15-6 14-2 L13 4 Q11 10 5 10 L-5 10 Q-10 10-11 6Z',
+    seam: 'M-10 1 Q-6-2-2 0 L3 2 Q6 5 3 7 L-2 6 M1-8 L1.5-5 M7-7.5 L7.5-4.5',
+  },
+  // Thumbs up: four fingers curled in a stack, the thumb standing straight on top.
+  thumb: {
+    edge: 'M-11 6 L-12-2 Q-12-6-9-7 L-9-23 Q-9-27-5.5-27 Q-2-27-2-23 L-2-8 L9-8 Q14-8 14-3 L14 8 Q13 13 7 13 L-5 13 Q-10 12-11 6Z',
+    seam: 'M-2-3 L12-3 M-2 2 L12 2 M-2 7 L11 7',
+  },
+  // The horns: first and little fingers up, the middle two curled into knuckles between them.
+  rock: {
+    edge: 'M-8 12 Q-13 9-13 2 L-13-5 Q-12-9-9.5-9.5 L-10-27 Q-10-31-6.5-31 Q-3-31-3-27 L-2.5-11 Q0-14.5 2.5-11 Q5-14.5 7.5-11 L8-21 Q8-25 11-25 Q14-25 14-21 L14-4 Q15 4 12 9 Q9 15 3 15Z',
+    seam: 'M-11-2 L-6 2 Q-3 4-3 0 M0-10 L0.5-6.5 M5-10 L5.5-6.5',
   },
   grip: {
     edge: 'M-9-2 Q-10-5-6-6 L5-5 Q12-4 11 2 Q10 7 5 9 L-2 8 Q-7 9-9 3Z',
@@ -198,6 +215,12 @@ function PropArt({ rig, phone }: { rig: PuppetRig; phone?: ReturnType<typeof pho
         <path d="M-8.5 5 L-6.5 7" fill="none" stroke="#e6c3a2" strokeWidth="1.6" />
       </g>}
       {pose.prop === 'plate' && <ServingTray />}
+      {pose.prop === 'mic' && <Microphone />}
+      {pose.prop === 'umbrella' && <Umbrella />}
+      {pose.prop === 'banana' && <g transform={pose.holder === 'left' ? 'scale(-1 1)' : undefined}><Banana /></g>}
+      {pose.prop === 'book' && <OpenBook />}
+      {pose.prop === 'rose' && <Rose />}
+      {pose.prop === 'chicken' && <RubberChicken />}
     </g>
   )
 }

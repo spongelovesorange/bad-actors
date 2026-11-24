@@ -14,7 +14,7 @@ function deferred<T>() {
   return { promise, resolve }
 }
 
-function booth(timed = false, heardAt?: (observationId: string) => number | undefined) {
+function booth(timed = false, heardAt?: (observationId: string) => number | undefined, waitForAsk = false) {
   const stage = { settled: true, visible: true, image: 'first image' }
   let used = 0
   let state: AudienceState = quietAudience
@@ -23,7 +23,7 @@ function booth(timed = false, heardAt?: (observationId: string) => number | unde
   const capture = vi.fn(async () => stage.image)
   const times: ClockReading[] = []
   const round = new AudienceRound(3, { start, observe }, () => stage.settled, capture, s => { state = s }, () => stage.visible,
-    timed ? reading => { times.push(reading) } : undefined, heardAt)
+    timed ? reading => { times.push(reading) } : undefined, heardAt, waitForAsk)
   return { start, observe, capture, stage, round, times, state: () => state }
 }
 
@@ -54,6 +54,24 @@ describe('AI audience at the stage', () => {
     expect(b.observe.mock.calls[0][0].image).toBe('second pose')
     b.round.poseChanged()
     await vi.advanceTimersByTimeAsync(4000)
+    expect(b.observe).toHaveBeenCalledTimes(1)
+  })
+
+  it('lets the player finish a pose: moving never sends a look until Ready is pressed', async () => {
+    const b = booth(false, undefined, true)
+    await b.round.start()
+    b.stage.image = 'half a pose'
+    b.round.poseChanged()
+    await vi.advanceTimersByTimeAsync(8000)
+    expect(b.observe).not.toHaveBeenCalled()
+    b.stage.image = 'the finished pose'
+    b.round.poseChanged()
+    b.round.ask()
+    await vi.advanceTimersByTimeAsync(100)
+    expect(b.observe.mock.calls.map(([frame]) => frame.image)).toEqual(['the finished pose'])
+    b.stage.image = 'another pose'
+    b.round.poseChanged()
+    await vi.advanceTimersByTimeAsync(8000)
     expect(b.observe).toHaveBeenCalledTimes(1)
   })
 

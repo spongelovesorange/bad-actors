@@ -5,12 +5,16 @@ export type StageTarget = {
   id: StageHandle; center: Point; radius: number; touchRadius: number
   tray?: { normal: Point; touchDepth: number }
 }
+// The grab disk around each prop's middle, in stage units. The long tray also gets a rim rule below.
+const propRadius: Record<PropKind, number> = {
+  plate: 53, phone: 25, cup: 18, mic: 25, umbrella: 46, banana: 26, book: 27, rose: 26, chicken: 34,
+}
 function paintedRadius(id: StageHandle, prop: PropKind | null) {
   switch (id) {
     case 'head': return 40
     case 'chest': return 36
     case 'waist': return 38
-    case 'prop': return prop === 'plate' ? 53 : prop === 'phone' ? 25 : 18
+    case 'prop': return prop ? propRadius[prop] : 18
     case 'left':
     case 'right': return 16
     case 'leftAnkle':

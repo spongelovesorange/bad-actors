@@ -1,7 +1,9 @@
 import { createHash } from 'node:crypto'
 import { Buffer } from 'node:buffer'
+import { cueTitles } from '../deck'
 
-export const cues = ['Drinking water', 'Talking on the phone', 'Taking a selfie', 'Covering your eyes', 'Surrendering', 'Carrying a tray']
+/** The referee's copy of the deck; a request names a cue by its position (1-based). */
+export const cues = cueTitles
 export const limit = 5
 export const uuid = /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i
 const pngPrefix = 'data:image/png;base64,'

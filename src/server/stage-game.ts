@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { Buffer } from 'node:buffer'
-import { providerFailureReason, refereeFailure, type StageProvider } from './charades-provider'
+import { nightMood, providerFailureReason, refereeFailure, type StageProvider } from './charades-provider'
 import { cues, failure, imageHash, limit, uuid, type StageReply, type VisionGuess } from './stage-protocol'
 
 const day = 86_400_000
@@ -47,7 +47,7 @@ export class StageGame {
   start(user: string, input: Input): StageReply {
     const cue = input.cue
     if (typeof cue !== 'number' || !Number.isInteger(cue) || !cues[cue - 1] || Object.keys(input).length !== 1)
-      return failure(400, 'invalid_cue', 'Choose one of the six rehearsal cues.')
+      return failure(400, 'invalid_cue', 'Choose one of the rehearsal cues.')
     const at = this.now()
     return this.storage.transactionSync(() => {
       this.sql.exec('DELETE FROM stage_looks WHERE day < ?', Math.floor(at / day) - 1)
@@ -173,7 +173,7 @@ export class StageGame {
     let words: VisionGuess | undefined
     let reply: StageReply
     try {
-      const read = await this.provider.guess(image, this.misses(seat.round, id))
+      const read = await this.provider.guess(image, this.misses(seat.round, id), nightMood(seat.cue))
       if (this.seat(user)?.round !== seat.round) return stale()
       words = { roundId: seat.round, observationId: id, used, limit, guess: read.text,
         ...(read.line && { line: read.line }), ...(read.delivery && { delivery: read.delivery }),

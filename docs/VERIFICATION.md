@@ -1,5 +1,68 @@
 # Bad Actors verification
 
+## Five nights, a bigger cupboard and a pit band · November 24, 2026
+
+The player asked for more props, faces and hand shapes. They also wanted every level to be its own surprise, with jokes in it, plus richer sounds and background music.
+
+- **Cupboard.** There are six new props: a microphone, an umbrella, a book, a rose, a banana and a rubber chicken held by its feet. They follow the existing rules for dragging, handing off and putting down. The long ones lie on their side when put down and stand up again when picked up.
+  - Five new faces: Fuming, Weepy, Snoozing, Smitten and Cheeky wink.
+  - Three new hand shapes: Point, Thumbs up and Rock on. The first Point drawing raised the finger from the middle of the fist and read as a rude gesture. The finger now rises from the thumb side.
+- **Five nights.** The deck grew from 18 to 30 cues. The first 18 kept their numbers, so a round started before the change still scores. Each night has its own twist, opener, act length and curtain-call reviews; the README lists the twists. Every cue has a director's note on the act slate, and the act clock waits while the slate is up.
+  - A full Big Feelings show with scripted replies scored 5/5 and 19 ★. Four acts were played in the card's mood and earned the method bonus; the fifth was not.
+  - The other twists were checked one by one at 1280 × 800 and 375 × 812:
+    - Stage fright makes the actor tremble.
+    - Catch! drops the phone at the actor's feet after the slate, with the stagehand's shout.
+    - Lights out turns the hall dark with two glowing eyes and an apology.
+    - The heckler shouts from a balcony box.
+- **Stubbs's humour by night.** The server adds the night's mood to the text beside each picture, for example "gala night: you wear a borrowed tuxedo and are feuding with a heckler in the balcony". A unit test checks that no mood names an action from the deck. No paid model call was made to try the moods.
+- **Pit band and stage cues.** An original eight-bar music-hall tune is arranged six ways and rendered in the browser into seamless loops:
+  - Lobby: solo piano.
+  - Opening Night: ragtime upright piano.
+  - The Prop Cupboard: xylophone and tuba.
+  - Big Feelings: a violin waltz in a minor key.
+  - Blackout Matinee: an organ in a minor key.
+  - Heckler’s Gala: brass.
+
+  The band plays at a gain of 0.15 and drops to about a third while Stubbs or the crowd is heard. **Pit band** turns it off. Twelve new synthesized cues cover the clapperboard, the flung prop, the prop pop, the face boing, the hand click, the blackout's fuse and breaker, the heckler's "Oi!", the method-acting sparkle, the curtain fanfare and knocking knees. The assistant did not listen to any of it. Levels were set by normalising peaks against the existing button sounds, and the player's ear is the real check.
+- **Phone fixes found while testing.**
+  - A vertical drag on a joint scrolled the page and dropped the grab, because Chrome ignores touch-action on the grip circles inside the SVG. A non-passive touchmove handler now keeps the drag.
+  - At 320 px the ink of a hanging cue sat 3.9–4.9 px from the paper edge, and the test wants at least 5. The board's padding grew by 1–2 px.
+  - The dressing room now uses tab semantics only when it is docked, so a screen reader reaches all four sections on desktop.
+- **Browser tests.** The stage specs were written for the loopback practice server, but the main Playwright config serves the hosted app. Its public page sends a player to `/room` to sign in, so 10 specs could never reach a game. `npm run test:stage` now runs them against the practice server with scripted replies.
+  - All 42 now pass. TypeScript, ESLint, 212 unit tests and both builds also passed.
+
+## A silent how-to-play demo and the dressing room · November 24, 2026
+
+The player said the pose controls sat too far below the stage, and a friend's playtest found that a newcomer could not tell where to start. Both changes borrow from phone games. Drawing games keep their tools beside the canvas. Two-player party collections open each game with a silent hand demo, then point at what to tap.
+
+- **Dressing room.** The prop tray, expressions, hand shapes and foot turns now sit in one column beside the stage. On desktop the column stays in view while the page scrolls. At 960 px and narrower it docks to the bottom of the screen with four tabs, Prop, Face, Hands and Feet, and the arrow keys move between them.
+  - At 1280 × 800 the stage, the tickets and every control fit on one screen.
+  - At 375 × 812 each tab fits the tray without scrolling. Hands is the tallest at 232 px, and the whole stage stays visible above the tray.
+- **Silent demo.** The handbook's cartoon is replaced by an 8.4 s loop on the real puppet. A white glove drags the right hand from the hip to the ear, taps the phone into it and presses Ready. Stubbs answers "On the phone!" and the judge's DING follows. Three captions light up in step.
+  - The drag uses the stage's own drag code, so the elbow turns outward as it does when a player drags. A unit test caps elbow travel at under 8 units per frame. The first path made it jump 98.
+  - The demo can be paused. With reduced motion it shows the finished scene and nothing moves.
+- **The glove after the demo.** It taps the Free play ticket, scrolled into view and above the tray on a phone. In the first game it shows which hand to grab. Once the pose changes it moves to Ready, and it disappears after the first look.
+  - It sits outside the photographed puppet, so Stubbs never sees it.
+  - A player arriving from a ticket link (`/room?play=…`) goes straight to the cue deck instead of seeing the demo a second time.
+- **Local Chrome checks, scripted responses, muted audio.** At 1024 × 768 and 375 × 812 the demo fit without scrolling. The whole chain ran: demo, ticket, deck, drag hint, Ready hint and one look, after which the hint was gone.
+
+## Levels, a five-act show and Ready-only looks · November 24, 2026
+
+The player asked for more cues and levels, a reason to keep playing, and for Stubbs to wait until a pose was finished. The ideas came from Google's *Quick, Draw!*, which ends a short run with a recap of the AI's guesses, and *Heads Up!*'s themed decks.
+
+- **Deck.** The deck has 18 cues, six per level, defined once in `src/deck.ts`. Both the stage and the server read it, so the referee's titles cannot drift from the buttons. The original six keep their pose sheets; the twelve new cues have text hints. Their recognition by the vision model has not been measured, and the later levels are meant to be harder.
+- **Timed show.** It deals five different cues from a level, gives each act 45 seconds and moves to the next act 3.2 s after each act's applause or heckle. The curtain call shows each frozen pose, Stubbs's line, stars for the number of looks used, the score and a review written in advance, which costs nothing. The best score per level is kept in the browser. Three acts guessed opens the next level.
+- **Ready-only looks.** Looks now happen only when the player presses **Ready! Guess, Stubbs**; moving the actor sends nothing. In local Chrome with scripted responses, moving a hand and waiting 6 s sent no look, and pressing Ready sent exactly one.
+- **Cue controls panel removed.** The opening guess moved to the box office. Hint and Change cue appear during a game, and pass-the-screen hiding was removed.
+- **Browser tests.** The browser test configuration now skips the handbook with a test-only key, because the handbook otherwise opens on every visit.
+
+**Local Chrome checks, scripted responses, muted audio:**
+- The 18-card deck sheet, the level sheet with Levels 2 and 3 locked, Free play on cue 12 and the hint strip.
+- A full Level 1 show: four acts guessed, one timed out. The curtain call read 4/5 with 12 ★, saved the best score, unlocked Level 2, and **Next level** dealt a Level 2 cue.
+- Because the preview pane ran in the background, those runs overrode page visibility and reduced motion to keep throttled timers moving.
+
+TypeScript, ESLint and 204 unit tests passed. The Playwright specs were updated to the new flow but, as before, cannot launch Chromium in this environment.
+
 ## A cheekier Stubbs, his new voice and the box office · November 24, 2026
 
 The player found the first voice too ordinary. The `list-voices` endpoint returned 1,452 voices, and we picked five comic ones. Each read the same line on `eleven_v3`, which acts out bracketed cues such as `[snorts]` and `[laughs]`. Each clip took about 3 s through the CLI. The player listened and chose “Georg”, a gruff, quavering ninety-year-old. [His sample](verification/stubbs-voice-sample.mp3)

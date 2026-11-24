@@ -1,6 +1,6 @@
 export type Point = { x: number; y: number }
 export type Hand = 'left' | 'right'
-export type HandShape = 'relaxed' | 'open' | 'fist' | 'peace'
+export type HandShape = 'relaxed' | 'open' | 'fist' | 'peace' | 'point' | 'thumb' | 'rock'
 export type Handle = Hand | 'head' | 'prop'
 export type Joint = 'leftShoulder' | 'rightShoulder' | 'leftElbow' | 'rightElbow' |
   'waist' | 'chest' | 'headTilt' | 'leftKnee' | 'rightKnee' | 'leftAnkle' | 'rightAnkle'
@@ -12,8 +12,8 @@ export const stageHandles: StageHandle[] = [
 export function isJoint(h: StageHandle): h is Joint {
   return h !== 'head' && h !== 'prop' && h !== 'left' && h !== 'right'
 }
-export type PropKind = 'phone' | 'cup' | 'plate'
-export type FaceShape = 'flat' | 'side-eye' | 'braced' | 'smile' | 'open'
+export type PropKind = 'phone' | 'cup' | 'plate' | 'mic' | 'umbrella' | 'banana' | 'book' | 'rose' | 'chicken'
+export type FaceShape = 'flat' | 'side-eye' | 'braced' | 'smile' | 'open' | 'angry' | 'sad' | 'sleepy' | 'love' | 'wink'
 type Bend = -1 | 1
 
 export type PuppetPose = {
@@ -46,8 +46,22 @@ export const homeHead = { x: 251, y: 99 }
 export const shoulders = { left: { x: 225, y: 162 }, right: { x: 276, y: 160 } }
 export const pivot = { x: 251, y: 229 }
 export const hands: Hand[] = ['left', 'right']
+/** What each prop is called on the tray buttons and to a screen reader. */
+export const propNames: Record<PropKind, string> = {
+  phone: 'phone', cup: 'cup', plate: 'tray', mic: 'microphone', umbrella: 'umbrella',
+  banana: 'banana', book: 'book', rose: 'rose', chicken: 'rubber chicken',
+}
+// From the gripping palm to the middle of each drawing. Long props are held near one end.
 const propOffsets: Record<PropKind, Point> = {
   cup: { x: -12, y: 7 }, phone: { x: 5, y: -24 }, plate: { x: -27, y: -12 },
+  mic: { x: 0, y: -11 }, umbrella: { x: 0, y: -23 }, banana: { x: 1, y: -14 },
+  book: { x: 0, y: -13 }, rose: { x: 0, y: -16 }, chicken: { x: 0, y: 28 },
+}
+// Put down, a tall prop lies on its side on the boards rather than standing on its tip.
+const floor: Record<PropKind, { y: number; turn?: number; out?: number }> = {
+  cup: { y: 289 }, phone: { y: 289 }, plate: { y: 289 }, mic: { y: 296, turn: 90 },
+  umbrella: { y: 292, turn: 90, out: 46 }, banana: { y: 296, turn: 90 }, book: { y: 292 },
+  rose: { y: 297, turn: 90 }, chicken: { y: 297, turn: 270, out: 18 },
 }
 
 export const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n))
@@ -78,7 +92,20 @@ export function withProp(p: PuppetPose, prop: PropKind | null): PuppetPose {
 }
 export function putDown(p: PuppetPose): PuppetPose {
   if (!p.prop || !p.holder) return p
-  return { ...p, holder: null, propPosition: { x: p.holder === 'right' ? 329 : 171, y: 289 } }
+  const rest = floor[p.prop], out = rest.out ?? 0
+  return {
+    ...p, holder: null, propTurn: rest.turn ?? p.propTurn,
+    propPosition: { x: p.holder === 'right' ? 329 + out : 171 - out, y: rest.y },
+  }
+}
+/** A prop taken up off the boards comes up the right way round. */
+export function pickUp(p: PuppetPose, hand: Hand): PuppetPose {
+  if (!p.prop) return p
+  return { ...p, holder: hand, propTurn: floor[p.prop].turn === undefined ? p.propTurn : 0 }
+}
+/** A prop thrown on from the wings lands on the boards beside the actor, waiting to be picked up. */
+export function withLooseProp(p: PuppetPose, prop: PropKind, side: Hand = 'right'): PuppetPose {
+  return putDown({ ...withProp(p, prop), holder: side })
 }
 export const handShape = (p: PuppetPose, hand: Hand): HandShape => p.handShapes?.[hand] ?? 'relaxed'
 export function withHandShape(p: PuppetPose, hand: Hand, shape: HandShape): PuppetPose {

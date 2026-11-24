@@ -18,8 +18,7 @@ function distance(a: Point, b: Point) {
 }
 
 async function beginRehearsal(page: Page) {
-  await page.goto('/')
-  await page.getByRole('button', { name: 'Your turn' }).click()
+  await page.goto('/?cue=1')
   await expect(page.getByRole('heading', { name: 'Drinking water' })).toBeVisible()
   return page.locator('svg[data-puppet-stage]')
 }
@@ -85,8 +84,6 @@ test('a rehearsal can switch props, remove one, and advance the cue', async ({ p
   await expect(page.getByRole('button', { name: 'Cup', exact: true })).toHaveAttribute('aria-pressed', 'false')
   await page.getByRole('button', { name: 'Tray', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Tray', exact: true })).toHaveAttribute('aria-pressed', 'false')
-  await page.getByRole('button', { name: 'Next cue' }).click()
-  await expect(page.getByRole('heading', { name: 'Drinking water' })).toHaveCount(0)
 })
 
 test.describe('narrow touch rehearsal', () => {
@@ -110,37 +107,9 @@ test.describe('narrow touch rehearsal', () => {
   })
 })
 
-test('handing the screen to a guesser hides the cue until the actor shows it', async ({ page }) => {
-  await beginRehearsal(page)
-  const card = page.getByRole('region', { name: 'Cue card' })
-  const board = page.getByTestId('fly-cue')
-  await card.getByRole('button', { name: 'Hide cue' }).click()
-  await expect(board.getByRole('heading', { name: 'Guess the pose' })).toBeVisible()
-  expect(await page.locator('main').innerHTML()).not.toContain('Drinking water')
-  await card.getByRole('button', { name: 'Next cue' }).click()
-  expect(await page.locator('main').innerHTML()).not.toContain('Talking on the phone')
-  await expect(card.getByRole('button', { name: 'Show cue' })).toHaveAttribute('aria-expanded', 'false')
-  await card.getByRole('button', { name: 'Show cue' }).click()
-  await expect(board.getByRole('heading', { name: 'Talking on the phone' })).toBeVisible()
-})
-
-test('the numbered practice link opens an illustrated cue that can be concealed', async ({ page }) => {
+test('the numbered practice link opens its cue on the hanging board', async ({ page }) => {
   await page.goto('/?cue=3')
-  const card = page.getByRole('region', { name: 'Cue card' })
-  const board = page.getByTestId('fly-cue')
-  await expect(board.getByRole('heading', { name: 'Taking a selfie' })).toBeVisible()
-  await card.getByRole('button', { name: 'Acting hint' }).click()
-  const example = card.locator('#ba-stage-note img')
-  await expect(example).toHaveAttribute('src', '/blocking/selfie.png')
-  await expect.poll(() => example.evaluate((node: HTMLImageElement) => node.naturalWidth)).toBeGreaterThan(0)
-  await card.getByRole('button', { name: 'Hide cue' }).click()
-  await expect(card.locator('#ba-stage-note')).toHaveCount(0)
-  await expect(card.getByRole('combobox')).toHaveCount(0)
-  expect(await card.innerHTML()).not.toMatch(/selfie|peace sign/i)
-  expect(await board.innerHTML()).not.toMatch(/selfie|peace sign/i)
-  await card.getByRole('button', { name: 'Show cue' }).click()
-  await card.getByRole('combobox').selectOption({ label: 'Carrying a tray' })
-  await expect(board.getByRole('heading', { name: 'Carrying a tray' })).toBeVisible()
-  await expect(page).toHaveURL(/cue=6/)
-  await expect(card.getByRole('button', { name: 'Acting hint' })).toHaveAttribute('aria-expanded', 'false')
+  await expect(page.getByTestId('fly-cue').getByRole('heading', { name: 'Taking a selfie' })).toBeVisible()
+  await page.goto('/?cue=18')
+  await expect(page.getByTestId('fly-cue').getByRole('heading', { name: 'Yawning' })).toBeVisible()
 })

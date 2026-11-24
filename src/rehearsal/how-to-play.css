@@ -1,0 +1,120 @@
+/* The silent demo: a small stage with the real puppet, a prop tray and a Ready button, played by a
+   white glove. Every position below is a percentage of the 500 × 430 box that how-to-play.ts uses. */
+.ba-howto { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 14px 22px; align-items: center; }
+.ba-howto-stage {
+  position: relative; container-type: inline-size; aspect-ratio: 500 / 430; overflow: hidden;
+  border: 2.5px solid #302923; border-radius: 4px; box-shadow: 3px 4px 0 #302923; background: #46352d;
+}
+.ba-howto-film { position: absolute; inset: 0; }
+.ba-howto-boards {
+  position: absolute; inset: 0 0 auto; height: 83.72%; overflow: hidden;
+  background: #987451 url('/hall-stage.webp') center / 100% 100% no-repeat;
+}
+.ba-howto-boards .ba-puppet-stage, .ba-howto-trail { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ba-howto-trail { overflow: visible; pointer-events: none; }
+.ba-howto-trail polyline { fill: none; stroke: #fff7e2; stroke-width: 4.5; stroke-linecap: round; stroke-dasharray: .5 11; }
+.ba-howto-trail circle { fill: rgb(255 223 134 / .3); stroke: #ffdf86; stroke-width: 3.5; }
+.ba-howto-cue {
+  position: absolute; z-index: 1; top: 4%; left: 3%; padding: .9cqw 2cqw; transform: rotate(-4deg);
+  background: #fff0b7; border: 1.5px solid #433521; box-shadow: 1px 2px #65563e;
+  font: 600 3.4cqw/1.15 var(--ba-sign); color: #2c241c;
+}
+.ba-howto-cue b { font: 700 3.8cqw/1.1 var(--ba-voice); }
+.ba-howto-critic { position: absolute; z-index: 2; left: 1%; bottom: 0; width: 25%; }
+.ba-howto-critic svg { display: block; width: 100%; height: auto; }
+.ba-howto-balloon {
+  position: absolute; bottom: 88%; left: 22%; margin: 0; padding: .9cqw 2cqw .6cqw; white-space: nowrap;
+  background: #fff9e9; border: 2px solid #2f2723; border-radius: 14px 24px 13px 19px / 20px 12px 18px 12px;
+  box-shadow: 2px 3px 0 #372923a6; font: 700 4.6cqw/1.1 var(--ba-voice); color: #2c241c;
+}
+.ba-howto-balloon::after {
+  content: ''; position: absolute; top: 100%; left: 18%; width: 3.4cqw; height: 2.4cqw;
+  background: #2f2723; clip-path: polygon(0 0, 100% 0, 15% 100%);
+}
+.ba-howto-stamp {
+  position: absolute; z-index: 2; top: 15%; right: 7%; padding: .5cqw 1.5cqw 0; transform: rotate(10deg);
+  background: #f6e4ac; border: 3px double #2e503c; color: #2e503c; font: 700 7.4cqw/1.05 var(--ba-voice);
+}
+.ba-howto-confetti { position: absolute; z-index: 2; left: 52%; top: 26%; }
+.ba-howto-confetti i { position: absolute; width: 1.8cqw; height: .9cqw; border-radius: 1px; background: var(--c); opacity: 0; }
+.ba-howto-confetti i:nth-child(1) { --c: #df5139; --x: -24cqw; --y: -10cqw; --r: 220deg; }
+.ba-howto-confetti i:nth-child(2) { --c: #ffdf86; --x: -15cqw; --y: -19cqw; --r: -160deg; }
+.ba-howto-confetti i:nth-child(3) { --c: #619090; --x: -4cqw; --y: -22cqw; --r: 300deg; }
+.ba-howto-confetti i:nth-child(4) { --c: #f2b38a; --x: 7cqw; --y: -21cqw; --r: -250deg; }
+.ba-howto-confetti i:nth-child(5) { --c: #df5139; --x: 17cqw; --y: -15cqw; --r: 180deg; }
+.ba-howto-confetti i:nth-child(6) { --c: #ffdf86; --x: 25cqw; --y: -5cqw; --r: -200deg; }
+.ba-howto-confetti i:nth-child(7) { --c: #619090; --x: -21cqw; --y: 6cqw; --r: 260deg; }
+.ba-howto-confetti i:nth-child(8) { --c: #f2b38a; --x: 22cqw; --y: 8cqw; --r: -300deg; }
+.ba-howto-confetti i:nth-child(9) { --c: #fff7e2; --x: -10cqw; --y: -14cqw; --r: 140deg; }
+.ba-howto-confetti i:nth-child(10) { --c: #fff7e2; --x: 11cqw; --y: -11cqw; --r: -120deg; }
+
+.ba-howto-tray { position: absolute; inset: 83.72% 0 0; background: #28322e; border-top: 2.5px solid #1d1915; }
+.ba-howto-chip, .ba-howto-ready { position: absolute; top: 85.6%; height: 12%; }
+.ba-howto-chip {
+  display: grid; place-items: center; width: 15%;
+  background: #f3e8d2; border: 2px solid #1d1915; border-radius: 4px; box-shadow: 2px 2px 0 #15201d;
+}
+.ba-howto-chip[data-kind='phone'] { left: 3%; }
+.ba-howto-chip[data-kind='cup'] { left: 19.5%; }
+.ba-howto-chip[data-kind='plate'] { left: 36%; }
+.ba-howto-chip svg { width: 78%; height: 84%; }
+.ba-howto-chip[data-pressed] { background: #dce8e3; translate: 0 1px; box-shadow: 1px 1px 0 #15201d; }
+.ba-howto-ready {
+  left: 64%; width: 32%; display: flex; align-items: center; justify-content: center; gap: 1cqw;
+  background: #ffdf86; border: 2px solid #1d1915; border-radius: 6px 10px 7px 9px; box-shadow: 2px 3px 0 #15201d;
+  font: 800 4.3cqw/1 var(--ba-sign); color: #2c241c;
+}
+.ba-howto-ready svg { width: 4.2cqw; height: 4.2cqw; }
+.ba-howto-ready[data-state='pressed'] { background: #ffeaa9; translate: 0 1px; box-shadow: 1px 1px 0 #15201d; }
+.ba-howto-ready[data-state='looking'] { background: #d9ccb1; }
+.ba-howto-tap {
+  position: absolute; z-index: 4; width: 10%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%;
+  border: .8cqw solid #fff7e2; box-shadow: 0 0 0 .4cqw rgb(43 36 29 / .35); pointer-events: none;
+}
+.ba-howto-hand { width: 9.5%; translate: -33.3% -8.3%; transform-origin: 33.3% 8.3%; transition: scale 90ms ease-out; }
+.ba-app .ba-howto-pause {
+  position: absolute; z-index: 6; top: 2.4%; right: 2%; display: grid; place-items: center; width: 34px; height: 34px; padding: 0;
+  border: 2px solid #1d1915; border-radius: 50%; background: rgb(255 247 227 / .92); color: #2c241c; cursor: pointer;
+}
+.ba-howto-pause:focus-visible { outline: 3px solid #2f6f8f; outline-offset: 2px; }
+
+.ba-howto-side { display: grid; gap: 14px; align-content: center; min-width: 0; }
+.ba-howto-side .ba-book-actions { margin-top: 2px; }
+.ba-howto-steps { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; counter-reset: ba-step; }
+.ba-howto-steps li {
+  counter-increment: ba-step; display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 1px 11px; align-items: center;
+  padding: 8px 10px; border: 2px solid transparent; border-radius: 6px 9px 7px 8px;
+  transition: background-color .18s ease, border-color .18s ease, box-shadow .18s ease, translate .18s ease;
+}
+.ba-howto-steps li::before {
+  content: counter(ba-step); grid-row: span 2; display: grid; place-items: center; width: 36px; height: 36px;
+  border-radius: 50%; background: #e3d6bd; color: #2c241c; font: 800 19px/1 var(--ba-sign);
+}
+.ba-howto-steps b { font: 700 21px/1.1 var(--ba-voice); letter-spacing: -.02em; }
+.ba-howto-steps span { font: 500 15.5px/1.25 var(--ba-sign); color: #4d4031; }
+.ba-howto-steps li[aria-current] { background: #fff4cf; border-color: #302923; box-shadow: 2px 3px 0 #302923; translate: 4px 0; }
+.ba-howto-steps li[aria-current]::before { background: #df5139; color: #fff7e8; }
+
+@media (max-width: 640px) {
+  .ba-howto { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .ba-howto-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .ba-howto-steps li { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 3px; padding: 6px 3px; text-align: center; }
+  .ba-howto-steps li::before { grid-row: auto; width: 26px; height: 26px; font-size: 15px; }
+  .ba-howto-steps b { font-size: 15.5px; }
+  .ba-howto-steps span { display: none; }
+  .ba-howto-steps li[aria-current] { translate: 0 -2px; }
+  .ba-howto-side { gap: 8px; }
+  .ba-howto-side .ba-book-actions { justify-content: center; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ba-howto-balloon { animation: ba-howto-pop 220ms cubic-bezier(.2,1.6,.4,1) both; transform-origin: 20% 100%; }
+  .ba-howto-stamp { animation: ba-howto-stamp 260ms cubic-bezier(.2,1.5,.4,1) both; }
+  .ba-howto-confetti i { animation: ba-howto-burst 1.25s cubic-bezier(.15,.75,.35,1) forwards; }
+  @keyframes ba-howto-pop { from { scale: .4; opacity: 0; } to { scale: 1; opacity: 1; } }
+  @keyframes ba-howto-stamp { from { scale: 2.1; opacity: 0; } to { scale: 1; opacity: 1; } }
+  @keyframes ba-howto-burst {
+    0% { opacity: 1; transform: translate(0, 0) rotate(0); }
+    75% { opacity: 1; }
+    100% { opacity: 0; transform: translate(var(--x), calc(var(--y) + 9cqw)) rotate(var(--r)); }
+  }
+}

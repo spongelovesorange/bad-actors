@@ -1,12 +1,46 @@
 /* One set, viewed from the front row. The control desk lives below its wooden lip. */
 .ba-main { max-width: 1120px; }
 .ba-workspace.ba-has-audience {
-  grid-template-columns: minmax(0, .84fr) minmax(0, 1.24fr) minmax(0, .92fr);
-  grid-template-areas: "stage stage stage" "cue dressing adjust";
-  grid-template-rows: auto auto; gap: 18px clamp(18px, 2.2vw, 30px);
+  grid-template-columns: minmax(0, 1fr) clamp(258px, 23vw, 320px);
+  grid-template-areas: "stage dock";
+  grid-template-rows: auto; gap: 18px clamp(16px, 2vw, 26px); align-items: start;
 }
-.ba-workspace.ba-has-audience .ba-dressing { grid-template-columns: minmax(0,1fr); align-content: start; gap: 16px; margin-top: 0; }
-.ba-workspace.ba-has-audience .ba-adjust { margin-top: 0; }
+/* The dressing room: drawing and dress-up games keep their tools within reach of the canvas. */
+.ba-dock { grid-area: dock; order: 5; min-width: 0; }
+.ba-dock-tabs { display: none; }
+@media (min-width: 961px) {
+  /* Beside the stage every drawer is open, and the column follows the page. */
+  .ba-dock {
+    position: sticky; top: 10px; max-height: calc(100vh - 20px); overflow-y: auto; overscroll-behavior: contain;
+    border-top: 4px solid var(--ink); padding: 2px 4px 8px 2px;
+  }
+  .ba-dock-panel + .ba-dock-panel { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--rule); }
+}
+@media (max-width: 960px) {
+  /* Narrower screens get a tray docked to the bottom of the view, one drawer at a time. */
+  .ba-workspace.ba-has-audience { grid-template-columns: minmax(0, 1fr); grid-template-areas: "stage" "dock"; align-items: stretch; }
+  .ba-dock {
+    position: sticky; bottom: 0; z-index: 8; max-height: 46vh; overflow-y: auto; overscroll-behavior: contain;
+    padding: 0 12px 10px; background: #f3e8d2; border: 3px solid var(--ink); border-bottom: 0;
+    box-shadow: 0 -8px 18px #2a211a3d;
+  }
+  .ba-dock-tabs {
+    position: sticky; top: 0; z-index: 1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 0 -12px 8px; background: var(--ink);
+  }
+  .ba-app .ba-dock-tabs button { min-height: 42px; color: #f3e8d2; font: 750 15px/1 var(--ba-sign); }
+  .ba-app .ba-dock-tabs button[aria-selected='true'] { background: #f3e8d2; color: var(--ink); }
+  /* Until the page knows it is docked, only the first drawer shows. */
+  .ba-dock:not([data-docked]) .ba-dock-panel ~ .ba-dock-panel { display: none; }
+  .ba-dock-heading, .ba-dock .ba-tray-heading, .ba-dock .ba-faces h3 { display: none; }
+  .ba-dock .ba-props, .ba-dock .ba-faces > div { margin-top: 0; }
+  /* Nine props fit two rows on a phone, so the tray never hides more of the stage than it must. */
+  .ba-dock .ba-props { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .ba-app .ba-dock .ba-props button { min-height: 58px; padding: 3px 1px; font-size: 11px; line-height: 1.05; }
+  .ba-dock .ba-props .ba-prop-art { width: 40px; height: 31px; }
+  .ba-dock .ba-hand-shapes { margin-top: 0; gap: 8px; }
+  .ba-dock .ba-foot-turns { margin-top: 0; }
+}
 .ba-theater .ba-audience { min-width: 0; color: var(--ink); }
 /* The boards end at the raised apron. Stubbs is one level lower than the actor. */
 .ba-scene-floor {
@@ -18,12 +52,13 @@
   content: ''; position: absolute; inset: 0 0 12%; z-index: -1; pointer-events: none;
   background: #987451 url('/hall-stage.webp') center / 100% 100% no-repeat;
 }
-.ba-scene-floor .ba-stage-canvas {
+/* The twin shares the canvas's box, outside its stacking context, for layers that sit above a blackout. */
+.ba-scene-floor :is(.ba-stage-canvas, .ba-stage-twin) {
   position: absolute; inset: 1% 12% 10%; min-width: 0; height: auto; aspect-ratio: auto;
   background: none; overflow: visible;
 }
 .ba-scene-floor .ba-player { inset: 0; }
-.ba-scene-floor:has(.ba-fly-cue) .ba-stage-canvas { top: clamp(51px, 6.9cqw, 78px); }
+.ba-scene-floor:has(.ba-fly-cue) :is(.ba-stage-canvas, .ba-stage-twin) { top: clamp(51px, 6.9cqw, 78px); }
 .ba-scene-floor .ba-fly-cue {
   position: absolute; z-index: 3; top: 0; left: 46%; transform: translateX(-50%);
   width: min(38%, 310px);
@@ -130,6 +165,24 @@
 .ba-app .ba-show-ticket:is(:hover, :focus-visible):enabled { transform: translateY(-3px) rotate(0); box-shadow: 4px 7px 0 #15201d; animation: none; }
 .ba-app .ba-show-ticket:active:enabled { transform: translateY(1px); box-shadow: 1px 2px 0 #15201d; }
 .ba-show-ticket:disabled { opacity: .62; }
+/* The opening guess sits at the box office until the first game. */
+.ba-lobby-guess, .ba-lobby-note { flex: 1 1 100%; }
+.ba-front-desk .ba-lobby-guess { flex-wrap: wrap; gap: 6px 10px; border: 0; background: none; }
+.ba-front-desk .ba-lobby-guess label { flex: 1 1 100%; font: 700 17px/1.2 var(--ba-sign); color: #ffe8a9; }
+.ba-front-desk .ba-lobby-guess input {
+  flex: 1 1 200px; min-height: 44px; padding: 8px 12px; border: 2px solid #1d1915; border-radius: 4px;
+  background: #fff7e3; color: #2c241c; font: 600 17px/1.2 var(--ba-sign);
+}
+.ba-front-desk .ba-lobby-guess button { min-height: 44px; padding: 6px 16px; border: 2px solid #1d1915; background: #4f7fa0; color: #fff7e8; font-size: 15px; }
+.ba-front-desk .ba-lobby-guess button:disabled { background: #44544f; color: #c5c2b0; }
+.ba-lobby-note { margin: 0; font: 700 17px/1.25 var(--ba-sign); color: #ffe8a9; }
+/* During a game the guess button is the main event: big, bright and hard to miss. */
+.ba-app .ba-audience-call.ba-guess-now {
+  min-height: 54px; padding: 8px 20px; gap: 12px; border: 2.5px solid #1d1915; border-radius: 6px 10px 7px 9px;
+  background: #ffdf86; box-shadow: 3px 4px 0 #15201d; font: 800 clamp(19px, 2vw, 24px)/1.05 var(--ba-sign);
+}
+.ba-app .ba-audience-call.ba-guess-now:hover:enabled { background: #ffeaa9; transform: translateY(-2px); box-shadow: 4px 6px 0 #15201d; }
+.ba-front-desk .ba-audience-direction b { color: #ffdf86; }
 .ba-show-arrow { transition: transform .12s ease-out; }
 .ba-show-ticket:hover:enabled .ba-show-arrow { transform: translateX(3px); }
 @media (prefers-reduced-motion: no-preference) {
@@ -150,20 +203,14 @@
 .ba-audience-log b, .ba-audience-log small { display: block; font-size: 13px; }
 .ba-audience-log small { margin-top: 2px; font-size: 11px; }
 
-@media (min-width:721px) and (max-width:940px) {
-  .ba-workspace.ba-has-audience { grid-template-columns: minmax(0,.87fr) minmax(0,1.13fr); grid-template-areas: "stage stage" "cue dressing" "cue adjust"; }
-}
 @media (max-width: 720px) {
   .ba-workspace.ba-has-audience { gap: 16px; }
-  .ba-workspace.ba-has-audience .ba-cue { order: 2; }
-  .ba-workspace.ba-has-audience .ba-dressing { order: 3; }
-  .ba-workspace.ba-has-audience .ba-adjust { order: 4; }
 }
 @media (max-width: 600px) {
   .ba-scene-floor { min-height: clamp(302px, 82vw, 386px); }
   .ba-scene-floor::before { bottom: 18%; }
-  .ba-scene-floor .ba-stage-canvas { inset: 2% 1% 13%; overflow: hidden; }
-  .ba-scene-floor:has(.ba-fly-cue) .ba-stage-canvas { top: 55px; }
+  .ba-scene-floor :is(.ba-stage-canvas, .ba-stage-twin) { inset: 2% 1% 13%; overflow: hidden; }
+  .ba-scene-floor:has(.ba-fly-cue) :is(.ba-stage-canvas, .ba-stage-twin) { top: 55px; }
   .ba-scene-floor .ba-fly-cue { left: 43.5%; width: clamp(165px, 54%, 228px); }
   .ba-scene-floor .ba-show-clock { top: 2px; right: 2%; width: clamp(60px, 16cqw, 84px); }
   .ba-front-patron { width: clamp(94px, 28%, 132px); left: 2%; bottom: 2%; gap: 8px; }

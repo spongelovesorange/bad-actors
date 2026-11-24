@@ -1,0 +1,49 @@
+/* The tutorial glove: a white hand that shows the next gesture, as in a party game's silent demo. */
+.ba-glove { fill: #fffdf6; stroke: #2b241d; stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+.ba-ghost-hand { position: absolute; z-index: 5; display: block; aspect-ratio: 1; pointer-events: none; }
+.ba-ghost-hand svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(1px 2px 0 rgb(43 36 29 / .45)); }
+
+/* On the real stage, a player's first game: the glove lifts the actor's hand along a dotted path. */
+.ba-stage-coach { position: absolute; inset: 0; z-index: 3; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.ba-stage-coach-path { fill: none; stroke: #fff7e2; stroke-width: 4; stroke-linecap: round; stroke-dasharray: .5 10; }
+.ba-stage-coach-ring { fill: rgb(255 223 134 / .3); stroke: #ffdf86; stroke-width: 3; }
+.ba-stage-coach .ba-glove { stroke-width: 1.15; }
+.ba-stage-coach-hand { filter: drop-shadow(1px 2px 0 rgb(43 36 29 / .45)); }
+
+/* After the demo the glove taps the way in, then the Ready button once a pose is struck. */
+.ba-app .ba-show-ticket[data-beckon], .ba-app .ba-audience-call.ba-guess-now[data-beckon] {
+  position: relative; box-shadow: 3px 4px 0 #15201d, 0 0 0 5px rgb(255 223 134 / .5);
+}
+.ba-beckon-hand { right: 18px; bottom: -22px; width: 42px; }
+/* Scrolled into view with room for the glove, and above the dressing-room tray on a phone. */
+.ba-show-picker { scroll-margin: 16px 0 44px; }
+@media (max-width: 960px) { .ba-show-picker { scroll-margin-bottom: 190px; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .ba-stage-coach-hand { animation: ba-coach-drag 2.6s cubic-bezier(.45,.05,.35,1) infinite; }
+  .ba-stage-coach-path { animation: ba-coach-dots 1s linear infinite; }
+  @keyframes ba-coach-drag {
+    0% { transform: translate(16px, 20px); opacity: 0; }
+    12% { transform: none; opacity: 1; }
+    22% { transform: scale(.86); }
+    42% { transform: translate(-25px, -51px) scale(.86); }
+    62% { transform: translate(-26px, -112px) scale(.86); opacity: 1; }
+    70% { transform: translate(-26px, -112px); opacity: 1; }
+    84%, 100% { transform: translate(-26px, -112px); opacity: 0; }
+  }
+  @keyframes ba-coach-dots { to { stroke-dashoffset: -10.5; } }
+  .ba-app .ba-show-ticket[data-beckon]:enabled, .ba-app .ba-audience-call.ba-guess-now[data-beckon]:enabled {
+    animation: ba-beckon-glow 1.6s ease-in-out infinite;
+  }
+  .ba-beckon-hand { animation: ba-beckon-tap 1.6s ease-in-out infinite; transform-origin: 33% 8%; }
+  .ba-show-picker:has([data-beckon]) .ba-show-timed:enabled { animation: none; }
+  @keyframes ba-beckon-glow {
+    50% { box-shadow: 3px 4px 0 #15201d, 0 0 0 10px rgb(255 223 134 / .28); }
+  }
+  @keyframes ba-beckon-tap {
+    0%, 100% { translate: 8px 10px; scale: 1; }
+    40% { translate: 0 0; scale: 1; }
+    52% { translate: 0 0; scale: .84; }
+    64% { translate: 0 0; scale: 1; }
+  }
+}

@@ -7,6 +7,9 @@ export const handShapeOptions = [
   { value: 'open', label: 'Open palm', viewBox: '-30 -32 60 54' },
   { value: 'fist', label: 'Fist', viewBox: '-22 -15 44 36' },
   { value: 'peace', label: 'Peace sign', viewBox: '-30 -36 60 58' },
+  { value: 'point', label: 'Point', viewBox: '-30 -36 60 58' },
+  { value: 'thumb', label: 'Thumbs up', viewBox: '-30 -33 60 54' },
+  { value: 'rock', label: 'Rock on', viewBox: '-30 -36 60 58' },
 ] satisfies { value: HandShape; label: string; viewBox: string }[]
 
 type HandShapePickerProps = {

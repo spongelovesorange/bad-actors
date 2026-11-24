@@ -125,11 +125,11 @@ export function createStageProvider(env: StageBindings): StageProvider {
     visionModel,
     judgeModel,
     speak,
-    async guess(image, missed = []) {
+    async guess(image, missed = [], mood) {
       if (!image.startsWith(pngPrefix)) throw new ProviderFailure('http_request')
       return complete('vision', { system: visionPrompt, messages: [{ role: 'user', content: [
         { type: 'image', source: { type: 'base64', media_type: 'image/png', data: image.slice(pngPrefix.length) } },
-        { type: 'text', text: visionRequest(missed, drawAngle()) },
+        { type: 'text', text: visionRequest(missed, drawAngle(), mood) },
       ] }] })
     },
     async judge(cue, guess) {

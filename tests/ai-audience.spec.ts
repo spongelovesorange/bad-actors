@@ -36,11 +36,18 @@ async function mockAudience(page: Page, observe: (request: Observation, used: nu
 }
 
 const panel = (page: Page) => page.getByTestId('ai-audience')
-const guessButton = (page: Page) => page.getByRole('button', { name: 'Guess this pose' })
+const guessButton = (page: Page) => page.getByRole('button', { name: /Ready! Guess, Stubbs/ })
 const changePose = (page: Page) => page.getByRole('group', { name: 'Puppet stage' }).getByRole('button', { name: 'Left hand', exact: true }).press('Shift+ArrowRight')
 
+// Free play: pick the current cue, then send the pose. Stubbs never looks on his own.
 async function startRound(page: Page) {
   await page.getByRole('button', { name: /^Free play/ }).click()
+  await page.getByRole('dialog', { name: 'Pick a cue' }).getByRole('button', { pressed: true }).click()
+  await guessButton(page).click()
+}
+async function lookAgain(page: Page) {
+  await changePose(page)
+  await guessButton(page).click()
 }
 
 test('a wrong observation can recover with a differently worded right answer', async ({ page }) => {
@@ -59,7 +66,7 @@ test('a wrong observation can recover with a differently worded right answer', a
   await expect(panel(page).locator('.ba-audience-balloon')).toContainText('Checking the weather.')
   await expect(panel(page).getByTestId('referee-slip')).toHaveText('Miss!')
   await expect(panel(page).getByTestId('stage-verdict-effects')).toHaveAttribute('data-verdict', 'incorrect')
-  await changePose(page)
+  await lookAgain(page)
   await expect(panel(page)).toHaveAttribute('data-verdict', 'correct', { timeout: 9000 })
   await expect(panel(page).locator('.ba-audience-balloon')).toContainText('Calling somebody.')
   await expect(panel(page)).toHaveAttribute('data-phase', 'complete')
@@ -90,7 +97,8 @@ test('an old round cannot score the next cue', async ({ page }) => {
   await page.goto('/?cue=2')
   await startRound(page)
   await expect.poll(() => frames.length).toBe(1)
-  await page.getByRole('button', { name: 'Next cue', exact: true }).click()
+  await panel(page).getByRole('button', { name: 'Change cue' }).click()
+  await page.getByRole('dialog', { name: 'Pick a cue' }).getByRole('button', { name: 'Taking a selfie' }).click()
   await expect(page.getByRole('heading', { name: 'Taking a selfie' })).toBeVisible()
   release()
   await oldReplyIssued
@@ -107,11 +115,11 @@ test('five incorrect looks end the round even if the performer keeps moving', as
   await startRound(page)
   for (let used = 1; used <= 5; used++) {
     await expect(panel(page).locator('.ba-audience-balloon')).toContainText('Wrong guess ' + used, { timeout: 10000 })
-    if (used < 5) await changePose(page)
+    if (used < 5) await lookAgain(page)
   }
   await expect(panel(page)).toHaveAttribute('data-phase', 'complete')
   await changePose(page)
-  // Wait past the next possible auto-look after the five-look cap.
+  // Moving after the five-look cap sends nothing.
   await page.waitForTimeout(4400)
   expect(frames).toHaveLength(5)
 })
@@ -159,12 +167,12 @@ for (const [answer, verdict] of [['phone call', 'correct'], ['baking bread', 'in
     const sound = page.getByRole('button', { name: 'Stage sound' })
     await expect(sound).toHaveAttribute('aria-pressed', 'false')
     await expect(effects).toHaveCount(0)
-    await page.getByRole('textbox', { name: 'Guess the actor’s action' }).fill(answer)
+    await page.getByRole('textbox', { name: /Guess the opening pose/ }).fill(answer)
     await page.getByRole('button', { name: 'Submit guess' }).click()
     await expect(effects).toHaveAttribute('data-verdict', verdict)
     await expect(effects).toBeInViewport({ ratio: .9 })
     await expect(page.getByTestId('referee-slip')).toHaveText(verdict === 'correct' ? 'Guessed it!' : 'Miss!')
-    await page.getByRole('button', { name: 'Your turn' }).click()
+    await changePose(page)
     await expect(effects).toHaveCount(0)
     expect(starts).toEqual([])
     expect(frames).toEqual([])
@@ -181,7 +189,7 @@ test('a counted vision failure asks for a changed pose before the next look', as
   await expect(panel(page).locator('.ba-audience-balloon')).toContainText('The image model took too long to reply.')
   await expect(panel(page).getByRole('button', { name: 'Change your pose' })).toBeDisabled()
   await expect(panel(page)).toHaveAttribute('data-phase', 'ready')
-  await changePose(page)
+  await lookAgain(page)
   await expect(panel(page)).toHaveAttribute('data-verdict', 'correct', { timeout: 9000 })
   expect(frames).toHaveLength(2)
   expect(frames[0].image).not.toBe(frames[1].image)
@@ -222,13 +230,14 @@ test('a timed show pauses for the audience, cuts off new looks at zero, and deal
   })
   await page.goto('/?cue=2')
   await page.getByRole('button', { name: /^Timed show/ }).click()
+  await page.getByRole('dialog', { name: 'Tonight’s show' }).getByRole('button', { name: /^Level 1/ }).click()
   const clock = page.getByTestId('stage-clock')
   await expect(clock).toHaveAttribute('data-mode', 'running')
   await expect(clock).toHaveAttribute('data-seconds', '45')
   expect(starts).toHaveLength(1)
   expect(starts[0]).toBeGreaterThanOrEqual(1)
   expect(starts[0]).toBeLessThanOrEqual(6)
-  expect(starts[0]).not.toBe(2)
+  await expect(panel(page)).toContainText('Act 1 of 5')
   await page.clock.fastForward(36_000)
   await expect(clock).toHaveAttribute('data-urgent', 'true')
   await guessButton(page).click()
@@ -244,37 +253,83 @@ test('a timed show pauses for the audience, cuts off new looks at zero, and deal
   await expect(clock).toHaveAttribute('data-seconds', '0')
   await expect(panel(page)).toHaveAttribute('data-end', 'timeout')
   await changePose(page)
-  await page.clock.fastForward(5000)
   expect(frames).toHaveLength(1)
-  await page.getByRole('button', { name: 'Draw another cue' }).click()
+  // The act ends on the bell and the next one is dealt from the same level.
+  await page.clock.fastForward(5000)
+  await expect(panel(page)).toContainText('Act 2 of 5')
   await expect(clock).toHaveAttribute('data-mode', 'running')
   await expect(clock).toHaveAttribute('data-seconds', '45')
   expect(starts).toHaveLength(2)
   expect(starts[1]).not.toBe(starts[0])
+  expect(starts[1]).toBeLessThanOrEqual(6)
 })
 
-test.describe('opening the handbook', () => {
+test.describe('opening the how-to-play demo', () => {
   test.use({ storageState: { cookies: [], origins: [] } })
 
-  test('every visit opens on the handbook, quiet entry keeps the pose, and the booklet stays replayable', async ({ page }) => {
+  test('every visit opens on the silent demo, and the glove then points the way to a first look', async ({ page }) => {
     const { starts, frames } = await mockAudience(page, () => ({ guess: 'Drinking.', verdict: 'correct' }))
     await page.goto('/?cue=1')
-    const book = page.getByRole('dialog', { name: 'The understudy’s handbook' })
+    const book = page.getByRole('dialog', { name: 'How to play' })
     await expect(book).toBeVisible()
-    await expect(book.locator('.ba-comic-strip li')).toHaveCount(3)
+    await expect(book.locator('.ba-howto-steps li')).toHaveCount(3)
+    // One loop of the demo: the glove poses the real puppet, presses Ready, and Stubbs answers.
+    await expect(book.locator('.ba-howto-steps li[aria-current]')).toHaveText(/Press Ready/, { timeout: 9000 })
+    await expect(book.getByText('On the phone!')).toBeVisible({ timeout: 9000 })
+    await book.getByRole('button', { name: 'Pause the demo' }).click()
+    await expect(book.getByRole('button', { name: 'Play the demo' })).toBeVisible()
     await book.getByRole('button', { name: 'Play quietly' }).click()
     await expect(book).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'Stage sound' })).toHaveAttribute('aria-pressed','false')
+
+    // Then the same glove taps the way in, the actor's hand, and the Ready button, once each.
+    const free = page.getByRole('button', { name: /^Free play/ })
+    await expect(free).toHaveAttribute('data-beckon', 'true')
+    await free.click()
+    await page.getByRole('dialog', { name: 'Pick a cue' }).getByRole('button', { pressed: true }).click()
+    await expect(page.locator('.ba-stage-coach')).toBeVisible()
+    await expect(guessButton(page)).not.toHaveAttribute('data-beckon')
+    await changePose(page)
+    await expect(page.locator('.ba-stage-coach')).toHaveCount(0)
+    await expect(guessButton(page)).toHaveAttribute('data-beckon', 'true')
+    await guessButton(page).click()
+    await expect(panel(page)).toHaveAttribute('data-verdict', 'correct', { timeout: 9000 })
+    await expect(page.locator('.ba-beckon-hand')).toHaveCount(0)
+    expect(starts).toEqual([1])
+    expect(frames).toHaveLength(1)
+
     await page.reload()
     await expect(book).toBeVisible()
     await book.getByRole('button', { name: 'Play quietly' }).click()
-    await expect(page.getByRole('button', { name: /^Free play/ })).toBeEnabled()
     await expect(book).toHaveCount(0)
     await page.getByRole('button', {name:'How to play'}).click()
     await expect(book).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(book).toHaveCount(0)
-    expect(starts).toEqual([])
-    expect(frames).toEqual([])
   })
+
+  test('with reduced motion the demo is one finished scene with nothing to pause', async ({ page }) => {
+    await mockAudience(page, () => ({ guess: 'Drinking.', verdict: 'correct' }))
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.goto('/?cue=1')
+    const still = page.getByRole('dialog', { name: 'How to play' })
+    await expect(still.getByText('DING!')).toBeVisible()
+    await expect(still.getByText('On the phone!')).toBeVisible()
+    await expect(still.getByRole('button', { name: /the demo/ })).toHaveCount(0)
+    await expect(still.locator('.ba-howto-hand')).toHaveCount(0)
+    await expect(still.locator('[aria-current]')).toHaveCount(0)
+  })
+})
+
+test('the hint replaces the drag tip during free play, with the pose sheet for a classic cue', async ({ page }) => {
+  await mockAudience(page, () => ({ guess: 'Taking a selfie.', verdict: 'correct' }))
+  await page.goto('/?cue=3')
+  await page.getByRole('button', { name: /^Free play/ }).click()
+  await page.getByRole('dialog', { name: 'Pick a cue' }).getByRole('button', { name: 'Taking a selfie' }).click()
+  await panel(page).getByRole('button', { name: 'Hint' }).click()
+  const hint = page.locator('.ba-stage-hint')
+  await expect(hint).toContainText('peace sign')
+  await expect(hint.locator('img')).toHaveAttribute('src', '/blocking/selfie.png')
+  await panel(page).getByRole('button', { name: 'Hint' }).click()
+  await expect(hint).toHaveCount(0)
 })

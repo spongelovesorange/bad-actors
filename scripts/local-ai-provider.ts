@@ -81,10 +81,10 @@ export function readOwnProvider(profilePath: string, send: typeof fetch = fetch)
   return {
     visionModel, judgeModel,
     // The same Stubbs brief and two-line reply as the hosted stage.
-    async guess(image, missed = []) {
+    async guess(image, missed = [], mood) {
       const read = await complete(visionModel, [
         { role: 'system', content: visionPrompt },
-        { role: 'user', content: [{ type: 'text', text: visionRequest(missed, drawAngle()) }, { type: 'image_url', image_url: { url: image } }] },
+        { role: 'user', content: [{ type: 'text', text: visionRequest(missed, drawAngle(), mood) }, { type: 'image_url', image_url: { url: image } }] },
       ], 1024, 2048)
       const { guess, line } = readStubbsReply(read.text)
       return { ...read, text: guess, line }

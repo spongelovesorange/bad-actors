@@ -1,3 +1,5 @@
+import { deck, type LevelId } from '../deck'
+
 export type Verdict = 'correct' | 'incorrect' | 'uncertain'
 /** `text` is the plain guess the referee scores, `line` the remark in his balloon and `delivery` its spoken form with cues. */
 export type Completion = { text: string; line?: string; delivery?: string; model: string; tokens?: number }
@@ -27,7 +29,8 @@ export type StageProvider = {
   visionModel: string
   judgeModel: string
   /** `missed` lists this round's earlier guesses that the referee ruled out, oldest first. */
-  guess: (image: string, missed?: readonly string[]) => Promise<Completion>
+  /** `mood` is the night's humour for his remark; it never names an action. */
+  guess: (image: string, missed?: readonly string[], mood?: string) => Promise<Completion>
   judge: (cue: string, guess: string) => Promise<Score>
   /** Reads one line aloud. Resolves to MP3 bytes as base64; absent where the stage has no voice. */
   speak?: (text: string) => Promise<string>
@@ -61,10 +64,25 @@ export const remarkAngles = [
   'an absurd demand to the stage manager',
 ]
 
+/** Each night puts Stubbs in a different humour. None of it names an action from the deck. */
+export const nightMoods: Record<LevelId, string> = {
+  1: 'It is opening night, so you are on your best behaviour, which for you is still smug.',
+  2: 'It is prop night, and you are a snob about how the performer handles any object.',
+  3: 'It is melodrama night: everything moves you to tears and you gush like a weepy Victorian.',
+  4: 'The stage lights keep failing tonight, and you blame the new electrician for everything.',
+  5: 'It is gala night: you wear a borrowed tuxedo and are feuding with a heckler in the balcony.',
+}
+/** The night a cue belongs to, by its number or its title. */
+export function nightMood(cue: number | string) {
+  const card = typeof cue === 'number' ? deck[cue - 1] : deck.find(entry => entry.title === cue)
+  return nightMoods[card?.level ?? 1]
+}
+
 /** The text sent beside each frozen picture. Earlier misses stand in for the performer shaking their head. */
-export function visionRequest(missed: readonly string[] = [], angle?: string) {
+export function visionRequest(missed: readonly string[] = [], angle?: string, mood?: string) {
   const earlier = missed.slice(-4).map(guess => JSON.stringify(guess.slice(0, 80)))
   let text = 'Here is the frozen pose.'
+  if (mood) text += ' ' + mood
   if (angle) text += ' For your remark, use this twist: ' + angle + '.'
   if (!earlier.length) return text
   return text + '\nEarlier this round you guessed ' + earlier.join('; ') +

@@ -2,13 +2,22 @@
 
 ## Sound in Safari and a livelier front row · November 24, 2026
 
-- **Silence in Safari.** In Safari on a Mac the live game made no sound, even with the Stage sound button reading On. Safari's `AudioNode.connect()` returns nothing, so the chained `source.connect(gain).connect(destination)` threw before any sound started, and the error was swallowed. Making `connect()` return nothing in Chromium reproduced the silence on the live site: no sound source started. Each connection is now its own call. A unit test with a Safari-style `connect()` fails on the old code and passes on the new one. Locally the room tone, the pit band and a one-off cue all start again. Nobody has listened in Safari itself yet.
+- **Silence in Safari.** In Safari on a Mac the live game made no sound, even with the Stage sound button reading On.
+  - **First guess, wrong.** The guess was that Safari's `AudioNode.connect()` returns nothing, which would break the chained `source.connect(gain).connect(destination)`. Making `connect()` return nothing in Chromium did silence the game, so release #10 split every chain into separate calls. The player still heard nothing in Safari.
+  - **Measured in Safari.** A temporary sound check ran in the player's Safari 26.6 against the practice server and recorded every Web Audio call:
+    - All 36 `connect()` calls returned the node.
+    - The context started on the click and was running.
+    - 17 sounds started and the level at the speakers peaked at 0.227.
+    - The player heard every sound and a plain test beep.
+
+    The game's audio code works in a fresh Safari page. Why the live tab stayed silent is not confirmed. The likeliest causes are a muted tab or an audio context that Safari had paused.
+  - **What changed.** The split calls stay, since they cost nothing. If the browser pauses the audio while Stage sound is on, the next click or key press now resumes it, and the room tone and band come back once it runs. Unit tests cover the unchained `connect()` and both ways of waking.
 - **Stubbs and Judge Monitor act between lines.** The player asked for richer faces that move. The README describes what each of them does in each mood. Every mood was drawn close up in Chromium, and the animations running on each part were read back from the page:
   - Stubbs: breathing, blinking and glancing at rest, plus a yawn when idle with his jaw shut; the opera-glass sweep while looking; three hops on a hit; a shiver and a falling bead of sweat on a miss; a wobble and circling eyes on an error; a falling tear on the Big Feelings night; glances at the balcony on the Gala night.
   - Judge Monitor: a flicker and a slow scan bar in every mood; blinking and glancing eyes at rest; typing dots and a blinking amber light while it weighs a guess; a hop, a glow and sparkles for a match; a glitch and a red flash for a miss; one eye pondering beside a question mark for a close call; static snow when it can't rule.
   - A free-play round with scripted replies reached the opera glasses, then the programme and the Miss! slip.
   - Reduced motion turns every one of these animations off and keeps the expressions.
-- 213 unit tests, the typecheck, lint, both builds and all 42 stage tests pass.
+- 214 unit tests, the typecheck, lint, both builds and all 42 stage tests pass.
 
 ## The twelve new cues on the real models · November 24, 2026
 

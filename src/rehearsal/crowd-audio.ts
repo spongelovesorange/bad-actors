@@ -275,7 +275,7 @@ export function createCrowdAudio() {
       source.playbackRate.value = speed
       source.loop = channel === 'room'
       gain.gain.value = level
-      // Two separate calls: Safari's connect() does not hand back the node, so a chained call throws.
+      // Two separate calls, so an engine whose connect() returns nothing still plays.
       source.connect(gain)
       gain.connect(context.destination)
       const active = { source, gain }
@@ -381,7 +381,15 @@ export function createCrowdAudio() {
       if (!Audio) return false
       let active: AudioContext | undefined
       try {
-        if (!context || context.state === 'closed') context = new Audio()
+        if (!context || context.state === 'closed') {
+          const fresh = new Audio()
+          // Safari can pause a long-lived context on its own. When it runs again, the room tone and the
+          // band come back; both start only on a running context.
+          fresh.onstatechange = () => {
+            if (context === fresh && enabled && fresh.state === 'running') { updateRoom(); updateMusic() }
+          }
+          context = fresh
+        }
         active = context
         if (active.state !== 'running') await active.resume()
         if (context !== active || active.state !== 'running') return false
@@ -393,6 +401,12 @@ export function createCrowdAudio() {
         if (context === active) dispose()
         return false
       }
+    },
+    /** Resumes a context the browser paused while sound stayed on. Safari allows this only inside a click or key press. */
+    wake() {
+      const active = context
+      if (!enabled || !active || active.state === 'running' || active.state === 'closed') return
+      void active.resume().then(() => { if (context === active) { updateRoom(); updateMusic() } }, () => {})
     },
     setRoom(wanted: boolean) { roomWanted = wanted; updateRoom() },
     /** Whether the pit band plays at all. */

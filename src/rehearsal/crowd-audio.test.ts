@@ -216,10 +216,10 @@ describe('the audience in the cheap seats', () => {
     desk.dispose()
   })
 
-  it('plays in Safari, whose connect() returns nothing to chain from', async () => {
+  it('plays where connect() returns nothing to chain from', async () => {
     const starts: { loop: boolean }[] = []
     const wired = vi.fn()
-    class SafariAudio {
+    class UnchainedAudio {
       state = 'running'
       currentTime = 0
       destination = { kind: 'speakers' }
@@ -231,7 +231,7 @@ describe('the audience in the cheap seats', () => {
       }
       close = vi.fn().mockResolvedValue(undefined)
     }
-    vi.stubGlobal('window', { AudioContext: SafariAudio })
+    vi.stubGlobal('window', { AudioContext: UnchainedAudio })
     const desk = createCrowdAudio()
     desk.setRoom(true)
     desk.music('lobby')
@@ -239,6 +239,53 @@ describe('the audience in the cheap seats', () => {
     desk.button('punch')
     expect(starts).toEqual([{ loop: true }, { loop: true }, { loop: false }])
     expect(wired).toHaveBeenCalledWith({ kind: 'speakers' })
+    desk.dispose()
+  })
+
+  it('wakes a context the browser paused on the next gesture, and the room tone and band come back', async () => {
+    const starts: { loop: boolean }[] = []
+    const made: PausingAudio[] = []
+    class PausingAudio {
+      state = 'running'
+      currentTime = 0
+      destination = {}
+      onstatechange: (() => void) | null = null
+      constructor() { made.push(this) }
+      resume = vi.fn(async () => { this.state = 'running'; this.onstatechange?.() })
+      createBuffer = (_channels: number, length: number) => ({ duration: length / crowdSampleRate, copyToChannel: vi.fn() })
+      createGain = () => ({ connect: vi.fn(), disconnect: vi.fn(), gain: { value: 1, cancelScheduledValues: vi.fn(), setTargetAtTime: vi.fn() } })
+      createBufferSource() {
+        return { context: this, loop: false, buffer: { duration: 1 }, playbackRate: { value: 1 }, disconnect: vi.fn(),
+          connect: (next: unknown) => next, start() { starts.push({ loop: this.loop }) }, stop: vi.fn() }
+      }
+      close = vi.fn().mockResolvedValue(undefined)
+    }
+    vi.stubGlobal('window', { AudioContext: PausingAudio })
+    const desk = createCrowdAudio()
+    desk.setRoom(true)
+    desk.music('lobby')
+    expect(await desk.enable()).toBe(true)
+    expect(starts).toEqual([{ loop: true }, { loop: true }])
+    const hall = made[0]
+    desk.wake()
+    expect(hall.resume).not.toHaveBeenCalled()
+    // Safari pauses the hall while the tab is away; nothing can play until it runs again.
+    hall.state = 'interrupted'
+    desk.setOnstage(false)
+    desk.setOnstage(true)
+    desk.button('punch')
+    expect(starts).toHaveLength(2)
+    desk.wake()
+    await Promise.resolve()
+    expect(hall.resume).toHaveBeenCalledTimes(1)
+    expect(starts.slice(2)).toEqual([{ loop: true }, { loop: true }])
+    // The browser can also let it run again by itself.
+    hall.state = 'suspended'
+    desk.setOnstage(false)
+    desk.setOnstage(true)
+    hall.state = 'running'
+    hall.onstatechange?.()
+    expect(starts.slice(4)).toEqual([{ loop: true }, { loop: true }])
     desk.dispose()
   })
 

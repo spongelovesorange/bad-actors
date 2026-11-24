@@ -57,8 +57,10 @@ export function StageSoundProvider({children}: {children: ReactNode}) {
     setMusicState(band)
     const visibility = () => audio.setOnstage(!document.hidden)
     const activate = (event: Event) => {
-      if (event.target instanceof Element && event.target.closest('[data-sound-power]')) return
-      if (restore.current && event.isTrusted) void setPower(true)
+      if (!event.isTrusted || (event.target instanceof Element && event.target.closest('[data-sound-power]'))) return
+      if (restore.current) void setPower(true)
+      // Sound is on but the browser paused it (Safari can, after sleep or a long while away).
+      else audio.wake()
     }
     const click = (event: Event) => {
       if (!(event.target instanceof Element)) return

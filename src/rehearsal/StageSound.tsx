@@ -19,15 +19,17 @@ export function StageSoundProvider({children}: {children: ReactNode}) {
   const [roomTone, setRoomTone] = useState(true)
   const request = useRef(0)
   const restore = useRef(false)
+  // The handbook that offers "Places! Sound on" is remembered across visits in localStorage, so
+  // the answer must be too: a per-tab preference left returning players in a silent hall.
   function setRoom(on: boolean) {
     setRoomTone(on)
     audio.setRoom(on)
-    try { sessionStorage.setItem('ba-room-tone', on ? 'on' : 'off') } catch { /* Optional preference. */ }
+    try { localStorage.setItem('ba-room-tone', on ? 'on' : 'off') } catch { /* Optional preference. */ }
   }
   async function setPower(on: boolean) {
     const ticket = ++request.current
     restore.current = false
-    try { sessionStorage.setItem('ba-stage-sound', on ? 'on' : 'off') } catch { /* Optional preference. */ }
+    try { localStorage.setItem('ba-stage-sound', on ? 'on' : 'off') } catch { /* Optional preference. */ }
     if (!on) { audio.dispose(); setMode('off'); return }
     const success = await audio.enable()
     if (ticket !== request.current) return
@@ -37,8 +39,9 @@ export function StageSoundProvider({children}: {children: ReactNode}) {
   useEffect(() => {
     let room = true
     try {
-      restore.current = sessionStorage.getItem('ba-stage-sound') === 'on'
-      room = sessionStorage.getItem('ba-room-tone') !== 'off'
+      // Browsers still need a gesture: a returning player's first click or key turns it back on.
+      restore.current = localStorage.getItem('ba-stage-sound') === 'on'
+      room = localStorage.getItem('ba-room-tone') !== 'off'
     } catch { /* Private browsing starts silent. */ }
     audio.setRoom(room)
     setRoomTone(room)

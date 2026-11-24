@@ -5,15 +5,16 @@ type FlyCueProps = {
   title: string
   covered: boolean
   reveal: boolean
-  draw?: number
+  /** Changes as each act begins, so the board swings down again when the curtain opens. */
+  drop?: number
   headingRef: RefObject<HTMLHeadingElement | null>
 }
 
 /** Someone replaced the right-hand counterweight with a boot and its own red lace. */
-export function FlyCue({ title, covered, reveal, draw, headingRef }: FlyCueProps) {
+export function FlyCue({ title, covered, reveal, drop, headingRef }: FlyCueProps) {
   return <div className="ba-fly-cue" data-testid="fly-cue" data-covered={covered || undefined}
     data-reveal={reveal || undefined} aria-live="polite" aria-atomic="true">
-    <div className="ba-fly-mechanism" key={draw ?? 'set'} data-drop={draw !== undefined || undefined}>
+    <div className="ba-fly-mechanism" key={drop ?? 'set'} data-drop={drop !== undefined || undefined}>
       <svg className="ba-fly-rig" viewBox="0 0 240 80" preserveAspectRatio="none" aria-hidden="true">
         <g strokeLinecap="round" strokeLinejoin="round" fill="none">
           <path d="M32 -4 34 16 32 29" stroke="#372a20" strokeWidth="4.7" />

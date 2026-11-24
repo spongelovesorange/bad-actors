@@ -3,7 +3,6 @@ import { Star } from 'lucide-react'
 import { rotate, type FaceShape, type PuppetPose } from '../puppet/geometry'
 import { computeRig, stillMotion } from '../puppet/motion'
 import { ActorFace } from '../puppet/ActorFace'
-import type { Level } from '../deck'
 import { useStageSound } from './StageSound'
 import './stage-twists.css'
 
@@ -15,23 +14,6 @@ function useHead(pose: PuppetPose) {
     const at = (x: number, y: number) => rotate({ x: head.x + x, y: head.y + y }, head, angle)
     return { left: at(-15, -7), right: at(15, -7), brow: at(30, -24), angle }
   }, [pose])
-}
-
-/**
- * The slate at the top of each act: which act, the cue, and the director's note. On the first act
- * of a night it also announces what will go wrong. It sits over the boards and never takes a click.
- */
-export function ActSlate({ kicker, title, quip, twist, onDone }: {
-  kicker: string; title: string; quip: string; twist?: Level['twist']; onDone: () => void
-}) {
-  const { audio } = useStageSound()
-  useEffect(() => { audio.effect('clack') }, [audio])
-  return <div className="ba-act-slate" role="status" onAnimationEnd={event => { if (event.target === event.currentTarget) onDone() }}>
-    <span className="ba-act-kicker">{kicker}</span>
-    <strong>{title}</strong>
-    <em>“{quip}” <small>— the director</small></em>
-    {twist && <span className="ba-act-twist">Tonight: <b>{twist.name}</b>. {twist.line}</span>}
-  </div>
 }
 
 /** Stage fright: beads of sweat fly off the understudy until someone takes hold of it. */

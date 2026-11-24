@@ -20,6 +20,11 @@
   font: 600 3.4cqw/1.15 var(--ba-sign); color: #2c241c;
 }
 .ba-howto-cue b { font: 700 3.8cqw/1.1 var(--ba-voice); }
+/* The same house curtain as the game's, opened by the demo's clock rather than its own. Stubbs sits in front of it. */
+.ba-howto-boards .ba-howto-curtain { z-index: 2; inset: 0 0 13%; cursor: default; pointer-events: none; }
+.ba-howto-curtain .ba-drape-left { transform: translateX(calc(var(--open) * -103%)) scaleX(calc(1 - var(--open) * .5)); }
+.ba-howto-curtain .ba-drape-right { transform: translateX(calc(var(--open) * 103%)) scaleX(calc(1 - var(--open) * .5)); }
+.ba-howto-curtain .ba-cue-sign { top: 10cqw; width: 84cqw; }
 .ba-howto-critic { position: absolute; z-index: 2; left: 1%; bottom: 0; width: 25%; }
 .ba-howto-critic svg { display: block; width: 100%; height: auto; }
 .ba-howto-balloon {
@@ -97,7 +102,7 @@
 
 @media (max-width: 640px) {
   .ba-howto { grid-template-columns: minmax(0, 1fr); gap: 10px; }
-  .ba-howto-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .ba-howto-steps { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
   .ba-howto-steps li { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 3px; padding: 6px 3px; text-align: center; }
   .ba-howto-steps li::before { grid-row: auto; width: 26px; height: 26px; font-size: 15px; }
   .ba-howto-steps b { font-size: 15.5px; }

@@ -34,7 +34,8 @@ import { useStageSound } from './StageSound'
 import { HowToPlay } from './HowToPlay'
 import { StageCoach } from './GhostHand'
 import { PropDrawing } from './PropDrawing'
-import { ActSlate, BlackoutCurtain, BlackoutEyes, Heckler, HeadsUp, MoodBadge, StageFright } from './StageTwists'
+import { BlackoutCurtain, BlackoutEyes, Heckler, HeadsUp, MoodBadge, StageFright } from './StageTwists'
+import { ActCurtain } from './ActCurtain'
 import type { Track } from './pit-band'
 import { AudienceSeat, type RoundEnd } from './AudienceSeat'
 import { createAudience, type AudienceClient } from './audience-round'
@@ -349,8 +350,8 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
   const [dialog, setDialog] = useState<DialogKind | null>(null)
   const [resetMessage, setResetMessage] = useState('')
   const [grabbing, setGrabbing] = useState(false)
-  // Each night's twist: the slate at the top of an act, nerves, a flung prop, and how the round ended.
-  const [slate, setSlate] = useState<{ key: number; kicker: string; title: string; quip: string; twist?: Level['twist'] } | null>(null)
+  // Each act opens on the house curtain with its cue. Then each night's twist: nerves, a flung prop, and how the round ended.
+  const [curtain, setCurtain] = useState<{ key: number; kicker: string; title: string; quip: string; twist?: Level['twist']; rush: boolean } | null>(null)
   const [fright, setFright] = useState(false)
   const [toss, setToss] = useState(0)
   const [roundEnd, setRoundEnd] = useState<{ guessed: boolean } | null>(null)
@@ -359,7 +360,7 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
   const poseRef = useRef(pose)
   poseRef.current = pose
   const moodRef = useRef<FaceShape | undefined>(undefined)
-  // On the Catch! night the prop waits in the wings until the slate is down, so the throw is seen.
+  // On the Catch! night the prop waits in the wings until the curtain is open, so the throw is seen.
   const pendingToss = useRef<PropKind | undefined>(undefined)
   const [bodyFollow, setBodyFollow] = useState(true)
   const { audio: houseAudio } = useStageSound()
@@ -468,21 +469,21 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
     helpTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
     setDialog(mode === 'rehearse' ? 'deck' : 'show')
   }
-  /** Raise the curtain on one cue: its slate, and whatever the night has in store for it. */
+  /** The curtain comes down on one cue and goes up on it: its billing, and whatever the night has in store. */
   function stageAct(index: number, kicker: string, fresh: boolean, announce: boolean) {
     const card = deck[index], night = levelOf(card.level)
     actSerial.current += 1
     lastNight.current = card.level
-    setSlate({ key: actSerial.current, kicker, title: card.title, quip: card.quip, twist: announce ? night.twist : undefined })
+    setCurtain({ key: actSerial.current, kicker, title: card.title, quip: card.quip, twist: announce ? night.twist : undefined, rush: false })
     setFright(night.twist.id === 'fright')
-    if (night.twist.id === 'fright') houseAudio.effect('rattle')
     setRoundEnd(null)
     setToss(0)
     pendingToss.current = fresh && night.twist.id === 'catch' ? card.prop : undefined
   }
-  /** The slate comes down, by itself or as soon as the player starts acting. Then any prop is thrown on. */
-  function lowerSlate() {
-    setSlate(null)
+  /** The curtain is open, by itself or because the player started acting. The nerves start, or the prop is thrown on. */
+  function curtainUp() {
+    setCurtain(null)
+    if (fright) houseAudio.effect('rattle')
     const flung = pendingToss.current
     if (!flung) return
     pendingToss.current = undefined
@@ -583,7 +584,7 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
     setShow(null)
     setNoteOpen(false)
     setGuide(null)
-    setSlate(null)
+    setCurtain(null)
     setFright(false)
     setToss(0)
     setRoundEnd(null)
@@ -620,7 +621,7 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
     setPose(next)
     posed.current = true
     if (fright) setFright(false)
-    if (slate) lowerSlate()
+    if (curtain && !curtain.rush) setCurtain({ ...curtain, rush: true })
     // The first move in a game hands the glove over to the Ready button.
     if (guide === 'drag' && solo) setGuide('ready')
   }
@@ -705,7 +706,7 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
         <div className="ba-workspace ba-has-audience">
           <section className="ba-stage-block" aria-label="Rehearsal stage">
             <div className="ba-theater">
-              <AudienceSeat firstLook={firstLook} paused={!introChecked || dialog !== null || slate !== null} client={hostedAudience ?? (publicEntry ? publicAudience : undefined)} publicEntry={publicEntry} requestedPlay={requestedPlay} mode={solo} cue={cue + 1} pose={pose} stage={stage} player={player}
+              <AudienceSeat firstLook={firstLook} paused={!introChecked || dialog !== null || curtain !== null} client={hostedAudience ?? (publicEntry ? publicAudience : undefined)} publicEntry={publicEntry} requestedPlay={requestedPlay} mode={solo} cue={cue + 1} pose={pose} stage={stage} player={player}
                 openingVerdict={phase === 'revealed' ? openingVerdict : undefined}
                 lobby={lobby} cueTools={cueTools}
                 beckon={guide === 'ticket' || guide === 'ready' ? guide : undefined}
@@ -716,7 +717,7 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
                 onStart={playWithAudience} onLeave={leaveGame} onClock={updateClock}
                 onNext={() => inShow ? advance() : changeCue((cue + 1) % deck.length)}
                 flyCue={<FlyCue title={flyTitle} covered={false} reveal={phase === 'revealed'} headingRef={cueHeading}
-                  draw={solo === 'draw' ? cue : undefined} />}
+                  drop={solo && !curtain ? actSerial.current : undefined} />}
                 clock={solo === 'draw' && clock && <StageClock seconds={clock.seconds} mode={clock.mode} className="ba-show-clock" />}>
                 <div className="ba-stage-canvas" data-fright={(fright && solo) || undefined} data-toss={toss || undefined}>
                   <div className="ba-player" ref={player}>
@@ -732,16 +733,16 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
                   {guide === 'drag' && solo && !grabbing && <StageCoach wrist={pose.right} />}
                   {fright && solo && <StageFright pose={pose} />}
                 </div>
-                {twist === 'blackout' && playing && <>
+                {twist === 'blackout' && playing && !curtain && <>
                   <BlackoutCurtain seed={actSerial.current} />
                   <div className="ba-stage-twin"><BlackoutEyes pose={pose} /></div>
                 </>}
-                {twist === 'heckler' && playing && <Heckler seed={actSerial.current} />}
+                {twist === 'heckler' && playing && !curtain && <Heckler seed={actSerial.current} />}
                 {toss > 0 && <HeadsUp key={toss} from="right" />}
                 {mood && moodLabel && <MoodBadge mood={mood} label={moodLabel} wearing={pose.face === mood}
                   earned={Boolean(roundEnd?.guessed) && pose.face === mood} />}
-                {slate && <ActSlate key={slate.key} kicker={slate.kicker} title={slate.title} quip={slate.quip} twist={slate.twist}
-                  onDone={lowerSlate} />}
+                {curtain && <ActCurtain key={curtain.key} seed={curtain.key} kicker={curtain.kicker} title={curtain.title}
+                  quip={curtain.quip} twist={curtain.twist} rush={curtain.rush} onOpen={curtainUp} />}
               </AudienceSeat>
             </div>
             <div className="ba-stage-bar">

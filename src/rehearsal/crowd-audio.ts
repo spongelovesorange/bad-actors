@@ -81,24 +81,33 @@ export function renderCrowdReaction(reaction: CrowdReaction) {
 }
 
 type ButtonSound = 'paper' | 'wood' | 'punch'
-/** The stage's own little noises: a clapperboard, a flung prop, a fuse, a heckler, a fanfare. */
+/** The stage's own little noises: a clapperboard, a flung prop, a fuse, a heckler, a fanfare, the house curtain. */
 export type StageCue = 'clack' | 'whoosh' | 'thud' | 'pop' | 'boing' | 'click' | 'zap' | 'clunk' | 'heckle' | 'sparkle' | 'fanfare' | 'rattle'
+  | 'drape' | 'roll' | 'tada'
 type Effect = ButtonSound | StageCue | 'mutter' | 'squeak' | 'spring' | 'shoe' | 'tick' | 'doubleTick' | 'lastTicks' | 'bell' | 'room'
-type Channel = 'button' | 'crowd' | 'voice' | 'line' | 'puppet' | 'clock' | 'room' | 'fx' | 'stage'
+type Channel = 'button' | 'crowd' | 'voice' | 'line' | 'puppet' | 'clock' | 'room' | 'fx' | 'stage' | 'drape' | 'drum'
 type Playing = { source: AudioBufferSourceNode; gain: GainNode }
 const lengths: Record<Effect, number> = {
   paper: .093, wood: .077, punch: .104, mutter: .081, squeak: .14, spring: .19, shoe: .11, tick: .06,
   doubleTick: .37, lastTicks: .44, bell: .68, room: 8,
   clack: .15, whoosh: .42, thud: .26, pop: .12, boing: .45, click: .045, zap: .62, clunk: .2, heckle: .38,
-  sparkle: .72, fanfare: 1.45, rattle: .52,
+  sparkle: .72, fanfare: 1.45, rattle: .52, drape: .95, roll: 2.6, tada: 1.05,
 }
 // The newer cues are normalised to these peaks, in line with the button sounds.
 const peaks: Partial<Record<Effect, number>> = {
   clack: .22, whoosh: .2, thud: .26, pop: .2, boing: .2, click: .12, zap: .18, clunk: .22, heckle: .2,
-  sparkle: .17, fanfare: .2, rattle: .16,
+  sparkle: .17, fanfare: .2, rattle: .16, drape: .2, roll: .15, tada: .2,
 }
 const stageCues = Object.keys(peaks) as StageCue[]
+/** The curtain's cloth and its drum each have a channel, so the "ta-da" cuts off the roll and nothing else. */
+const cueChannel = (cue: StageCue): Channel => cue === 'drape' ? 'drape' : cue === 'roll' || cue === 'tada' ? 'drum'
+  : ['zap', 'clunk', 'whoosh', 'thud', 'heckle', 'rattle'].includes(cue) ? 'stage' : 'fx'
 const isStageCue = (effect: Effect): effect is StageCue => (stageCues as Effect[]).includes(effect)
+/** The curtain rings ticking over the rod, closest together in the middle of the pull, when the cloth moves fastest. */
+const curtainRings = Array.from({ length: 28 }, (_, i) => {
+  const x = (i + .5) / 28
+  return .05 + .8 * (x + .13 * Math.sin(turn * x)) + .009 * Math.sin(i * 7.3)
+})
 /** A struck note that starts at `at` seconds and dies away at `decay` per second. */
 const ping = (t: number, at: number, hz: number, decay: number) => t < at ? 0 : Math.exp(-decay * (t - at)) * Math.sin(turn * hz * (t - at))
 
@@ -163,6 +172,33 @@ function stageCue(effect: StageCue, t: number, u: number, noise: number, air: nu
     }
     case 'rattle': return [0, .055, .1, .16, .21, .27, .33, .38, .44].reduce((sum, at) =>
       sum + (t < at ? 0 : Math.exp(-150 * (t - at)) * (Math.sin(turn * 950 * (t - at)) + .5 * noise)), 0)
+    case 'drape': {
+      // Heavy velvet dragged along its track, with the rings ticking over the rod.
+      const pull = Math.sin(Math.PI * Math.min(1, u * 1.12)) ** 1.3
+      state.swish += (.06 + .3 * pull) * (noise - state.swish)
+      const rings = curtainRings.reduce((sum, at, i) => sum + ping(t, at, 2700 + 230 * (i % 5), 230), 0)
+      return pull * (.75 * state.swish + .6 * air + .22 * rings)
+    }
+    case 'roll': {
+      // A snare roll that swells while the cue hangs over the stage: about twenty strokes a second.
+      state.phase += (19 + 5 * u) / crowdSampleRate
+      const stroke = Math.floor(state.phase), since = (state.phase - stroke) / (19 + 5 * u)
+      const hit = Math.exp(-30 * since) * (stroke % 2 ? .8 : 1)
+      const wires = (noise - air) * hit, shell = Math.sin(turn * 196 * since) * Math.exp(-60 * since)
+      return (.22 + .78 * u ** 1.7) * (.7 * wires + .3 * shell) * Math.min(1, (1 - u) / .04)
+    }
+    case 'tada': {
+      // "Ta-daa!": a pick-up note, a held major chord from the pit, and a cymbal.
+      let sound = 0
+      for (const [at, held, hz, weight] of [[0, .08, 523.25, 1], [.12, .5, 659.25, .6], [.12, .5, 783.99, .6], [.12, .5, 1046.5, .6]]) {
+        if (t < at) continue
+        const s = t - at
+        const env = Math.min(1, s / .015) * (s < held ? 1 : Math.exp(-(s - held) * 9))
+        const bright = .35 + .65 * Math.exp(-6 * s)
+        for (let k = 1; k <= 5; k++) sound += weight * env * Math.sin(turn * k * hz * s) * (k === 1 ? 1 : bright / k)
+      }
+      return sound + (t > .12 ? .5 * (noise - air) * Math.exp(-3.8 * (t - .12)) : 0)
+    }
   }
 }
 
@@ -418,8 +454,10 @@ export function createCrowdAudio() {
       if (visible) { updateRoom(); updateMusic() }
       else stop()
     },
-    /** A stage cue on its own channel, so it never cuts off a button or Stubbs. */
-    effect(cue: StageCue, level = 1) { play(['zap', 'clunk', 'whoosh', 'thud', 'heckle', 'rattle'].includes(cue) ? 'stage' : 'fx', cue, 1, level) },
+    /** A stage cue on its own channel, so it never cuts off a button or Stubbs. A faster speed plays it higher and shorter. */
+    effect(cue: StageCue, level = 1, speed = 1) { play(cueChannel(cue), cue, speed, level) },
+    /** Stops a stage cue early, such as the drum roll when the curtain opens before it ends. */
+    cut(cue: StageCue) { silence(cueChannel(cue)) },
     button(sound: ButtonSound) { play('button', sound, 1, .76) },
     /** Decodes Stubbs's recorded line once stage sound is on. Undefined if this browser cannot. */
     async prepareLine(bytes: ArrayBuffer): Promise<AudioBuffer | undefined> {

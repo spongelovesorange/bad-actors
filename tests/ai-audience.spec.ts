@@ -39,10 +39,17 @@ const panel = (page: Page) => page.getByTestId('ai-audience')
 const guessButton = (page: Page) => page.getByRole('button', { name: /Ready! Guess, Stubbs/ })
 const changePose = (page: Page) => page.getByRole('group', { name: 'Puppet stage' }).getByRole('button', { name: 'Left hand', exact: true }).press('Shift+ArrowRight')
 
+/** Every act opens on the house curtain with its cue in big letters. A click opens it at once. */
+async function openCurtain(page: Page) {
+  const curtain = page.getByTestId('act-curtain')
+  await curtain.click()
+  await expect(curtain).toHaveCount(0)
+}
 // Free play: pick the current cue, then send the pose. Stubbs never looks on his own.
 async function startRound(page: Page) {
   await page.getByRole('button', { name: /^Free play/ }).click()
   await page.getByRole('dialog', { name: 'Pick a cue' }).getByRole('button', { pressed: true }).click()
+  await openCurtain(page)
   await guessButton(page).click()
 }
 async function lookAgain(page: Page) {
@@ -220,6 +227,33 @@ test('a daily limit disables further AI looks while practice remains editable', 
   expect(frames).toHaveLength(1)
 })
 
+test('each act opens on the curtain with its cue in big letters, and Stubbs waits until it parts', async ({ page }) => {
+  const { frames } = await mockAudience(page, () => ({ guess: 'On the phone.', verdict: 'correct' }))
+  await page.goto('/?cue=2')
+  await page.getByRole('button', { name: /^Free play/ }).click()
+  await page.getByRole('dialog', { name: 'Pick a cue' }).getByRole('button', { pressed: true }).click()
+  const curtain = page.getByTestId('act-curtain')
+  await expect(curtain).toHaveAttribute('data-beat', 'reading')
+  await expect(curtain.getByRole('status')).toContainText('Talking on the phone')
+  // The first act of a night also says what will go wrong tonight.
+  await expect(curtain).toContainText('Tonight: Stage fright')
+  // A look asked for behind the curtain waits for it to open, which it does by itself.
+  await guessButton(page).click()
+  await page.waitForTimeout(800)
+  expect(frames).toHaveLength(0)
+  await expect(curtain).toHaveCount(0, { timeout: 8000 })
+  await expect.poll(() => frames.length).toBe(1)
+  await expect(panel(page)).toHaveAttribute('data-verdict', 'correct')
+  // The same night's next cue needs no warning, and the player's first move opens the curtain at once.
+  await panel(page).getByRole('button', { name: /Next cue/ }).click()
+  await expect(curtain).toHaveAttribute('data-beat', 'reading')
+  await expect(curtain).toContainText('Taking a selfie')
+  await expect(curtain).not.toContainText('Tonight:')
+  await page.getByRole('button', { name: 'Cup', exact: true }).click()
+  await expect(curtain).toHaveCount(0, { timeout: 2000 })
+  await expect(page.getByTestId('fly-cue')).toContainText('Taking a selfie')
+})
+
 test('a timed show pauses for the audience, cuts off new looks at zero, and deals a different cue', async ({ page }) => {
   await page.clock.install()
   let release!: () => void
@@ -232,6 +266,10 @@ test('a timed show pauses for the audience, cuts off new looks at zero, and deal
   await page.getByRole('button', { name: /^Timed show/ }).click()
   await page.getByRole('dialog', { name: 'Tonight’s show' }).getByRole('button', { name: /^Level 1/ }).click()
   const clock = page.getByTestId('stage-clock')
+  // The act's clock waits behind the curtain.
+  await expect(page.getByTestId('act-curtain')).toContainText('Act 1 of 5')
+  await expect(clock).toHaveAttribute('data-mode', 'paused')
+  await openCurtain(page)
   await expect(clock).toHaveAttribute('data-mode', 'running')
   await expect(clock).toHaveAttribute('data-seconds', '45')
   expect(starts).toHaveLength(1)
@@ -257,6 +295,7 @@ test('a timed show pauses for the audience, cuts off new looks at zero, and deal
   // The act ends on the bell and the next one is dealt from the same level.
   await page.clock.fastForward(5000)
   await expect(panel(page)).toContainText('Act 2 of 5')
+  await openCurtain(page)
   await expect(clock).toHaveAttribute('data-mode', 'running')
   await expect(clock).toHaveAttribute('data-seconds', '45')
   expect(starts).toHaveLength(2)
@@ -272,8 +311,10 @@ test.describe('opening the how-to-play demo', () => {
     await page.goto('/?cue=1')
     const book = page.getByRole('dialog', { name: 'How to play' })
     await expect(book).toBeVisible()
-    await expect(book.locator('.ba-howto-steps li')).toHaveCount(3)
-    // One loop of the demo: the glove poses the real puppet, presses Ready, and Stubbs answers.
+    await expect(book.locator('.ba-howto-steps li')).toHaveCount(4)
+    // One loop of the demo: the curtain opens on the cue, the glove poses the real puppet, presses Ready, and Stubbs answers.
+    await expect(book.locator('.ba-howto-steps li[aria-current]')).toHaveText(/Read the cue/, { timeout: 12000 })
+    await expect(book.locator('.ba-howto-curtain')).toContainText('Talking on the phone')
     await expect(book.locator('.ba-howto-steps li[aria-current]')).toHaveText(/Press Ready/, { timeout: 9000 })
     await expect(book.getByText('On the phone!')).toBeVisible({ timeout: 9000 })
     await book.getByRole('button', { name: 'Pause the demo' }).click()

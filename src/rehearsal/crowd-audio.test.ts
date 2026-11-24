@@ -152,7 +152,7 @@ describe('the audience in the cheap seats', () => {
   })
 
   it('renders the stage cues at their set peaks, with clean edges', () => {
-    const peaks = { clack: .22, whoosh: .2, thud: .26, pop: .2, boing: .2, click: .12, zap: .18, clunk: .22, heckle: .2, sparkle: .17, fanfare: .2, rattle: .16 }
+    const peaks = { clack: .22, whoosh: .2, thud: .26, pop: .2, boing: .2, click: .12, zap: .18, clunk: .22, heckle: .2, sparkle: .17, fanfare: .2, rattle: .16, drape: .2, roll: .15, tada: .2 }
     for (const [effect, peak] of Object.entries(peaks) as [keyof typeof peaks, number][]) {
       const pcm = renderStageEffect(effect)
       expect(pcm.every(Number.isFinite)).toBe(true)
@@ -160,6 +160,43 @@ describe('the audience in the cheap seats', () => {
       expect(Math.abs(pcm[0])).toBeLessThan(.02)
       expect(Math.abs(pcm[pcm.length - 1])).toBeLessThan(.001)
     }
+  })
+
+  it('gives the curtain its own channels: the ta-da cuts off the drum roll and nothing else', async () => {
+    const played: { name: number; stopped: boolean }[] = []
+    class Audio {
+      state = 'running'
+      currentTime = 0
+      destination = {}
+      createBuffer = (_channels: number, length: number) => ({ duration: length / crowdSampleRate, length, copyToChannel: vi.fn() })
+      createGain = () => ({ connect: vi.fn(), disconnect: vi.fn(), gain: { value: 1, cancelScheduledValues: vi.fn(), setTargetAtTime: vi.fn() } })
+      createBufferSource() {
+        const sound = { name: 0, stopped: false }
+        return { context: this, loop: false, playbackRate: { value: 1 }, disconnect: vi.fn(), connect: (next: unknown) => next,
+          set buffer(sample: { length: number }) { sound.name = sample.length },
+          start() { played.push(sound) }, stop() { sound.stopped = true } }
+      }
+      close = vi.fn().mockResolvedValue(undefined)
+    }
+    vi.stubGlobal('window', { AudioContext: Audio })
+    const desk = createCrowdAudio()
+    desk.setMusic(false)
+    await desk.enable()
+    const length = (cue: 'roll' | 'tada' | 'drape' | 'sparkle') => renderStageEffect(cue).length
+    desk.effect('sparkle')
+    desk.effect('drape', .6, 1.35)
+    desk.effect('roll')
+    desk.effect('tada')
+    const [sparkle, drape, roll, tada] = played
+    expect([sparkle.name, drape.name, roll.name, tada.name]).toEqual([length('sparkle'), length('drape'), length('roll'), length('tada')])
+    expect(roll.stopped).toBe(true)
+    expect([sparkle.stopped, drape.stopped, tada.stopped]).toEqual([false, false, false])
+    desk.effect('roll')
+    desk.cut('roll')
+    expect(played.at(-1)?.stopped).toBe(true)
+    expect(tada.stopped).toBe(true)
+    expect(drape.stopped).toBe(false)
+    desk.dispose()
   })
 
   it('arranges one tune six ways, each a seamless loop at half scale', () => {

@@ -1,21 +1,6 @@
 /* Each night's twist plays on the scene floor, over the boards, and never takes a pointer. */
 .ba-twist-layer { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 
-/* The act slate: a lower third over the boards at the top of each act. */
-.ba-act-slate {
-  position: absolute; z-index: 6; left: 50%; bottom: 15%; translate: -50% 0;
-  display: grid; justify-items: center; gap: 3px; width: min(88%, 470px); padding: 9px 16px 10px;
-  background: #241d18ed; color: #fff3d6; border: 2px solid #e2b34f; border-radius: 6px 10px 7px 9px;
-  box-shadow: 3px 4px 0 #15100c; text-align: center; pointer-events: none;
-  animation: ba-slate 3.8s ease both;
-}
-.ba-act-kicker { font: 800 12px/1.1 var(--ba-sign); letter-spacing: .14em; text-transform: uppercase; color: #e2b34f; }
-.ba-act-slate strong { font: 700 clamp(20px, 3.4cqw, 28px)/1.1 var(--ba-voice); }
-.ba-act-slate em { font: 600 clamp(13px, 1.9cqw, 16px)/1.25 var(--ba-sign); font-style: normal; color: #f3dfb6; }
-.ba-act-slate em small { font-size: .85em; opacity: .75; }
-.ba-act-twist { margin-top: 3px; padding-top: 5px; border-top: 1px dashed #e2b34f88; font: 600 13px/1.25 var(--ba-sign); color: #ffd98a; }
-@keyframes ba-slate { 0% { opacity: 0; translate: -50% 10px; } 7%, 87% { opacity: 1; translate: -50% 0; } 100% { opacity: 0; translate: -50% -6px; } }
-
 /* Stage fright: the understudy trembles and sweats until it is taken in hand. */
 .ba-fright-sweat { z-index: 3; }
 .ba-fright-sweat path { fill: #8fc3df; stroke: #302d27; stroke-width: 1.2; }
@@ -69,11 +54,6 @@
 }
 
 @media (max-width: 600px) {
-  /* On a phone the slate covers the hanging cue, which says the same thing, and leaves the actor in view. */
-  .ba-act-slate { top: 1%; bottom: auto; width: 94%; gap: 1px; padding: 6px 10px 7px; }
-  .ba-act-slate strong { font-size: 20px; }
-  .ba-act-slate em { font-size: 13px; }
-  .ba-act-twist { font-size: 12px; }
   .ba-mood-badge { top: auto; bottom: 15%; left: auto; right: 2%; font-size: 13px; }
   .ba-heckler { width: 58px; }
   .ba-heckler p { max-width: 136px; font-size: 13px; }
@@ -108,8 +88,6 @@
   @keyframes ba-heckle { from { scale: .5; opacity: 0; } to { scale: 1; opacity: 1; } }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ba-act-slate { animation-name: ba-slate-still; }
-  @keyframes ba-slate-still { 0%, 92% { opacity: 1; } 100% { opacity: 0; } }
-  /* Without motion the lights stay up; the slate still names the night's trouble. */
+  /* Without motion the lights stay up; the curtain still names the night's trouble. */
   .ba-blackout, .ba-blackout-eyes { display: none; }
 }

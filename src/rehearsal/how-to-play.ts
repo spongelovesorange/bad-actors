@@ -5,12 +5,17 @@ import type { CriticMood } from './AudienceCritic'
 
 /**
  * The silent how-to-play loop, written as a pure function of time so the dialog, reduced motion and
- * the tests all read one script. Like the hand demos at the start of a party game, a white glove
- * drags the real puppet, taps a prop and presses Ready, then Stubbs guesses.
+ * the tests all read one script. As in the game, the curtain opens on the cue. Then, like the hand
+ * demos at the start of a party game, a white glove drags the real puppet, taps a prop and presses
+ * Ready, and Stubbs guesses. The curtain closes on the scene and the loop begins again.
  *
  * Screen positions are percentages of the demo box: the 500 × 360 stage with a 70-unit tray below.
  */
-export const demoLength = 8400
+export const demoLength = 10000
+/** The curtain and its cue board take this long before the glove comes on. */
+const intro = 1800
+/** When the curtain starts to close on the finished scene. */
+const closing = 9500
 const boxHeight = 430
 export const demoSpots = {
   /** The Phone chip and the Ready button. The stylesheet places them on these centres. */
@@ -20,12 +25,16 @@ export const demoSpots = {
   leave: { x: 97, y: 72 },
 }
 /** A moment late in the loop that shows the whole story at once, for reduced motion. */
-export const demoStill = 6800
+export const demoStill = intro + 6800
 
-export type DemoStep = 0 | 1 | 2
+export type DemoStep = 0 | 1 | 2 | 3
 export type DemoFrame = {
-  /** The caption to light: drag, prop, Ready. */
+  /** The caption to light: the cue, drag, prop, Ready. */
   step: DemoStep
+  /** How far the curtain has opened, from 0 (closed) to 1 (open). */
+  curtain: number
+  /** How far the cue board has been hoisted above its place on the curtain, from 0 to 1 (out of sight). */
+  sign: number
   pose: PuppetPose
   hand?: Point & { opacity: number; pressed: boolean }
   /** A ring that spreads from the last tap; age runs from 0 to 1. */
@@ -39,8 +48,6 @@ export type DemoFrame = {
   critic: CriticMood
   line?: string
   stamp: boolean
-  /** The whole picture fades out at the end of a loop and back in at the start. */
-  fade: number
 }
 
 // The elbow stays out to the side while the forearm swings the hand from the hip up to the ear,
@@ -84,15 +91,27 @@ const ease = (n: number) => { const t = clamp01(n); return t < .5 ? 4 * t * t * 
 const between = (t: number, start: number, end: number) => clamp01((t - start) / (end - start))
 const lerp = (a: Point, b: Point, n: number) => ({ x: a.x + (b.x - a.x) * n, y: a.y + (b.y - a.y) * n })
 const onScreen = (p: Point) => ({ x: p.x / 5, y: p.y / (boxHeight / 100) })
+/** Lowered on its ropes, the board drops a little past its mark and settles back. */
+const settle = (n: number) => { const t = clamp01(n) - 1; return 1 + 2.2 * t ** 3 + 1.2 * t ** 2 }
+
+/** The curtain and the cue board at a moment of the loop: the board comes down, is read, goes up, the curtain parts. */
+function curtainAt(t: number) {
+  const curtain = t < closing ? ease(between(t, 1450, 2050)) : 1 - ease(between(t, closing, closing + 450))
+  const sign = t < 1350 ? 1 - settle(t / 420) : ease(between(t, 1350, 1700))
+  return { curtain, sign }
+}
 
 export function demoFrame(time: number): DemoFrame {
-  const t = ((time % demoLength) + demoLength) % demoLength
+  const loop = ((time % demoLength) + demoLength) % demoLength
+  const { curtain, sign } = curtainAt(loop)
   const { drag, held, beaming } = poses()
   const rest = drag[0]
-  if (t >= 8050) {
-    // The next loop begins on an untouched actor.
-    return { step: 0, pose: rest, trail: 0, chip: false, ready: 'idle', critic: 'idle', stamp: false, fade: between(t, 8050, demoLength) }
+  if (loop < intro) {
+    // The curtain is down: the cue board comes in, the house reads it, and the curtain opens on an untouched actor.
+    return { step: 0, curtain, sign, pose: rest, trail: 0, chip: false, ready: 'idle', critic: 'idle', stamp: false }
   }
+  // From here the glove plays the round on the script's own clock.
+  const t = loop - intro
   const progress = ease(between(t, 850, 2250))
   const dragged = drag[Math.round(progress * (drag.length - 1))]
   let pose = t < 850 ? rest : dragged
@@ -118,7 +137,9 @@ export function demoFrame(time: number): DemoFrame {
     .find(entry => t >= entry.at && t < entry.at + 500)
   const critic: CriticMood = t < 4400 ? 'idle' : t < 5200 ? 'looking' : t < 5900 ? 'guess' : 'hit'
   return {
-    step: t < 2400 ? 0 : t < 3500 ? 1 : 2,
+    step: t < 2400 ? 1 : t < 3500 ? 2 : 3,
+    curtain,
+    sign,
     pose,
     hand,
     tap: tapAt && { ...tapAt.spot, age: (t - tapAt.at) / 500 },
@@ -129,6 +150,5 @@ export function demoFrame(time: number): DemoFrame {
     critic,
     line: critic === 'looking' ? 'Hmm…' : critic === 'guess' || critic === 'hit' ? 'On the phone!' : undefined,
     stamp: t >= 5900,
-    fade: t < 7700 ? 1 : 1 - between(t, 7700, 8050),
   }
 }

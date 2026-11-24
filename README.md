@@ -63,6 +63,7 @@
 | **Built with** | I chose the project (dropping my first one), wrote the first plan, designed the game, chose every reference, tested every screen and button by hand and approved every commit and deploy. Coding agents (Codex, then Claude Code) wrote most of the code and the automated tests under my direction. [How it was built](#how-it-was-built) |
 | **Checked** | 227 unit tests, 44 Chromium stage tests, 12 DeepSpace tests on the local Worker (three with two real test accounts) and paid real-model checks. The latest covered the 12 new cues for $0.012. |
 | **Not built** | Spectators, chat and a party mode where friends guess each other's poses. [What I’d do next](#not-built-and-what-id-do-next) |
+| **SDK feedback** | Five things I ran into on DeepSpace SDK 0.44.2, with what I did about each. [Notes for the DeepSpace team](#notes-for-the-deepspace-team) |
 
 ## The feel I was going for
 
@@ -176,7 +177,7 @@ The race is built from DeepSpace's own parts:
 
 ## How it was built
 
-I built Bad Actors by directing coding agents, and every change went through me. I wrote the first plan, made every product decision, tested every screen and button by hand, and approved every commit and all 16 deploys. Every commit is in my name, and 17 of them also credit Claude as co-author. The agents wrote most of the code and the automated tests.
+I built Bad Actors by directing coding agents, and every change went through me. I wrote the first plan, made every product decision, tested every screen and button by hand, and approved every commit and every deploy. Every commit is in my name, and 17 of them also credit Claude as co-author. The agents wrote most of the code and the automated tests.
 
 **Choosing the project.** My first build for this task was a meetup app I called Plan B. I built it, but it was a familiar forms-and-lists app that would have been hard to show: nothing in it a reviewer would remember. On November 23 I set it aside and started Bad Actors. I'd rather change course early than polish an idea that can't show what I can do.
 
@@ -211,6 +212,16 @@ I built Bad Actors by directing coding agents, and every change went through me.
 - **Stubbs isn't always right.** In the last real-model check he named 9 of 12 new cues on the first look, and the three misses needed new poses or names. I’d measure all 30 cues the same way.
 - **Safari.** A long-open Safari tab once stayed silent with sound on. Two fixes shipped and sound came back, but the root cause is unconfirmed. [The notes](docs/VERIFICATION.md)
 - **One pair of ears.** The music and effects are synthesized in code and only I have judged them.
+
+## Notes for the DeepSpace team
+
+Things I ran into building on SDK 0.44.2, and what I did about each.
+
+1. **The Anthropic integration drops two request fields.** `anthropic/chat-completion` forwards neither `thinking` nor `output_config`. Requests with deliberately invalid values for both still succeeded, so the model's reasoning can't be turned down from the request. Claude Haiku 5.5 can spend about 1,024 tokens reasoning before it answers, so the guesser runs with `max_tokens: 3000`. An error for unsupported fields, or passing them through, would make this visible at the first call. [The test](docs/VERIFICATION.md)
+2. **Server actions can only write to the main record room.** The scaffold's action tools are bound to `app:<APP_ID>`, and `ActionTools` takes no scope. A race would naturally be its own `RecordScope`, but its referee has to write from an action, so races live in the main room, keyed by their code. A `scope` option on the tools would let each room keep its own records.
+3. **No supported way to stub a paid integration in a multi-user test.** `.dev.vars` is rewritten on every dev and test run, and `page.route` can't reach calls the Worker makes itself. A two-player spec therefore can't finish a round without real model calls. Ours stops at the deal, and a full round was checked separately with about 20 paid calls. A test mode that answers named integration endpoints with fixture replies would close the gap.
+4. **`deepspace test run` with several spec files ran only the first.** `npx deepspace test run tests/api.spec.ts tests/collab.spec.ts tests/smoke.spec.ts` ran the three tests in `api.spec.ts` and said nothing about the other two files.
+5. **The scaffold ships a lot to delete.** Every app starts with settings and API-status pages, a UI kit, and AI chat, payment and theme templates. Removing them safely took an import-graph audit: about 30 files and four packages here. A lean template, or a command that lists scaffold files nothing imports, would help.
 
 ## Run it locally
 

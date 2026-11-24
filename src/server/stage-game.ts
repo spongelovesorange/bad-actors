@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { Buffer } from 'node:buffer'
 import { providerFailureReason, refereeFailure, type StageProvider } from './charades-provider'
 import { cues, failure, imageHash, limit, uuid, type StageReply, type VisionGuess } from './stage-protocol'
 
@@ -10,10 +11,17 @@ type Seat = { round: string; cue: number; lastLook: number; opened: number; star
 type Receipt = { hash: string; used: number; words: string | null; result: string | null }
 type LiveObservation = { user: string; words: Promise<VisionGuess | undefined>; result: Promise<StageReply> }
 type Input = Record<string, unknown>
+export type VoiceReply = StageReply | { status: 200; audio: ArrayBuffer }
+const voiceless = () => failure(502, 'voice_failed', 'Stubbs lost his voice on that line.')
+const mp3 = (base64: string): VoiceReply => {
+  const bytes = Buffer.from(base64, 'base64')
+  return { status: 200, audio: bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer }
+}
 
 /** One app-wide SQLite authority reserves a paid look and both daily counters in one turn. */
 export class StageGame {
   private readonly live = new Map<string, LiveObservation>()
+  private readonly speaking = new Map<string, Promise<VoiceReply>>()
   private readonly sql: SqlStorage
 
   constructor(private storage: Pick<DurableObjectStorage, 'sql' | 'transactionSync'>,
@@ -27,6 +35,9 @@ export class StageGame {
       hash TEXT NOT NULL, used INTEGER NOT NULL, words TEXT, result TEXT,
       PRIMARY KEY(round,id), UNIQUE(round,hash))`)
     this.sql.exec('CREATE INDEX IF NOT EXISTS stage_daily ON stage_looks(day,user)')
+    // At most one spoken clip per look. A row without audio is a spent attempt and is never re-billed.
+    this.sql.exec(`CREATE TABLE IF NOT EXISTS stage_voices (
+      round TEXT NOT NULL, id TEXT NOT NULL, day INTEGER NOT NULL, audio TEXT, PRIMARY KEY(round,id))`)
   }
 
   private seat(user: string) {
@@ -40,6 +51,7 @@ export class StageGame {
     const at = this.now()
     return this.storage.transactionSync(() => {
       this.sql.exec('DELETE FROM stage_looks WHERE day < ?', Math.floor(at / day) - 1)
+      this.sql.exec('DELETE FROM stage_voices WHERE day < ?', Math.floor(at / day) - 1)
       this.sql.exec('DELETE FROM stage_seats WHERE opened < ? AND lastLook < ?', at - roundLifetime, at - roundLifetime)
       const previous = this.seat(user)
       const starts: number[] = previous ? JSON.parse(previous.starts) : []
@@ -91,6 +103,38 @@ export class StageGame {
     return pending.result
   }
 
+  /**
+   * Stubbs reads his line for one of the player's own looks. The clip is generated once, on the
+   * first request, and served from SQLite afterwards; looks already cap how many can exist.
+   */
+  async voice(user: string, input: Input): Promise<VoiceReply> {
+    const { roundId, observationId } = input
+    if (typeof roundId !== 'string' || !uuid.test(roundId) || typeof observationId !== 'string' ||
+        !uuid.test(observationId) || Object.keys(input).length !== 2)
+      return failure(400, 'invalid_voice', 'Ask for the voice of one look.')
+    if (!this.provider.speak) return failure(503, 'voice_unavailable', 'Stubbs has lost his voice tonight.')
+    const look = this.sql.exec<{ words: string | null }>('SELECT words FROM stage_looks WHERE round=? AND id=? AND user=?',
+      roundId, observationId, user).toArray()[0]
+    const words: VisionGuess | undefined = look?.words ? JSON.parse(look.words) : undefined
+    if (!words) return failure(404, 'no_line', 'Stubbs has not said anything for that look.')
+    const key = roundId + ':' + observationId
+    const live = this.speaking.get(key)
+    if (live) return live
+    const saved = this.sql.exec<{ audio: string | null }>('SELECT audio FROM stage_voices WHERE round=? AND id=?',
+      roundId, observationId).toArray()[0]
+    if (saved) return saved.audio ? mp3(saved.audio) : voiceless()
+    this.sql.exec('INSERT INTO stage_voices (round,id,day) VALUES (?,?,?)', roundId, observationId, Math.floor(this.now() / day))
+    const work = this.provider.speak((words.line ?? words.guess).slice(0, 240)).then(
+      (audio): VoiceReply => {
+        this.sql.exec('UPDATE stage_voices SET audio=? WHERE round=? AND id=?', audio, roundId, observationId)
+        return mp3(audio)
+      },
+      () => voiceless(),
+    ).finally(() => this.speaking.delete(key))
+    this.speaking.set(key, work)
+    return work
+  }
+
   private reserve(user: string, seat: Seat, id: string, hash: string, at: number): number | StageReply {
     return this.storage.transactionSync(() => {
       const used = this.sql.exec<{ n: number }>('SELECT COUNT(*) n FROM stage_looks WHERE round=?', seat.round).one().n
@@ -114,14 +158,25 @@ export class StageGame {
     })
   }
 
+  /** Guesses the referee ruled out earlier in this round, oldest first: the performer's shaken head. */
+  private misses(round: string, id: string): string[] {
+    return this.sql.exec<{ result: string }>(
+      'SELECT result FROM stage_looks WHERE round=? AND id<>? AND result IS NOT NULL ORDER BY used', round, id,
+    ).toArray().flatMap(({ result }) => {
+      const { body } = JSON.parse(result) as StageReply
+      return (body.verdict === 'incorrect' || body.verdict === 'uncertain') && typeof body.guess === 'string' ? [body.guess] : []
+    })
+  }
+
   private async perform(user: string, seat: Seat, id: string, image: string, used: number,
     heard: (words: VisionGuess | undefined) => void): Promise<StageReply> {
     let words: VisionGuess | undefined
     let reply: StageReply
     try {
-      const read = await this.provider.guess(image)
+      const read = await this.provider.guess(image, this.misses(seat.round, id))
       if (this.seat(user)?.round !== seat.round) return stale()
-      words = { roundId: seat.round, observationId: id, used, limit, guess: read.text, visionModel: read.model, visionTokens: read.tokens }
+      words = { roundId: seat.round, observationId: id, used, limit, guess: read.text,
+        ...(read.line && { line: read.line }), visionModel: read.model, visionTokens: read.tokens }
       this.sql.exec('UPDATE stage_looks SET words=? WHERE round=? AND id=?', JSON.stringify(words), seat.round, id)
       heard(words)
       const score = await this.provider.judge(cues[seat.cue - 1], read.text)

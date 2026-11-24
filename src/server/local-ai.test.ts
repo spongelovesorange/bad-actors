@@ -8,6 +8,7 @@ import { localAudiencePlugin, localRequestAllowed } from '../../scripts/local-ai
 import { privateProfilePaths, readOwnProvider, refereeFailure, type OwnProvider } from '../../scripts/local-ai-provider'
 import { openObservationQuota } from '../../scripts/local-ai-quota'
 import { createLocalAudience } from '../../scripts/local-ai-service'
+import { visionPrompt } from './charades-provider'
 
 const frames = Array.from({ length: 6 }, (_, i) => 'data:image/png;base64,' + readFileSync(
   new URL('../../docs/verification/six-poses-2026-11-23/' + (i + 1) + '.png', import.meta.url),
@@ -54,11 +55,20 @@ describe('local AI observation and independent referee', () => {
     const request = f.input(0)
     const result = await f.game.observe(f.cookie, request)
     expect(result.body).toMatchObject({ guess: 'make a call', verdict: 'correct', used: 1, limit: 5, visionModel: 'vision', judgeModel: 'referee' })
-    expect(f.provider.guess.mock.calls).toEqual([[frames[0]]])
+    expect(f.provider.guess.mock.calls).toEqual([[frames[0], []]])
     expect(f.provider.judge).toHaveBeenCalledWith('Talking on the phone', 'make a call')
     expect(await f.game.observe(f.cookie, request)).toEqual(result)
     expect((await f.game.observe(f.cookie, f.input(1))).body.error).toBe('round_finished')
     expect(f.claim).toHaveBeenCalledTimes(1)
+  })
+
+  it('reminds the local Stubbs of his ruled-out guesses in the same round', async () => {
+    const f = fixture()
+    f.provider.guess.mockResolvedValueOnce({ text: 'Taking a selfie', line: 'A selfie! The vanity of sandbags.', model: 'vision' })
+    expect((await f.game.observe(f.cookie, f.input(0))).body).toMatchObject({ guess: 'Taking a selfie', line: 'A selfie! The vanity of sandbags.' })
+    f.tick()
+    await f.game.observe(f.cookie, f.input(1))
+    expect(f.provider.guess.mock.calls.map(([, missed]) => missed)).toEqual([[], ['Taking a selfie']])
   })
 
   it('joins concurrent duplicate requests and rejects other in-flight observations and changed bytes under the same ID', async () => {
@@ -114,7 +124,7 @@ describe('local AI observation and independent referee', () => {
     const judgeGate = new Promise<void>(resolve => { release = resolve })
     const providerTransport = vi.fn<typeof fetch>(async (url, init) => {
       expect(String(url)).toBe('https://provider.invalid/v1/chat/completions')
-      const vision = JSON.parse(String(init?.body)).messages.length === 1
+      const vision = Array.isArray(JSON.parse(String(init?.body)).messages.at(-1).content)
       if (!vision) await judgeGate
       return Response.json({ choices: [{ message: { content: vision ? 'Calling someone.' : 'CORRECT' } }] })
     })
@@ -284,9 +294,10 @@ describe('local AI observation and independent referee', () => {
     expect((await provider.judge('Talking on the phone', seen.text)).verdict).toBe('correct')
     const vision = JSON.parse(send.mock.calls[0][1]!.body as string)
     const judge = JSON.parse(send.mock.calls[1][1]!.body as string)
-    expect(vision.messages).toHaveLength(1)
-    expect(vision.messages[0].content.map((x: { type: string }) => x.type)).toEqual(['text', 'image_url'])
-    expect(vision.messages[0].content[0].text).not.toMatch(/drinking|selfie|surrender|call|eyes|tray/)
+    expect(vision.messages).toHaveLength(2)
+    expect(vision.messages[0]).toEqual({ role: 'system', content: visionPrompt })
+    expect(vision.messages[1].content.map((x: { type: string }) => x.type)).toEqual(['text', 'image_url'])
+    expect(vision.messages[0].content + vision.messages[1].content[0].text).not.toMatch(/drink|sip|selfie|photo|surrender|phone|call|tray|carry|cover/i)
     expect(judge.messages[1]).toEqual({ role: 'user', content: JSON.stringify({ assignedAction: 'Talking on the phone', guess: 'call sombody' }) })
     expect(JSON.stringify(judge)).not.toContain('image_url')
     expect(judge.max_completion_tokens).toBe(1024)

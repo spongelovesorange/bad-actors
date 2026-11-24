@@ -42,7 +42,7 @@ describe('hosted stage entrypoints', () => {
     'leaves the free stage closed to paid calls when the provider is unavailable', async controls => {
       const { request, forwarded } = game(controls)
       expect(await (await request('status')).json()).toEqual({ available: false, requiresLogin: false })
-      for (const action of ['rounds', 'observe']) {
+      for (const action of ['rounds', 'observe', 'voice']) {
         const response = await request(action, { method: 'POST', headers: auth, body: '{}' })
         expect(response.status).toBe(503)
         expect(await response.json()).toMatchObject({ error: 'unavailable' })
@@ -72,6 +72,21 @@ describe('hosted stage entrypoints', () => {
     expect((await request('rounds', { method: 'POST', headers: auth, body: ' '.repeat(1025) })).status).toBe(413)
     expect((await request('observe', { method: 'POST', headers: auth, body: ' '.repeat(820_001) })).status).toBe(413)
     expect(forwarded).not.toHaveBeenCalled()
+  })
+
+  it('forwards a small, signed-in voice request and passes the clip straight through', async () => {
+    const { request, forwarded } = game()
+    forwarded.mockResolvedValueOnce(new Response(new Uint8Array([73, 68, 51]), { headers: { 'Content-Type': 'audio/mpeg' } }))
+    const response = await request('voice', { method: 'POST', headers: auth, body: '{"roundId":"r","observationId":"o"}' })
+    expect(response.headers.get('content-type')).toBe('audio/mpeg')
+    expect(response.headers.get('cache-control')).toContain('no-store')
+    expect(new Uint8Array(await response.arrayBuffer())).toEqual(new Uint8Array([73, 68, 51]))
+    const internal = forwarded.mock.calls[0][0]
+    expect(new URL(internal.url).pathname).toBe('/voice')
+    expect(internal.headers.get('x-stage-user')).toBe('member-from-auth')
+    expect((await request('voice', { method: 'POST', headers: auth, body: ' '.repeat(1025) })).status).toBe(413)
+    expect((await request('voice', { method: 'POST', headers: { ...auth, Authorization: 'Bearer guest' }, body: '{}' })).status).toBe(401)
+    expect(forwarded).toHaveBeenCalledTimes(1)
   })
 
   it('uses one app ledger and forwards only the verified identity, negotiation and JSON payload', async () => {

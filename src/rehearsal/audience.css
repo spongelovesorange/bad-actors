@@ -47,6 +47,14 @@
   background: #2f2723; clip-path: polygon(0 0, 100% 0, 22% 100%);
 }
 .ba-audience-balloon::after { background: #fff9e9; width: 17px; height: 11px; left: calc(52% + 2px); margin-top: -1px; }
+/* A full remark gets a wider, smaller-lettered balloon rather than a tall column over the stage. */
+.ba-audience-balloon[data-size='long'] {
+  width: max-content; max-width: min(36cqw, 330px); font-size: clamp(15px, 1.6cqw, 20px); transition: opacity .15s ease-out;
+}
+/* While the player holds a joint, a long remark steps back so the pose stays visible. */
+.ba-scene-floor:has(svg[data-grabbed]) .ba-audience-balloon[data-size='long'] { opacity: .18; }
+.ba-audience-balloon[data-size='long']::before { left: 24%; }
+.ba-audience-balloon[data-size='long']::after { left: calc(24% + 2px); }
 .ba-critic-portrait { position: relative; display: grid; justify-items: center; width: 93%; margin-left: 3%; min-width: 0; }
 .ba-critic-portrait svg { display: block; width: 100%; height: auto; }
 .ba-critic-portrait strong {
@@ -128,6 +136,7 @@
   .ba-scene-floor .ba-show-clock { top: 2px; right: 2%; width: clamp(60px, 16cqw, 84px); }
   .ba-front-patron { width: clamp(94px, 28%, 132px); left: 2%; bottom: 2%; gap: 8px; }
   .ba-audience-balloon { padding: 6px 7px 5px; font-size: clamp(15.5px, 4cqw, 19px); line-height: 1.13; }
+  .ba-audience-balloon[data-size='long'] { max-width: min(62cqw, 240px); font-size: clamp(13.5px, 3.7cqw, 16px); }
   .ba-critic-portrait { width: 92%; margin-left: 2%; }
   .ba-critic-portrait strong { margin-top: -3px; padding: 1px 4px; font-size: 11px; }
   .ba-referee-station { width: clamp(72px,21.5%,113px); right: 1%; top: 20%; }

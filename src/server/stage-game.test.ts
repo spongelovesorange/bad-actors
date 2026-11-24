@@ -4,6 +4,7 @@ import { DatabaseSync } from 'node:sqlite'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { StageProvider } from './charades-provider'
 import { StageGame } from './stage-game'
+import type { StageReply } from './stage-protocol'
 
 const frames = Array.from({ length: 6 }, (_, index) => 'data:image/png;base64,' + readFileSync(new URL(
   '../../docs/verification/six-poses-2026-11-23/' + (index + 1) + '.png', import.meta.url)).toString('base64'))
@@ -26,6 +27,7 @@ function fixture(owner?: string) {
   const provider = { visionModel: 'mock', judgeModel: 'judge',
     guess: vi.fn<StageProvider['guess']>(async () => ({ model: 'mock', text: 'making a call' })),
     judge: vi.fn<StageProvider['judge']>(async () => ({ model: 'judge', verdict: 'incorrect' })),
+    speak: vi.fn<NonNullable<StageProvider['speak']>>(async () => 'SUQzBA=='),
   }
   let now = Date.UTC(2026, 0, 1)
   function reboot() { return new StageGame(storage, provider, () => now, owner) }
@@ -43,7 +45,7 @@ describe('hosted stage durable reservations', () => {
     provider.judge.mockResolvedValueOnce({ model: 'judge', verdict: 'correct' })
     const words = vi.fn(), scored = await game.observe('alice', shot, words)
     expect(scored.body).toMatchObject({ roundId: id, used: 1, verdict: 'correct' })
-    expect(provider.guess.mock.calls).toEqual([[shot.image]])
+    expect(provider.guess.mock.calls).toEqual([[shot.image, []]])
     expect(provider.judge.mock.calls).toEqual([['Talking on the phone', 'making a call']])
     expect(words.mock.calls[0][0]).not.toHaveProperty('verdict')
     const second = reboot(), replay = vi.fn()
@@ -51,6 +53,47 @@ describe('hosted stage durable reservations', () => {
     expect(replay.mock.calls).toEqual(words.mock.calls)
     expect((await second.observe('alice', frame(id, 1))).body.error).toBe('round_finished')
     expect(provider.guess).toHaveBeenCalledTimes(1)
+  })
+
+  it('reminds Stubbs of guesses ruled out in this round only, and keeps his line with the words', async () => {
+    const { game, provider, draw, frame, tick } = fixture()
+    provider.guess.mockResolvedValueOnce({ model: 'mock', text: 'Taking a selfie', line: 'A selfie! Vanity, thy name is sandbag.' })
+    const id = draw('a')
+    expect((await game.observe('a', frame(id, 0))).body).toMatchObject({
+      guess: 'Taking a selfie', line: 'A selfie! Vanity, thy name is sandbag.', verdict: 'incorrect' })
+    tick()
+    provider.judge.mockResolvedValueOnce({ model: 'judge', verdict: 'uncertain' })
+    await game.observe('a', frame(id, 1))
+    tick()
+    expect((await game.observe('a', frame(id, 2))).body).not.toHaveProperty('line')
+    expect(provider.guess.mock.calls.map(([, missed]) => missed)).toEqual([[], ['Taking a selfie'], ['Taking a selfie', 'making a call']])
+    await game.observe('a', frame(draw('a'), 3))
+    expect(provider.guess.mock.calls.at(-1)?.[1]).toEqual([])
+  })
+
+  it('reads each look aloud once, keeps the clip across restarts and never re-bills a failed one', async () => {
+    const { game, provider, draw, frame, tick, reboot } = fixture()
+    provider.guess.mockResolvedValueOnce({ model: 'mock', text: 'Taking a selfie', line: 'A selfie! Vanity, thy name is sandbag.' })
+    const id = draw('a'), shot = frame(id, 0)
+    const ask = { roundId: id, observationId: shot.observationId }
+    expect(await game.voice('a', ask)).toMatchObject({ status: 404, body: { error: 'no_line' } })
+    await game.observe('a', shot)
+    const [first, twin] = await Promise.all([game.voice('a', ask), game.voice('a', ask)])
+    expect(new Uint8Array((first as { audio: ArrayBuffer }).audio)).toEqual(new Uint8Array([73, 68, 51, 4]))
+    expect(twin).toEqual(first)
+    expect(provider.speak.mock.calls).toEqual([['A selfie! Vanity, thy name is sandbag.']])
+    expect(new Uint8Array((await reboot().voice('a', ask) as { audio: ArrayBuffer }).audio)).toEqual(new Uint8Array([73, 68, 51, 4]))
+    expect((await game.voice('b', ask) as StageReply).body.error).toBe('no_line')
+    for (const bad of [{ roundId: id }, { ...ask, text: 'Say this instead' }, { ...ask, observationId: 'look' }])
+      expect((await game.voice('a', bad) as StageReply).status).toBe(400)
+    tick()
+    const second = frame(id, 1)
+    await game.observe('a', second)
+    provider.speak.mockRejectedValueOnce(new Error('upstream'))
+    const ask2 = { roundId: id, observationId: second.observationId }
+    expect(await game.voice('a', ask2)).toMatchObject({ status: 502, body: { error: 'voice_failed' } })
+    expect(await reboot().voice('a', ask2)).toMatchObject({ status: 502, body: { error: 'voice_failed' } })
+    expect(provider.speak.mock.calls).toEqual([['A selfie! Vanity, thy name is sandbag.'], ['making a call']])
   })
 
   it('delivers the early words and joins a concurrent retry, rejecting a competing pose', async () => {

@@ -2,7 +2,7 @@ import { existsSync, readFileSync, realpathSync } from 'node:fs'
 import { isAbsolute, relative, resolve, sep } from 'node:path'
 import { parseEnv } from 'node:util'
 
-import { ProviderFailure, refereePrompt, scoreVerdict, visionPrompt, type Completion, type StageProvider } from '../src/server/charades-provider'
+import { ProviderFailure, readStubbsReply, refereePrompt, scoreVerdict, visionPrompt, visionRequest, type Completion, type StageProvider } from '../src/server/charades-provider'
 export { providerFailureReason, refereeFailure, type Verdict } from '../src/server/charades-provider'
 export type OwnProvider = StageProvider
 
@@ -42,7 +42,7 @@ export function readOwnProvider(profilePath: string, send: typeof fetch = fetch)
   }
   endpoint.pathname = prefix + '/chat/completions'
 
-  async function complete(model: string, messages: unknown[], maxCompletionTokens: number): Promise<Completion> {
+  async function complete(model: string, messages: unknown[], maxCompletionTokens: number, longest = 200): Promise<Completion> {
     const signal = AbortSignal.timeout(30_000)
     let response: Response
     try {
@@ -74,15 +74,21 @@ export function readOwnProvider(profilePath: string, send: typeof fetch = fetch)
     if (choice.finish_reason === 'content_filter' || choice.message?.refusal) throw new ProviderFailure('refused', details)
     const content = choice.message?.content
     if (typeof content !== 'string' || !content.trim()) throw new ProviderFailure('empty_output', details)
-    if (content.length > 200) throw new ProviderFailure('invalid_response', details)
+    if (content.length > longest) throw new ProviderFailure('invalid_response', details)
     return { ...details, text: content.trim() }
   }
 
   return {
     visionModel, judgeModel,
-    guess: (image) => complete(visionModel, [{ role: 'user', content: [
-      { type: 'text', text: visionPrompt }, { type: 'image_url', image_url: { url: image } },
-    ] }], 512),
+    // The same Stubbs brief and two-line reply as the hosted stage.
+    async guess(image, missed = []) {
+      const read = await complete(visionModel, [
+        { role: 'system', content: visionPrompt },
+        { role: 'user', content: [{ type: 'text', text: visionRequest(missed) }, { type: 'image_url', image_url: { url: image } }] },
+      ], 1024, 2048)
+      const { guess, line } = readStubbsReply(read.text)
+      return { ...read, text: guess, line }
+    },
     async judge(cue, guess) {
       const result = await complete(judgeModel, [
         { role: 'system', content: refereePrompt },

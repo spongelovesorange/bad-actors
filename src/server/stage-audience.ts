@@ -16,7 +16,7 @@ export class StageAudience {
     const user = request.headers.get('x-stage-user')
     if (!user) return asJson(failure(401, 'sign_in_required', 'Sign in to play with the AI audience.'))
     const path = new URL(request.url).pathname
-    if (request.method !== 'POST' || (path !== '/rounds' && path !== '/observe'))
+    if (request.method !== 'POST' || (path !== '/rounds' && path !== '/observe' && path !== '/voice'))
       return asJson(failure(404, 'not_found', 'Unknown stage action.'))
     let input: unknown
     try { input = await request.json() } catch { input = null }
@@ -26,6 +26,11 @@ export class StageAudience {
     const game = this.game ??= new StageGame(this.state.storage, createStageProvider(this.env), Date.now,
       this.env.STAGE_OWNER_OPEN_REHEARSAL === 'true' ? this.env.OWNER_USER_ID : undefined)
     if (path === '/rounds') return asJson(game.start(user, body))
+    if (path === '/voice') {
+      const reply = await game.voice(user, body)
+      if (!('audio' in reply)) return asJson(reply)
+      return new Response(reply.audio, { headers: { 'Content-Type': 'audio/mpeg', 'Cache-Control': 'private, no-store' } })
+    }
     if (!request.headers.get('accept')?.split(',').some(type => type.trim() === 'application/x-ndjson'))
       return asJson(await game.observe(user, body))
 

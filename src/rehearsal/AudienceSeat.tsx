@@ -25,6 +25,9 @@ type SeatProps = {
   onClock: (reading: ClockReading | null) => void
 }
 
+// Stubbs fills the wait between looks; the line rotates so a long round doesn't repeat itself.
+const squints = ['Just a squint…', 'Hold it. Art takes time.', 'Polishing my monocle…', 'My programme’s upside down. One moment.', 'Squinting professionally…']
+
 const reaction: Record<Verdict, CriticMood> = {
   correct: 'hit', incorrect: 'miss', uncertain: 'guess', unjudged: 'guess',
 }
@@ -138,10 +141,31 @@ export function AudienceSeat({ firstLook, paused, children, clock, flyCue, openi
       audio.play(crowdVerdict)
     }
   }, [performanceKey, crowdVerdict, audio])
+  // With stage sound on, the hosted Stubbs reads his line aloud. His glove stays up for up to four
+  // seconds while the clip arrives; after that he falls back to his tin syllables.
+  const voiceId = active && hosted && crowdSound === 'on' && observation?.line ? observation.observationId : undefined
+  const voiceRound = observation?.roundId
+  const [voice, setVoice] = useState<{ id: string; clip?: AudioBuffer; settled: boolean }>()
+  useEffect(() => {
+    if (!voiceId || !voiceRound) return
+    let current = true
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 4000)
+    setVoice({ id: voiceId, settled: false })
+    client.voice(voiceRound, voiceId, controller.signal)
+      .then(bytes => audio.prepareLine(bytes))
+      .catch(() => undefined)
+      .then(clip => { if (current) setVoice({ id: voiceId, clip, settled: true }) })
+      .finally(() => clearTimeout(timer))
+    return () => { current = false; controller.abort(); clearTimeout(timer) }
+  }, [voiceId, voiceRound, client, audio])
+  const clip = voiceId && voice?.id === voiceId ? voice.clip : undefined
+  const awaitingVoice = Boolean(voiceId) && !(voice?.id === voiceId && voice?.settled)
+  const startLine = useCallback(() => { if (clip) audio.speakLine(clip) }, [clip, audio])
   const referee: RefereeMood = ruling ?? (observation && !state.issue ? 'listening' : 'idle')
   let mood: CriticMood = verdict ? reaction[verdict] : observation ? 'guess' : 'idle'
-  let speech = observation?.guess ?? (active ? 'My squint is ready.' : 'I’ll take a guess.')
-  if (looking && !observation) { mood = 'looking'; speech = state.phase === 'starting' ? 'My usual seat.' : 'Just a squint…' }
+  let speech = observation?.line ?? observation?.guess ?? (active ? 'My squint is ready.' : 'I’ll take a guess.')
+  if (looking && !observation) { mood = 'looking'; speech = state.phase === 'starting' ? 'My usual seat.' : squints[state.used % squints.length] }
   if (state.issue && !observation) { mood = 'error'; speech = state.issue }
   if (timeUp) { mood = 'miss'; speech = 'Was that the bell or my hearing aid?' }
   if (offline) { mood = 'idle'; speech = 'Off duty. My seat’s still warm.' }
@@ -164,6 +188,7 @@ export function AudienceSeat({ firstLook, paused, children, clock, flyCue, openi
       <CriticDelivery key={JSON.stringify([cue, mode, observation?.observationId, speech])}
         line={speech} mood={mood} observationId={observation?.observationId}
         referee={referee} onVoiceBeat={audio.speak} onDelivered={markDelivered}
+        hold={awaitingVoice} pace={clip && clip.duration * 1000} onStart={startLine}
         animate={(publicEntry || availability !== 'checking') && (Boolean(observation) || (!state.issue && state.phase !== 'error'))} />
     </div>
     <FrontRowRail />

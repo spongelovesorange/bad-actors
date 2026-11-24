@@ -81,7 +81,7 @@ export function renderCrowdReaction(reaction: CrowdReaction) {
 
 type ButtonSound = 'paper' | 'wood' | 'punch'
 type Effect = ButtonSound | 'mutter' | 'squeak' | 'spring' | 'shoe' | 'tick' | 'doubleTick' | 'lastTicks' | 'bell' | 'room'
-type Channel = 'button' | 'crowd' | 'voice' | 'puppet' | 'clock' | 'room'
+type Channel = 'button' | 'crowd' | 'voice' | 'line' | 'puppet' | 'clock' | 'room'
 type Playing = { source: AudioBufferSourceNode; gain: GainNode }
 const lengths: Record<Effect, number> = {
   paper: .093, wood: .077, punch: .104, mutter: .081, squeak: .14, spring: .19, shoe: .11, tick: .06,
@@ -170,10 +170,15 @@ export function createCrowdAudio() {
 
   function play(channel: Channel, name: CrowdReaction | Effect, speed = 1, level = 1) {
     if (!onstage || !enabled || !context || context.state !== 'running') return
+    start(channel, buffer(name, context), speed, level)
+  }
+
+  function start(channel: Channel, sample: AudioBuffer, speed = 1, level = 1) {
+    if (!onstage || !enabled || !context || context.state !== 'running') return false
     try {
       silence(channel)
       const source = context.createBufferSource(), gain = context.createGain()
-      source.buffer = buffer(name, context)
+      source.buffer = sample
       source.playbackRate.value = speed
       source.loop = channel === 'room'
       gain.gain.value = level
@@ -187,13 +192,17 @@ export function createCrowdAudio() {
       playing.set(channel, active)
       source.start()
       const bed = playing.get('room')?.gain.gain
-      if (bed && (channel === 'voice' || channel === 'crowd')) {
+      if (bed && (channel === 'voice' || channel === 'line' || channel === 'crowd')) {
         const now = context.currentTime
         bed.cancelScheduledValues(now)
         bed.setTargetAtTime(.25, now, .02)
-        bed.setTargetAtTime(1, now + (channel === 'voice' ? .18 : .8), .16)
+        bed.setTargetAtTime(1, now + (channel === 'line' ? sample.duration : channel === 'voice' ? .18 : .8), .16)
       }
-    } catch { silence(channel) }
+      return true
+    } catch {
+      silence(channel)
+      return false
+    }
   }
 
   function updateRoom() {
@@ -241,8 +250,16 @@ export function createCrowdAudio() {
       else stop()
     },
     button(sound: ButtonSound) { play('button', sound, 1, .76) },
+    /** Decodes Stubbs's recorded line once stage sound is on. Undefined if this browser cannot. */
+    async prepareLine(bytes: ArrayBuffer): Promise<AudioBuffer | undefined> {
+      const active = context
+      if (!enabled || !active || active.state !== 'running') return undefined
+      try { return await active.decodeAudioData(bytes.slice(0)) } catch { return undefined }
+    },
+    /** Plays the recorded line; the ticket punch's tin syllables stay quiet underneath it. */
+    speakLine(sample: AudioBuffer) { return start('line', sample) },
     speak(glyph: string) {
-      if (!enabled || !onstage || !context || context.currentTime - lastVoice < .086) return
+      if (!enabled || !onstage || !context || playing.has('line') || context.currentTime - lastVoice < .086) return
       lastVoice = context.currentTime
       play('voice', 'mutter', .9 + (glyph.charCodeAt(0) % 9) * .05)
     },

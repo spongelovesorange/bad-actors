@@ -2,7 +2,7 @@ import type { Context, Hono } from 'hono'
 import { isAnonymousUserId, type VerifyResult } from 'deepspace/worker'
 import type { AppContext, Env } from '../../worker.js'
 import { maxBodyBytes } from './stage-protocol.js'
-import { stageModel, stageProviderEnabled } from './stage-provider.js'
+import { judgeModel, stageProviderEnabled, visionModel } from './stage-provider.js'
 
 type ResolveAuth = (req: Request, env: Env) => Promise<VerifyResult | null>
 
@@ -52,10 +52,10 @@ export function registerStageRoutes(app: Hono<AppContext>, resolveAuth: ResolveA
     const auth = await resolveAuth(c.req.raw, c.env)
     const requiresLogin = !auth?.userId || isAnonymousUserId(auth.userId)
     const available = !requiresLogin
-    return c.json({ available, requiresLogin, ...(available && { visionModel: stageModel, judgeModel: stageModel }) })
+    return c.json({ available, requiresLogin, ...(available && { visionModel, judgeModel }) })
   })
 
-  async function forward(c: Context<AppContext>, action: 'rounds' | 'observe') {
+  async function forward(c: Context<AppContext>, action: 'rounds' | 'observe' | 'voice') {
     const request = c.req.raw
     if (!configured(c.env))
       return c.json({ error: 'unavailable', message: 'The AI audience is unavailable on this stage.' }, 503)
@@ -68,7 +68,7 @@ export function registerStageRoutes(app: Hono<AppContext>, resolveAuth: ResolveA
     if (request.headers.get('Content-Type')?.split(';')[0].trim().toLowerCase() !== 'application/json' ||
         request.headers.has('Content-Encoding'))
       return c.json({ error: 'invalid_type', message: 'Send an uncompressed JSON request.' }, 415)
-    const bytes = await readBody(request, action === 'rounds' ? 1024 : maxBodyBytes)
+    const bytes = await readBody(request, action === 'observe' ? maxBodyBytes : 1024)
     if (!bytes) return c.json({ error: 'too_large', message: 'The stage request is too large.' }, 413)
     if (!bytes.length) return c.json({ error: 'invalid_request', message: 'The stage request is empty.' }, 400)
 
@@ -87,4 +87,5 @@ export function registerStageRoutes(app: Hono<AppContext>, resolveAuth: ResolveA
 
   app.post('/api/stage-ai/rounds', c => forward(c, 'rounds'))
   app.post('/api/stage-ai/observe', c => forward(c, 'observe'))
+  app.post('/api/stage-ai/voice', c => forward(c, 'voice'))
 }

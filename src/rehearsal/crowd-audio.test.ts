@@ -57,6 +57,40 @@ describe('the audience in the cheap seats', () => {
     expect(start).toHaveBeenCalledTimes(2)
   })
 
+  it('decodes Stubbs’s recorded line only with sound on and keeps the tin syllables quiet while it plays', async () => {
+    const start = vi.fn()
+    const decoded = { duration: 2.5 }
+    let ended: (() => void) | undefined
+    class TestAudioContext {
+      currentTime = 1
+      state = 'suspended'
+      destination = {}
+      close = vi.fn().mockResolvedValue(undefined)
+      resume = async () => { this.state = 'running' }
+      decodeAudioData = vi.fn(async () => decoded)
+      createBuffer = () => ({ copyToChannel: vi.fn() })
+      createGain = () => ({ connect: vi.fn(), disconnect: vi.fn(), gain: { cancelScheduledValues: vi.fn(), setTargetAtTime: vi.fn() } })
+      createBufferSource = () => {
+        const source = { context: this, start, stop: vi.fn(), playbackRate: { value: 1 }, disconnect: vi.fn(),
+          connect: (node: unknown) => node, buffer: undefined as unknown, set onended(done: () => void) { if (source.buffer === decoded) ended = done } }
+        return source
+      }
+    }
+    vi.stubGlobal('window', { AudioContext: TestAudioContext })
+    const house = createCrowdAudio()
+    expect(await house.prepareLine(new ArrayBuffer(8))).toBeUndefined()
+    expect(await house.enable()).toBe(true)
+    const line = await house.prepareLine(new ArrayBuffer(8))
+    expect(line).toBe(decoded)
+    expect(house.speakLine(line!)).toBe(true)
+    expect(start).toHaveBeenCalledTimes(1)
+    house.speak('a')
+    expect(start).toHaveBeenCalledTimes(1)
+    ended!()
+    house.speak('a')
+    expect(start).toHaveBeenCalledTimes(2)
+  })
+
   it('paces the jaw and joints, pauses clock sounds, and resumes only the room on return', async () => {
     let now = 0
     const starts: { loop: boolean; duration: number }[] = []

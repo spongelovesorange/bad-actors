@@ -57,6 +57,24 @@ describe('AI audience at the stage', () => {
     expect(b.observe).toHaveBeenCalledTimes(1)
   })
 
+  it('keeps Stubbs’s spoken line beside the scored guess and drops a malformed one', async () => {
+    const b = booth()
+    const line = 'A call! Tell them I want my cushion back.'
+    b.observe.mockImplementationOnce(async (frame, _signal, onGuess) => {
+      onGuess({ roundId: frame.roundId, observationId: frame.observationId, used: 1, limit: 5, guess: 'Making a call', line })
+      return { ...reply(frame, 1), line }
+    }).mockImplementationOnce(async frame => ({ ...reply(frame, 2), line: 'x'.repeat(300) }))
+    await b.round.start()
+    b.round.ask()
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(b.state().history[0]).toMatchObject({ guess: 'Making a call', line })
+    b.stage.image = 'second pose'
+    b.round.poseChanged()
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(b.state().history).toHaveLength(2)
+    expect(b.state().history[1].line).toBeUndefined()
+  })
+
   it('shows an already posed actor once, even if the free round start needs a retry', async () => {
     const b = booth()
     b.stage.image = 'cup at the mouth'

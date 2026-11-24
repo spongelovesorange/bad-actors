@@ -44,6 +44,24 @@ describe('the hosted theatre', () => {
     expect(JSON.parse(String(fetch.mock.calls[2][1]?.body))).toEqual(frame)
   })
 
+  it('fetches Stubbs’s recorded line with a fresh bearer and refuses anything but MP3', async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(new Response(new Uint8Array([73, 68, 51]), { headers: { 'Content-Type': 'audio/mpeg' } }))
+      .mockResolvedValueOnce(Response.json({ error: 'voice_failed' }, { status: 502 }))
+      .mockResolvedValueOnce(new Response('<html>', { headers: { 'Content-Type': 'text/html' } }))
+    vi.stubGlobal('fetch', fetch)
+    const client = createAudience('hosted', async () => 'fresh')
+    const { signal } = new AbortController()
+    expect(new Uint8Array(await client.voice('r', 'o', signal))).toEqual(new Uint8Array([73, 68, 51]))
+    await expect(client.voice('r', 'o', signal)).rejects.toBeInstanceOf(AudienceError)
+    await expect(client.voice('r', 'o', signal)).rejects.toBeInstanceOf(AudienceError)
+    const [url, settings] = fetch.mock.calls[0]
+    expect(url).toBe('/api/stage-ai/voice')
+    expect(settings?.method).toBe('POST')
+    expect(new Headers(settings?.headers).get('Authorization')).toBe('Bearer fresh')
+    expect(JSON.parse(String(settings?.body))).toEqual({ roundId: 'r', observationId: 'o' })
+  })
+
   it('handles a missing sign-in and a broken service as server-side failures', async () => {
     const fetch = vi.fn<typeof globalThis.fetch>()
       .mockResolvedValueOnce(Response.json({ error: 'unauthorized' }, { status: 401 }))

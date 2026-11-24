@@ -1,5 +1,34 @@
 # Bad Actors verification
 
+## Stubbs reads the hard poses and says his line · November 23, 2026
+
+The player reported that Stubbs called every phone-at-the-ear pose a selfie and every covered-eyes pose a lifted load. We sent the same six stage PNGs from the earlier blind check through the developer CLI. Each request contained the picture and the brief and nothing else: no cue, filename or answer list. With a new brief describing the puppet's anatomy, Claude Haiku 4.5 still answered “Taking a selfie with phone” and “carrying a heavy suitcase overhead.” Claude Haiku 5.5, Sonnet 5.5 and Opus 5.5 each named both actions. Haiku 5.5 cost about $0.0002–0.0005 per look, less than Haiku 4.5's $0.001, so the hosted reader now uses it. The text-only referee stays on Haiku 4.5 at temperature 0.
+
+- The integration forwards neither `thinking` nor `output_config`. Requests with deliberately invalid values for both succeeded. Haiku 5.5 therefore runs at its default reasoning effort. One call spent its whole 1,024-token budget on reasoning and returned `output_budget_exhausted`. The reader now allows 3,000 tokens, and the game reports that code as an output limit.
+- Results for the shipped brief, one call per frame:
+  - phone at the ear: “talking on a mobile phone”
+  - covered eyes: “playing peekaboo”
+  - hands raised: “surrendering with hands raised”
+  - tray: “carrying a baking dish”
+
+  The shipped referee prompt scored the three paraphrases as correct. Across the prompt drafts, the surrender frame was read as stretching in 2 of 8 calls.
+- When the earlier guesses in a round are listed as ruled out, Stubbs changes his reading. For example, after “Taking a selfie” was ruled out he answered “Oh, a phone call, not a selfie, you vain sandbag.” A correct selfie stayed a selfie after an unrelated miss.
+- All 68 calls cost $0.0372 in total. [Every request label, answer, timing and cost](verification/stubbs-haiku55-2026-11-23.json)
+
+ElevenLabs `generate-speech` returned `data:audio/mpeg;base64,…` for one real line with the stock “George” voice, `eleven_flash_v2_5` and `mp3_22050_32`: 21,646 bytes, 5.36 seconds, mono 22.05 kHz at 32 kbps, about 1.2 seconds through the CLI. [The clip](verification/stubbs-voice-sample.mp3)
+
+In local Chrome, scripted responses replaced the stage endpoints and a temporary switch enabled the voice path on the practice page. The switch was removed afterwards. With Stage sound on:
+
+- The balloon held at zero letters 64 ms after the guess arrived.
+- The first letter appeared once the clip arrived, 1.5 s after the click, including a simulated 1.2 s delay.
+- The 80 letters spread over 10.5 s of an 11 s test clip.
+- When the clip request failed, the same line typed at the normal pace in 2.0 s with the tin syllables.
+- At 1280 × 800 the long-line balloon measured 330 × 99 px beside the actor. At 375 px it measured 213 × 76 px inside the stage.
+
+TypeScript, ESLint, 195 unit tests and both production builds passed.
+
+Still to check: a signed-in round on the deployed site with the real models and voice, on a physical phone and by ear.
+
 ## Local preview · November 23, 2026 · Handwritten handbook and stage sound
 
 The loopback AI rehearsal returned HTTP 200 at the drinking-water exercise. Its status reported `gpt-6.2-sol` for both roles. No live model request was sent during this regression. The sample recording uses the same original synthesis functions as the game. [11-second sound check](../public/stage-soundcheck.mp3)

@@ -6,7 +6,8 @@ export { AudienceError } from './audience-issue'
 
 export type Verdict = 'correct' | 'incorrect' | 'uncertain' | 'unjudged'
 type Frame = { roundId: string; observationId: string; image: string }
-export type PendingGuess = Omit<Frame, 'image'> & { guess: string; used: number; limit: number }
+/** `guess` is the phrase the referee scored; `line` is Mr. Stubbs's delivery of it. */
+export type PendingGuess = Omit<Frame, 'image'> & { guess: string; line?: string; used: number; limit: number }
 export type Guess = PendingGuess & { verdict: Verdict; judgeFailure?: string }
 export type Look = Guess & { image: string }
 export type AudienceState = {
@@ -74,6 +75,18 @@ export function createAudience(mode: 'local' | 'hosted', getToken?: () => Promis
     start: (cue: number, signal: AbortSignal) => post<{ roundId: string; limit: number }>(send, 'rounds', { cue }, signal),
     observe: (frame: Frame, signal: AbortSignal, onGuess: (guess: PendingGuess) => void) =>
       post<Guess>(send, 'observe', frame, signal, response => readAudienceStream(response, onGuess)),
+    /** Stubbs's recorded line for one of this player's looks, as MP3 bytes. The hosted stage only. */
+    async voice(roundId: string, observationId: string, signal: AbortSignal): Promise<ArrayBuffer> {
+      const response = await send('voice', {
+        method: 'POST', signal, body: JSON.stringify({ roundId, observationId }),
+        headers: { 'Content-Type': 'application/json', Accept: 'audio/mpeg, application/json' },
+      })
+      const mediaType = response.headers.get('content-type')?.split(';')[0].trim().toLowerCase()
+      if (!response.ok || mediaType !== 'audio/mpeg') throw new AudienceError('Stubbs lost his voice.', response.status)
+      const bytes = await response.arrayBuffer()
+      if (!bytes.byteLength || bytes.byteLength > 400_000) throw new AudienceError('Stubbs lost his voice.', 502)
+      return bytes
+    },
   }
 }
 
@@ -84,6 +97,11 @@ function matchesLook(guess: PendingGuess, frame: Frame, limit: number) {
   return guess?.roundId === frame.roundId && guess.observationId === frame.observationId &&
     typeof guess.guess === 'string' && guess.guess.trim().length > 0 && guess.guess.length <= 200 &&
     guess.limit === limit && Number.isInteger(guess.used) && guess.used >= 1 && guess.used <= limit
+}
+
+/** Stubbs's spoken line is decoration. Anything unexpected falls back to the plain guess. */
+function spokenLine(line: unknown) {
+  return typeof line === 'string' && line.trim() && line.length <= 240 ? line : undefined
 }
 
 /** The player can keep acting while a look is in flight. Only the newest unsent pose is retained. */
@@ -242,7 +260,8 @@ export class AudienceRound {
           throw new Error('The audience sent a mismatched guess.')
         if (!prior) {
           const { roundId, observationId, guess, used, limit } = words
-          this.update({ used, pendingGuess: { roundId, observationId, guess, used, limit } })
+          const line = spokenLine(words.line)
+          this.update({ used, pendingGuess: { roundId, observationId, guess, used, limit, ...(line && { line }) } })
         }
       })
       if (this.abort.signal.aborted) return
@@ -256,7 +275,8 @@ export class AudienceRound {
       if (complete) this.pending = false
       this.scoredAt = { id: answer.observationId, at: Date.now() }
       this.update({
-        used: answer.used, pendingGuess: undefined, history: [...this.state.history, { ...answer, image: frame.image }],
+        used: answer.used, pendingGuess: undefined,
+        history: [...this.state.history, { ...answer, line: spokenLine(answer.line), image: frame.image }],
         phase: complete ? 'complete' : 'ready', issue: undefined, message: undefined,
         recovery: !complete && answer.verdict === 'unjudged' ? 'change-pose' : undefined,
       })

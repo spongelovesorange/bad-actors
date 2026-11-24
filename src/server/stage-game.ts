@@ -124,7 +124,7 @@ export class StageGame {
       roundId, observationId).toArray()[0]
     if (saved) return saved.audio ? mp3(saved.audio) : voiceless()
     this.sql.exec('INSERT INTO stage_voices (round,id,day) VALUES (?,?,?)', roundId, observationId, Math.floor(this.now() / day))
-    const work = this.provider.speak((words.line ?? words.guess).slice(0, 240)).then(
+    const work = this.provider.speak((words.delivery ?? words.line ?? words.guess).slice(0, 280)).then(
       (audio): VoiceReply => {
         this.sql.exec('UPDATE stage_voices SET audio=? WHERE round=? AND id=?', audio, roundId, observationId)
         return mp3(audio)
@@ -176,7 +176,8 @@ export class StageGame {
       const read = await this.provider.guess(image, this.misses(seat.round, id))
       if (this.seat(user)?.round !== seat.round) return stale()
       words = { roundId: seat.round, observationId: id, used, limit, guess: read.text,
-        ...(read.line && { line: read.line }), visionModel: read.model, visionTokens: read.tokens }
+        ...(read.line && { line: read.line }), ...(read.delivery && { delivery: read.delivery }),
+        visionModel: read.model, visionTokens: read.tokens }
       this.sql.exec('UPDATE stage_looks SET words=? WHERE round=? AND id=?', JSON.stringify(words), seat.round, id)
       heard(words)
       const score = await this.provider.judge(cues[seat.cue - 1], read.text)

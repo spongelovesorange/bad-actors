@@ -1,6 +1,6 @@
 import { apiWorkerFetch } from 'deepspace/server'
 import type { Env } from '../../worker'
-import { ProviderFailure, readStubbsReply, refereePrompt, scoreVerdict, visionPrompt, visionRequest, type Completion, type StageProvider } from './charades-provider'
+import { drawAngle, ProviderFailure, readStubbsReply, refereePrompt, scoreVerdict, visionPrompt, visionRequest, type Completion, type StageProvider } from './charades-provider'
 
 /**
  * Haiku 4.5 read the phone at the ear as a selfie and the hands over the eyes as a
@@ -9,10 +9,10 @@ import { ProviderFailure, readStubbsReply, refereePrompt, scoreVerdict, visionPr
  */
 export const visionModel = 'claude-haiku-5-5'
 export const judgeModel = 'claude-haiku-4-5'
-/** Flash is ElevenLabs' fastest model; a short remark comes back in about a second. */
-export const voiceModel = 'eleven_flash_v2_5'
-/** The integration's stock "George": a warm, slightly grand British narrator for a front-row critic. */
-const stubbsVoice = 'JBFqnCBsd6RMkjVDRZzb'
+/** v3 acts out bracketed cues such as [snorts] and [laughs]; a short remark takes two or three seconds. */
+export const voiceModel = 'eleven_v3'
+/** "Georg": a quavering, gruff ninety-year-old, picked by ear from five comic voices for the front-row heckler. */
+const stubbsVoice = 'LRpNiUBlcqgIsKUzcrlN'
 const mp3Prefix = /^data:audio\/(?:mpeg|mp3);base64,/
 const pngPrefix = 'data:image/png;base64,'
 type StageBindings = Pick<Env, 'APP_OWNER_JWT' | 'API_WORKER' | 'API_WORKER_URL' | 'STAGE_AI_PROVIDER'>
@@ -85,8 +85,8 @@ export function createStageProvider(env: StageBindings): StageProvider {
     if (!raw) throw new ProviderFailure('empty_output', details)
     if (raw.length > (kind === 'vision' ? 2048 : 200)) throw new ProviderFailure('invalid_response', details)
     if (kind === 'referee') return { ...details, text: raw }
-    const { guess, line } = readStubbsReply(raw)
-    return { ...details, text: guess, line }
+    const { guess, line, delivery } = readStubbsReply(raw)
+    return { ...details, text: guess, line, ...(delivery && { delivery }) }
   }
 
   /** Mono 32 kbps MP3: a five-second line is about 20 KB, small enough to keep beside its look. */
@@ -129,7 +129,7 @@ export function createStageProvider(env: StageBindings): StageProvider {
       if (!image.startsWith(pngPrefix)) throw new ProviderFailure('http_request')
       return complete('vision', { system: visionPrompt, messages: [{ role: 'user', content: [
         { type: 'image', source: { type: 'base64', media_type: 'image/png', data: image.slice(pngPrefix.length) } },
-        { type: 'text', text: visionRequest(missed) },
+        { type: 'text', text: visionRequest(missed, drawAngle()) },
       ] }] })
     },
     async judge(cue, guess) {

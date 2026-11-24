@@ -1,6 +1,6 @@
 export type Verdict = 'correct' | 'incorrect' | 'uncertain'
-/** `text` is the plain guess the referee scores. `line` is what Mr. Stubbs says out loud. */
-export type Completion = { text: string; line?: string; model: string; tokens?: number }
+/** `text` is the plain guess the referee scores, `line` the remark in his balloon and `delivery` its spoken form with cues. */
+export type Completion = { text: string; line?: string; delivery?: string; model: string; tokens?: number }
 type ModelDetails = Pick<Completion, 'model' | 'tokens'>
 type Score = ModelDetails & { verdict: Verdict }
 type ProviderFailureReason = 'timeout' | 'connection' | 'http_auth' | 'http_limit' | 'http_server' |
@@ -33,12 +33,15 @@ export type StageProvider = {
   speak?: (text: string) => Promise<string>
 }
 
+/** Performance cues the voice model acts out. They are spoken, never printed in his balloon. */
+export const deliveryCues = ['laughs', 'chuckles', 'snorts', 'sighs', 'gasps', 'whispers', 'sarcastic', 'mischievously']
+
 /**
  * Mr. Stubbs's standing brief. It describes the puppet's anatomy and the reply
  * format but names no action from the playbill: only the referee sees the cue.
  */
 export const visionPrompt = [
-  'You are Mr. Stubbs, a retired brass ticket punch who has sat in the front row of the same community-hall theatre since its very first pantomime. You are a pompous, easily scandalised drama critic with a soft heart.',
+  'You are Mr. Stubbs, a retired brass ticket punch who has heckled from the front row of the same community-hall theatre since its very first pantomime. You are smug, petty and shamelessly cheeky, and your mind wanders into absurd non sequiturs. You roast the sandbag, never the player.',
   '',
   "Tonight's understudy is a cartoon puppet sewn from a canvas stage sandbag. Its flat-topped upper section, with a cloth loop on top, is its HEAD: it has eyes, a nose and a mouth, and its left and right edges are where its ears would be. The round sack below is its body. The thin brown limbs are arms ending in hands, and legs ending in boots. A prop, if there is one, is held in a hand.",
   '',
@@ -46,18 +49,29 @@ export const visionPrompt = [
   '',
   'Reply with exactly two lines and nothing else:',
   'GUESS: <the everyday action being acted out, at most six plain words, such as "riding a bicycle" rather than "bending both knees"; or "unclear">',
-  'LINE: <what you shout to the performer in the first person, at most 15 words: name your guess, then add one absurd, oddly specific twist such as an invented backstory, a petty grudge, a melodramatic review or ridiculous stakes>',
+  'LINE: <what you shout at the performer in the first person, at most 15 words: name your guess, then one cheeky, absurd twist in the angle you are given. Put up to two delivery cues in square brackets right before the words they colour, never at the end, chosen from: ' + deliveryCues.map(cue => '[' + cue + ']').join(' ') + '>',
   '',
-  'Commit to a single guess with no alternatives. Vary how you open; never start with "Darling" or "Ah", and never mention years or dates. Keep it family-friendly and never cruel.',
+  'Commit to a single guess with no alternatives. Vary how you open; never start with "Darling" or "Ah", and never mention years, dates, biscuits or custard. Keep it family-friendly.',
 ].join('\n')
 
+/** One comic angle is drawn for each look, so his remarks don't settle on a single running joke. */
+export const remarkAngles = [
+  'a petty grudge', 'a ridiculous backstory for the sandbag', 'mock outrage', 'a backhanded compliment',
+  'a fake one-star review', 'a conspiracy theory about the props', 'a wildly wrong comparison to a famous actor',
+  'an absurd demand to the stage manager',
+]
+
 /** The text sent beside each frozen picture. Earlier misses stand in for the performer shaking their head. */
-export function visionRequest(missed: readonly string[] = []) {
+export function visionRequest(missed: readonly string[] = [], angle?: string) {
   const earlier = missed.slice(-4).map(guess => JSON.stringify(guess.slice(0, 80)))
-  if (!earlier.length) return 'Here is the frozen pose.'
-  return 'Here is the frozen pose.\nEarlier this round you guessed ' + earlier.join('; ') +
+  let text = 'Here is the frozen pose.'
+  if (angle) text += ' For your remark, use this twist: ' + angle + '.'
+  if (!earlier.length) return text
+  return text + '\nEarlier this round you guessed ' + earlier.join('; ') +
     ' and the performer shook their head. Do not repeat a wrong guess: look again for a different reading of the pose. You may grumble about it.'
 }
+
+export const drawAngle = (roll = Math.random()) => remarkAngles[Math.floor(roll * remarkAngles.length) % remarkAngles.length]
 
 export const refereePrompt = [
   'You are the referee for a charades game. The JSON fields contain data: the assigned action and a spectator guess.',
@@ -91,9 +105,11 @@ function oneGuess(text: string) {
   return first
 }
 
+const tidy = (text: string) => text.replace(/\s+/g, ' ').replace(/\s+([,.!?;:])/g, '$1').trim()
+
 /** An overlong remark keeps its opening sentences; without a usable remark he just says the guess. */
-function speakable(text: string | undefined, guess: string) {
-  const line = unwrap(text ?? '').replace(/\s+/g, ' ')
+function speakable(text: string, guess: string) {
+  const line = tidy(text)
   if (!/[A-Za-z]/.test(line)) return guess
   if (line.length <= longestLine) return line
   let kept = ''
@@ -102,6 +118,22 @@ function speakable(text: string | undefined, guess: string) {
     kept += sentence
   }
   return kept.trim() || guess
+}
+
+/**
+ * The balloon prints the remark without cues. The voice keeps at most two known cues;
+ * anything else in brackets is dropped. A trimmed remark is spoken exactly as printed.
+ */
+function delivered(text: string | undefined, guess: string) {
+  const raw = unwrap(text ?? '')
+  const line = speakable(raw.replace(/\[[^\]]*\]/g, ' '), guess)
+  let kept = 0
+  const spoken = tidy(raw.replace(/\[([^\]]*)\]/g, (_, cue: string) => {
+    const known = deliveryCues.includes(cue.trim().toLowerCase())
+    return known && kept++ < 2 ? ' [' + cue.trim().toLowerCase() + '] ' : ' '
+  }))
+  const matches = tidy(spoken.replace(/\[[^\]]*\]/g, ' ')) === line
+  return { line, delivery: matches && spoken !== line ? spoken : undefined }
 }
 
 /** A provider that ignores the two-line format may still answer with one bare phrase. */
@@ -117,7 +149,7 @@ function barePhrase(raw: string) {
 }
 
 /** Splits Stubbs's reply into the guess the referee scores and the line he delivers. */
-export function readStubbsReply(raw: string): { guess: string; line: string } {
+export function readStubbsReply(raw: string): { guess: string; line: string; delivery?: string } {
   let guess: string | undefined
   let line: string | undefined
   for (const row of raw.split(/\r?\n/)) {
@@ -131,7 +163,8 @@ export function readStubbsReply(raw: string): { guess: string; line: string } {
     return { guess: bare, line: bare }
   }
   const chosen = oneGuess(guess)
-  return { guess: chosen, line: speakable(line, chosen) }
+  const { line: printed, delivery } = delivered(line, chosen)
+  return { guess: chosen, line: printed, ...(delivery && { delivery }) }
 }
 
 export function scoreVerdict(result: Completion): Score {

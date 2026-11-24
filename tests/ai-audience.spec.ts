@@ -40,7 +40,7 @@ const guessButton = (page: Page) => page.getByRole('button', { name: 'Guess this
 const changePose = (page: Page) => page.getByRole('group', { name: 'Puppet stage' }).getByRole('button', { name: 'Left hand', exact: true }).press('Shift+ArrowRight')
 
 async function startRound(page: Page) {
-  await page.getByRole('button', { name: 'Guess it, Stubbs!', exact: true }).click()
+  await page.getByRole('button', { name: /^Free play/ }).click()
 }
 
 test('a wrong observation can recover with a differently worded right answer', async ({ page }) => {
@@ -123,7 +123,7 @@ test('an unavailable provider leaves the practice stage usable', async ({ page }
   await expect(page.getByRole('heading', { name: 'Taking a selfie' })).toBeVisible()
   await expect(panel(page)).toHaveAttribute('data-service', 'offline')
   await expect(panel(page)).toContainText('Booth closed')
-  await expect(page.getByRole('button', { name: 'Cue Roulette · 45s' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /^Timed show/ })).toHaveCount(0)
   const stage = page.getByRole('group', { name: 'Puppet stage' })
   const palm = stage.getByRole('button', { name: 'Left hand', exact: true })
   const before = await palm.getAttribute('cx')
@@ -133,7 +133,7 @@ test('an unavailable provider leaves the practice stage usable', async ({ page }
   const posed = await palm.getAttribute('cx')
   connected = true
   await panel(page).getByRole('button', { name: 'Recheck connection' }).click()
-  await expect(panel(page).getByRole('button', { name: 'Cue Roulette · 45s' })).toBeEnabled()
+  await expect(panel(page).getByRole('button', { name: /^Timed show/ })).toBeEnabled()
   await expect(palm).toHaveAttribute('cx', posed!)
   expect(starts).toEqual([])
   expect(frames).toEqual([])
@@ -221,7 +221,7 @@ test('a timed show pauses for the audience, cuts off new looks at zero, and deal
     return { guess: 'Checking the weather.', verdict: 'incorrect' }
   })
   await page.goto('/?cue=2')
-  await page.getByRole('button', { name: 'Cue Roulette · 45s', exact: true }).click()
+  await page.getByRole('button', { name: /^Timed show/ }).click()
   const clock = page.getByTestId('stage-clock')
   await expect(clock).toHaveAttribute('data-mode', 'running')
   await expect(clock).toHaveAttribute('data-seconds', '45')
@@ -268,7 +268,7 @@ test.describe('opening the handbook', () => {
     await page.reload()
     await expect(book).toBeVisible()
     await book.getByRole('button', { name: 'Play quietly' }).click()
-    await expect(page.getByRole('button', {name:'Guess it, Stubbs!'})).toBeEnabled()
+    await expect(page.getByRole('button', { name: /^Free play/ })).toBeEnabled()
     await expect(book).toHaveCount(0)
     await page.getByRole('button', {name:'How to play'}).click()
     await expect(book).toBeVisible()

@@ -73,7 +73,8 @@ describe('hosted stage durable reservations', () => {
 
   it('reads each look aloud once, keeps the clip across restarts and never re-bills a failed one', async () => {
     const { game, provider, draw, frame, tick, reboot } = fixture()
-    provider.guess.mockResolvedValueOnce({ model: 'mock', text: 'Taking a selfie', line: 'A selfie! Vanity, thy name is sandbag.' })
+    provider.guess.mockResolvedValueOnce({ model: 'mock', text: 'Taking a selfie', line: 'A selfie! Vanity, thy name is sandbag.',
+      delivery: '[snorts] A selfie! Vanity, thy name is sandbag.' })
     const id = draw('a'), shot = frame(id, 0)
     const ask = { roundId: id, observationId: shot.observationId }
     expect(await game.voice('a', ask)).toMatchObject({ status: 404, body: { error: 'no_line' } })
@@ -81,7 +82,7 @@ describe('hosted stage durable reservations', () => {
     const [first, twin] = await Promise.all([game.voice('a', ask), game.voice('a', ask)])
     expect(new Uint8Array((first as { audio: ArrayBuffer }).audio)).toEqual(new Uint8Array([73, 68, 51, 4]))
     expect(twin).toEqual(first)
-    expect(provider.speak.mock.calls).toEqual([['A selfie! Vanity, thy name is sandbag.']])
+    expect(provider.speak.mock.calls).toEqual([['[snorts] A selfie! Vanity, thy name is sandbag.']])
     expect(new Uint8Array((await reboot().voice('a', ask) as { audio: ArrayBuffer }).audio)).toEqual(new Uint8Array([73, 68, 51, 4]))
     expect((await game.voice('b', ask) as StageReply).body.error).toBe('no_line')
     for (const bad of [{ roundId: id }, { ...ask, text: 'Say this instead' }, { ...ask, observationId: 'look' }])
@@ -93,7 +94,7 @@ describe('hosted stage durable reservations', () => {
     const ask2 = { roundId: id, observationId: second.observationId }
     expect(await game.voice('a', ask2)).toMatchObject({ status: 502, body: { error: 'voice_failed' } })
     expect(await reboot().voice('a', ask2)).toMatchObject({ status: 502, body: { error: 'voice_failed' } })
-    expect(provider.speak.mock.calls).toEqual([['A selfie! Vanity, thy name is sandbag.'], ['making a call']])
+    expect(provider.speak.mock.calls).toEqual([['[snorts] A selfie! Vanity, thy name is sandbag.'], ['making a call']])
   })
 
   it('delivers the early words and joins a concurrent retry, rejecting a competing pose', async () => {

@@ -23,7 +23,7 @@ export function CastComic() {
           <span className="ba-panel-balloon">Having a drink?</span>
           <AudienceCritic mood="guess" jaw="open" gesture="hold" />
         </figure>
-        <div><h3>Put Stubbs on the spot.</h3><p>Tap <b>Guess it, Stubbs!</b> He only sees the pose.</p></div>
+        <div><h3>Put Stubbs on the spot.</h3><p>Pick <b>Free play</b> or the <b>Timed show</b>. He only sees the pose.</p></div>
       </li>
       <li className="ba-panel-rule">
         <figure aria-hidden="true">

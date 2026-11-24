@@ -9,8 +9,8 @@ export const maxBodyBytes = 820_000
 export type StageReply = { status: number; body: Record<string, unknown> }
 export type VisionGuess = {
   roundId: string; observationId: string; used: number; limit: number
-  /** `guess` is what the referee scores; `line` is Mr. Stubbs's delivery of it. */
-  guess: string; line?: string; visionModel: string; visionTokens?: number
+  /** `guess` is what the referee scores; `line` is printed in his balloon; `delivery` adds spoken cues. */
+  guess: string; line?: string; delivery?: string; visionModel: string; visionTokens?: number
 }
 export const failure = (status: number, error: string, message: string, used?: number): StageReply => ({
   status, body: { error, message, ...(used === undefined ? {} : { used, limit }) },

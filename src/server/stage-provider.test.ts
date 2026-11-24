@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Env } from '../../worker'
-import { providerFailureReason, refereeFailure, visionPrompt, visionRequest } from './charades-provider'
+import { drawAngle, providerFailureReason, refereeFailure, remarkAngles, visionPrompt, visionRequest } from './charades-provider'
 import { createStageProvider, judgeModel, stageProviderEnabled, visionModel } from './stage-provider'
 
 const frame = 'data:image/png;base64,c3RhZ2U='
@@ -33,10 +33,9 @@ describe('hosted Anthropic stage audience', () => {
     // Haiku 5.5 rejects sampling overrides and spends part of its budget thinking.
     expect(bodies[0]).toMatchObject({ model: visionModel, max_tokens: 3000, system: visionPrompt })
     expect(bodies[0]).not.toHaveProperty('temperature')
-    expect(bodies[0].messages[0].content).toEqual([
-      { type: 'image', source: { type: 'base64', media_type: 'image/png', data: 'c3RhZ2U=' } },
-      { type: 'text', text: 'Here is the frozen pose.' },
-    ])
+    expect(bodies[0].messages[0].content[0]).toEqual({ type: 'image', source: { type: 'base64', media_type: 'image/png', data: 'c3RhZ2U=' } })
+    expect(bodies[0].messages[0].content[1].text).toMatch(/^Here is the frozen pose\. For your remark, use this twist: .+\.$/)
+    expect(bodies[0].messages[0].content).toHaveLength(2)
     expect(bodies[1]).toMatchObject({ model: judgeModel, temperature: 0, max_tokens: 24 })
     expect(JSON.stringify(bodies[0])).not.toContain('Drinking water')
     expect(JSON.stringify(bodies[1])).not.toContain('c3RhZ2U=')
@@ -44,7 +43,8 @@ describe('hosted Anthropic stage audience', () => {
   })
 
   it('keeps every cue out of Stubbs’s brief and names only his own ruled-out guesses', async () => {
-    expect(visionPrompt + visionRequest(['Waving'])).not.toMatch(/drink|sip|selfie|photo|surrender|phone|call|tray|carry|cover/i)
+    expect(visionPrompt + visionRequest(['Waving'], remarkAngles.join('; '))).not.toMatch(/drink|sip|selfie|photo|surrender|phone|call|tray|carry|cover/i)
+    expect(new Set(Array.from({ length: 8 }, (_, i) => drawAngle(i / 8)))).toEqual(new Set(remarkAngles))
     const { provider, fetch } = booth(() => Response.json(message('GUESS: Answering a phone call\nLINE: A phone call! Not a selfie, you vain sandbag.')))
     const missed = ['Taking a selfie', 'Waving', 'Hailing a taxi', 'Stretching', 'Checking a message']
     await expect(provider.guess(frame, missed)).resolves.toMatchObject({ text: 'Answering a phone call' })
@@ -63,6 +63,26 @@ describe('hosted Anthropic stage audience', () => {
   ])('splits the scored guess from Stubbs’s line (%#)', async (output, guess, line) => {
     const { provider } = booth(() => Response.json(message(output)))
     await expect(provider.guess(frame)).resolves.toMatchObject({ text: guess, line })
+  })
+
+  it('prints the remark without cues and keeps up to two known cues for the voice', async () => {
+    const { provider } = booth(() => Response.json(message(
+      'GUESS: Answering a phone call\nLINE: [snorts] A phone call? [sarcastic] Oh, bravo [screams]. Tell your mum. [laughs]')))
+    await expect(provider.guess(frame)).resolves.toMatchObject({
+      text: 'Answering a phone call',
+      line: 'A phone call? Oh, bravo. Tell your mum.',
+      delivery: '[snorts] A phone call? [sarcastic] Oh, bravo. Tell your mum.',
+    })
+  })
+
+  it.each([
+    ['GUESS: Drinking\nLINE: A sip! My urn weeps.', 'A sip! My urn weeps.'],
+    ['GUESS: Drinking\nLINE: [laughs]', 'Drinking'],
+  ])('sends no separate delivery when there are no cues to act (%#)', async (output, line) => {
+    const { provider } = booth(() => Response.json(message(output)))
+    const read = await provider.guess(frame)
+    expect(read.line).toBe(line)
+    expect(read).not.toHaveProperty('delivery')
   })
 
   it('trims an overlong line to the sentences that fit the balloon', async () => {
@@ -114,8 +134,7 @@ describe('hosted Anthropic stage audience', () => {
     expect(url).toBe('https://api-worker/api/integrations/elevenlabs/generate-speech')
     expect(new Headers(init.headers).get('Authorization')).toBe('Bearer test-owner-token')
     expect(init.redirect).toBe('manual')
-    expect(JSON.parse(String(init.body))).toEqual({ text: 'A selfie!', voice_id: 'JBFqnCBsd6RMkjVDRZzb',
-      model_id: 'eleven_flash_v2_5', output_format: 'mp3_22050_32' })
+    expect(JSON.parse(String(init.body))).toMatchObject({ text: 'A selfie!', model_id: 'eleven_v3', output_format: 'mp3_22050_32' })
   })
 
   it.each([

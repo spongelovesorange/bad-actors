@@ -423,9 +423,16 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
       setPose(initialPose())
       setPhase('practice')
     }
+    // Free play from the opening act starts on the first cue with a fresh actor; Stubbs waits for a pose.
+    const fromOpening = mode === 'rehearse' && phase !== 'practice'
+    if (fromOpening) {
+      changeCue(0)
+      setPose(initialPose())
+      setPhase('practice')
+    }
     setCueHidden(false)
     setNoteOpen(false)
-    setFirstLook(mode === 'rehearse' && (!fromRoomLink || parkedLook.current === cue))
+    setFirstLook(mode === 'rehearse' && !fromOpening && (!fromRoomLink || parkedLook.current === cue))
     parkedLook.current = null
     setSolo(mode)
   }
@@ -510,7 +517,7 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
         <div className="ba-workspace ba-has-audience">
           <section className="ba-stage-block" aria-label="Rehearsal stage">
             <div className="ba-theater">
-              <AudienceSeat firstLook={firstLook} paused={!introChecked || dialog !== null} client={hostedAudience ?? (publicEntry ? publicAudience : undefined)} publicEntry={publicEntry} requestedPlay={requestedPlay} mode={solo} canRehearse={phase === 'practice' && !cueHidden} cue={cue + 1} pose={pose} stage={stage} player={player}
+              <AudienceSeat firstLook={firstLook} paused={!introChecked || dialog !== null} client={hostedAudience ?? (publicEntry ? publicAudience : undefined)} publicEntry={publicEntry} requestedPlay={requestedPlay} mode={solo} cue={cue + 1} pose={pose} stage={stage} player={player}
                 openingVerdict={phase === 'revealed' ? openingVerdict : undefined}
                 onStart={playWithAudience} onLeave={() => setSolo(null)} onClock={updateClock}
                 onNext={() => solo === 'draw' ? playWithAudience('draw') : changeCue((cue + 1) % exercises.length)}
@@ -707,7 +714,7 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
           </section>
         </div>
         <p className="ba-practice-note">
-          Local rehearsal <span aria-hidden="true">/</span> The opening act uses a preset cue. Live AI starts when you invite Stubbs.
+          Designed by Shi Qiu
         </p>
       </main>
       {dialog && (

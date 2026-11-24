@@ -1,5 +1,21 @@
 # Bad Actors verification
 
+## A cheekier Stubbs, his new voice and the box office · November 24, 2026
+
+The player found the first voice too ordinary. The `list-voices` endpoint returned 1,452 voices, and we picked five comic ones. Each read the same line on `eleven_v3`, which acts out bracketed cues such as `[snorts]` and `[laughs]`. Each clip took about 3 s through the CLI. The player listened and chose “Georg”, a gruff, quavering ninety-year-old. [His sample](verification/stubbs-voice-sample.mp3)
+
+- Stubbs's brief now makes him smug, petty and absurd. He teases the sandbag, never the player. Each look draws one comic angle from eight, such as a fake one-star review or a conspiracy theory about the props, so the jokes vary.
+- He may add up to two known cues, placed before the words they colour. The balloon prints the remark without cues; the voice receives the cues.
+- Because v3 is slower, the voice wait grew from 4 s to 6 s.
+- On the six stage frames, the new brief still named all six actions. Two rounds of six calls cost $0.005.
+- Two large tickets under the stage now start a game.
+  - **Free play** moves the opening act to the first cue and waits for a pose before Stubbs looks.
+  - **Timed show · 45s** draws a random cue and starts the clock.
+- Both tickets were checked with scripted responses and muted audio. They sit side by side at desktop width and stack at 375 px without overflow.
+- The footer now reads “Designed by Shi Qiu”.
+
+TypeScript, ESLint, 198 unit tests and both builds passed. Georg's voice in a signed-in round awaits the player's own check.
+
 ## Sound, handbook and front row · November 23, 2026
 
 The player reported a silent site after the release. On the live page, Chromium started the room tone, button sounds, applause and Stubbs's syllables once Stage sound was on. The cause was the stored preference. The handbook that offers **Places! Sound on** was remembered in localStorage, but the sound choice lived in sessionStorage. A returning player in a new tab therefore got neither the handbook nor sound.

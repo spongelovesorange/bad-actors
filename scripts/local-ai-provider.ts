@@ -2,7 +2,7 @@ import { existsSync, readFileSync, realpathSync } from 'node:fs'
 import { isAbsolute, relative, resolve, sep } from 'node:path'
 import { parseEnv } from 'node:util'
 
-import { ProviderFailure, readStubbsReply, refereePrompt, scoreVerdict, visionPrompt, visionRequest, type Completion, type StageProvider } from '../src/server/charades-provider'
+import { drawAngle, ProviderFailure, readStubbsReply, refereePrompt, scoreVerdict, visionPrompt, visionRequest, type Completion, type StageProvider } from '../src/server/charades-provider'
 export { providerFailureReason, refereeFailure, type Verdict } from '../src/server/charades-provider'
 export type OwnProvider = StageProvider
 
@@ -84,7 +84,7 @@ export function readOwnProvider(profilePath: string, send: typeof fetch = fetch)
     async guess(image, missed = []) {
       const read = await complete(visionModel, [
         { role: 'system', content: visionPrompt },
-        { role: 'user', content: [{ type: 'text', text: visionRequest(missed) }, { type: 'image_url', image_url: { url: image } }] },
+        { role: 'user', content: [{ type: 'text', text: visionRequest(missed, drawAngle()) }, { type: 'image_url', image_url: { url: image } }] },
       ], 1024, 2048)
       const { guess, line } = readStubbsReply(read.text)
       return { ...read, text: guess, line }

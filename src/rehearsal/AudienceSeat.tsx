@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
-import { ArrowRight, Eye, Volume2, VolumeX } from 'lucide-react'
+import { ArrowRight, Drama, Eye, Timer, Volume2, VolumeX } from 'lucide-react'
 import type { PuppetPose, PuppetStageApi } from '../puppet'
 import type { CriticMood } from './AudienceCritic'
 import { CriticDelivery } from './CriticDelivery'
@@ -19,7 +19,7 @@ type SeatProps = {
   client?: AudienceClient; publicEntry: boolean; requestedPlay?: PlayMode
   firstLook: boolean; paused: boolean
   openingVerdict?: 'correct' | 'incorrect'
-  mode: PlayMode | null; canRehearse: boolean; cue: number; pose: PuppetPose
+  mode: PlayMode | null; cue: number; pose: PuppetPose
   player: RefObject<HTMLDivElement | null>; stage: RefObject<PuppetStageApi | null>
   onStart: (mode: PlayMode, fromRoomLink?: boolean) => void; onLeave: () => void; onNext: () => void
   onClock: (reading: ClockReading | null) => void
@@ -32,7 +32,7 @@ const reaction: Record<Verdict, CriticMood> = {
   correct: 'hit', incorrect: 'miss', uncertain: 'guess', unjudged: 'guess',
 }
 
-export function AudienceSeat({ firstLook, paused, children, clock, flyCue, openingVerdict, client = localAudience, publicEntry, requestedPlay, mode, canRehearse, cue, pose, stage, player, onStart, onLeave, onNext, onClock }: SeatProps) {
+export function AudienceSeat({ firstLook, paused, children, clock, flyCue, openingVerdict, client = localAudience, publicEntry, requestedPlay, mode, cue, pose, stage, player, onStart, onLeave, onNext, onClock }: SeatProps) {
   const active = mode !== null
   const [availability, setAvailability] = useState<Availability>('checking')
   const [statusCheck, setStatusCheck] = useState(0)
@@ -141,7 +141,7 @@ export function AudienceSeat({ firstLook, paused, children, clock, flyCue, openi
       audio.play(crowdVerdict)
     }
   }, [performanceKey, crowdVerdict, audio])
-  // With stage sound on, the hosted Stubbs reads his line aloud. His glove stays up for up to four
+  // With stage sound on, the hosted Stubbs reads his line aloud. His glove stays up for up to six
   // seconds while the clip arrives; after that he falls back to his tin syllables.
   const voiceId = active && hosted && crowdSound === 'on' && observation?.line ? observation.observationId : undefined
   const voiceRound = observation?.roundId
@@ -150,7 +150,7 @@ export function AudienceSeat({ firstLook, paused, children, clock, flyCue, openi
     if (!voiceId || !voiceRound) return
     let current = true
     const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), 4000)
+    const timer = setTimeout(() => controller.abort(), 6000)
     setVoice({ id: voiceId, settled: false })
     client.voice(voiceRound, voiceId, controller.signal)
       .then(bytes => audio.prepareLine(bytes))
@@ -213,19 +213,25 @@ export function AudienceSeat({ firstLook, paused, children, clock, flyCue, openi
       {modelIssue('referee', scored?.judgeFailure)}{!finished && ' Change the pose for another look.'}
     </p>}
     {finished && state.used >= state.limit && last?.verdict !== 'correct' && <p className="ba-audience-message"><strong>Out of looks.</strong> Curtain down on this one.</p>}
-    {!active ? <div className="ba-audience-footer ba-box-office">
+    {!active ? <div className={'ba-audience-footer ba-box-office' + (offline ? '' : ' ba-box-office-open')}>
       {offline ? <><span>{offlineDetail}</span>
         {(localServer || hosted) && <button type="button" className="ba-audience-rehearse" onClick={() => {
           setAvailability('checking')
           setStatusCheck(check => check + 1)
         }}>Recheck connection</button>}</>
-        : <>
-          <button type="button" className="ba-audience-call" onClick={() => onStart(canRehearse ? 'rehearse' : 'draw')} disabled={!readyToStart}>
-            {!readyToStart ? 'Checking the booth…' : canRehearse ? 'Guess it, Stubbs!' : 'Cue Roulette · 45s'} <ArrowRight size={17} aria-hidden="true" />
+        // Two tickets are the way in: an untimed game with any cue, or the 45-second show.
+        : <div className="ba-show-picker" role="group" aria-label="Play with Stubbs">
+          <button type="button" className="ba-show-ticket ba-show-free" onClick={() => onStart('rehearse')} disabled={!readyToStart}>
+            <Drama size={28} aria-hidden="true" />
+            <span><b>Free play</b><small>{readyToStart ? 'Pick any cue, strike a pose. No clock.' : 'Checking the booth…'}</small></span>
+            <ArrowRight className="ba-show-arrow" size={22} aria-hidden="true" />
           </button>
-          {readyToStart && canRehearse && <button type="button" className="ba-audience-rehearse"
-            onClick={() => onStart('draw')}>Cue Roulette · 45s</button>}
-        </>}
+          <button type="button" className="ba-show-ticket ba-show-timed" onClick={() => onStart('draw')} disabled={!readyToStart}>
+            <Timer size={28} aria-hidden="true" />
+            <span><b>Timed show · 45s</b><small>{readyToStart ? 'A random cue. Beat the clock.' : 'Checking the booth…'}</small></span>
+            <ArrowRight className="ba-show-arrow" size={22} aria-hidden="true" />
+          </button>
+        </div>}
     </div> : <>
       <div className="ba-audience-footer">
         {finished && !finishingLine

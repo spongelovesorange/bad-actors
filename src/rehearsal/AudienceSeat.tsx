@@ -7,6 +7,7 @@ import { CriticDelivery } from './CriticDelivery'
 import { refereeLabels, type RefereeMood } from './BoothReferee'
 import { FrontRowRail } from './FrontRowRail'
 import { GhostHand } from './GhostHand'
+import { RaceCodeForm } from './RaceBoard'
 import { StageVerdictEffects } from './StageVerdictEffects'
 import { useStageSound } from './StageSound'
 import { AudienceRound, localAudience, quietAudience, type AudienceState, type AudienceClient, type Verdict } from './audience-round'
@@ -24,6 +25,8 @@ type SeatProps = {
   lobby?: ReactNode
   /** Extra buttons beside the Ready button during a game. */
   cueTools?: ReactNode
+  /** The cue's hint, opened from cueTools and shown under them. */
+  cueHint?: ReactNode
   /** Where the tutorial glove taps: the Free play ticket, or Ready once a newcomer has posed. */
   beckon?: 'ticket' | 'ready'
   /** Stubbs's first words as a game begins. Each night has its own. */
@@ -60,7 +63,7 @@ const reaction: Record<Verdict, CriticMood> = {
   correct: 'hit', incorrect: 'miss', uncertain: 'guess', unjudged: 'guess',
 }
 
-export function AudienceSeat({ firstLook, paused, children, clock, flyCue, lobby, cueTools, beckon, opener, actSeconds = 45, night, actLabel, nextLabel, onRoundEnd, onRoundOver, raceBoard, onRace, onProgress, openingVerdict, client = localAudience, publicEntry, requestedPlay, mode, cue, pose, stage, player, onStart, onLeave, onNext, onClock }: SeatProps) {
+export function AudienceSeat({ firstLook, paused, children, clock, flyCue, lobby, cueTools, cueHint, beckon, opener, actSeconds = 45, night, actLabel, nextLabel, onRoundEnd, onRoundOver, raceBoard, onRace, onProgress, openingVerdict, client = localAudience, publicEntry, requestedPlay, mode, cue, pose, stage, player, onStart, onLeave, onNext, onClock }: SeatProps) {
   const active = mode !== null
   const [availability, setAvailability] = useState<Availability>('checking')
   const [statusCheck, setStatusCheck] = useState(0)
@@ -298,6 +301,7 @@ export function AudienceSeat({ firstLook, paused, children, clock, flyCue, lobby
             <span><b>Race a friend</b><small>{readyToStart ? 'Same cue on two stages. First to make Stubbs say it wins.' : 'Checking the booth…'}</small></span>
             <ArrowRight className="ba-show-arrow" size={22} aria-hidden="true" />
           </button>}
+          {onRace && <RaceCodeForm label="Got a race code from a friend?" from="room" />}
         </div>}
     </div> : <>
       <div className="ba-audience-footer">
@@ -312,6 +316,7 @@ export function AudienceSeat({ firstLook, paused, children, clock, flyCue, lobby
         {cueTools}
         {!raceBoard && <button type="button" className="ba-audience-leave" onClick={onLeave}>Stop AI</button>}
       </div>
+      {cueHint}
       {raceBoard}
       {state.history.length > 0 && <details className="ba-audience-log">
         <summary>What Stubbs saw ({state.history.length})</summary>

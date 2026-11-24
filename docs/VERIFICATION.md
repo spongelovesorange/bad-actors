@@ -1,5 +1,22 @@
 # Bad Actors verification
 
+## Joining by code, and a hint in view · November 24, 2026
+
+- **What the player found.** Trying a race with two accounts on the live site (release #18), the player had a code on screen and nowhere to type it: the board said "Send the code to a friend", but only the invite link let a friend in. Pressing Hint also seemed to do nothing.
+- **What changed.**
+  - A code box sits under **Race a friend** on the signed-in stage, and on the race page when a link has no code or an unknown one. Case and spaces don't matter. A word with vowels is refused on the spot: "A race code is four consonants, like KXTP."
+  - The hint did open, but in the dark bar at the foot of the stage. In a race that bar is below the race board, and on a phone the dressing room covered it. The hint now opens as a card right under the Hint button, which turns yellow while it is open.
+- **How it was checked.**
+  - In the two-player DeepSpace test, the friend now types the code on their own stage instead of following the link. "kate" is refused and the page stays put. The real code, typed in lower case with spaces, opens the race and seats them.
+  - The stage test for the hint now checks that the card opens in view, just under its button, and closes again.
+  - Screenshots at 1280 and 390 pixels covered:
+    - the code box and its error;
+    - the race page without a code, and with an unknown one;
+    - a newcomer's glove, still clear of the race ticket and the code box;
+    - the hint in free play and in a race.
+  - No model calls were made.
+- 227 unit tests, the typecheck, lint, both builds, all 44 stage tests and 12 DeepSpace tests pass.
+
 ## Racing a friend, and DeepSpace collections underneath · November 24, 2026
 
 - **Why.** Before submitting, the build was checked against the brief and against DeepSpace's three example apps (StoryNest, ThreadHunt, RunningMap). All three keep their data in collections with per-row rules and live queries, and all three test with two real users. Bad Actors used DeepSpace's auth and integration proxy but no collections, and had no two-user test. The player proposed racing the same cue and asked for it to follow how established party games run their rooms.

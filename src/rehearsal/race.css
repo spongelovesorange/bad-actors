@@ -39,8 +39,29 @@
 .ba-app .ba-race-deal:disabled { opacity: .6; cursor: progress; }
 .ba-race-leave { margin-left: auto; }
 .ba-race-missing { display: grid; gap: 10px; justify-items: start; }
+/* The join box: a friend's four letters, typed onto a ticket stub. */
+.ba-race-join { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 19px; }
+.ba-show-picker .ba-race-join { grid-column: 1 / -1; margin: 0; padding: 0 2px; }
+.ba-race-join label { font: 700 16px/1.2 var(--ba-sign); }
+.ba-front-desk .ba-race-join label { color: #ffe8a9; }
+.ba-app .ba-race-join input, .ba-room .ba-race-join input {
+  width: 6.4em; min-height: 42px; padding: 3px 4px 0 10px; border: 2px dashed #1d1915; border-radius: 4px;
+  background: #fff7e3; color: #2c241c; font: 700 22px/1.1 var(--ba-voice); letter-spacing: .28em; text-transform: uppercase;
+}
+.ba-race-join input::placeholder { color: #b9a98c; opacity: 1; }
+.ba-race-join input[aria-invalid] { border-color: #ad3523; }
+.ba-app .ba-race-join button, .ba-room .ba-race-join button {
+  display: inline-flex; align-items: center; gap: 5px; min-height: 42px; padding: 4px 14px;
+  border: 2px solid #1d1915; border-radius: 6px 9px 7px 8px; background: #f3e8d2; color: #2c241c;
+  box-shadow: 2px 3px 0 #15201d; font: 800 16px/1 var(--ba-sign);
+}
+.ba-app .ba-race-join button:hover, .ba-room .ba-race-join button:hover { background: #fff3d9; }
+.ba-race-join [role='alert'] { flex: 1 1 100%; margin: 0; font: 650 14px/1.25 var(--ba-sign); color: #7a2414; }
+.ba-front-desk .ba-race-join [role='alert'] { color: #ffc9bb; }
 @media (max-width: 600px) {
   .ba-race-code { font-size: 22px; }
   .ba-race-roster li { grid-template-columns: 28px 10px minmax(0, 1fr); }
   .ba-race-status { grid-column: 3; font-size: 13.5px; }
+  /* On a phone the question takes its own line, so the code box and Join stay side by side. */
+  .ba-race-join label { flex: 1 1 100%; }
 }

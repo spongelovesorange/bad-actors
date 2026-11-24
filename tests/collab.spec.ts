@@ -57,10 +57,19 @@ test('two players race the same cue: a room code, a live roster, and one deal fo
   expect(code).toMatch(/^[BCDFGHJKLMNPQRSTVWXZ]{4}$/)
   await expect(hostBoard.getByRole('button', { name: 'Start the race' })).toBeDisabled()
 
-  // The friend follows the invite link and takes a seat; both rosters fill in live.
-  await friend.context.addInitScript(() => { try { localStorage.setItem('bad-actors:handbook:skip', '1') } catch { /* Shown instead. */ } })
+  // The friend types the code on their own stage, as a Jackbox player types a room code, and takes a seat.
+  // A word is refused on the spot; the real code is read however it is typed. Both rosters fill in live.
+  await openStage(friend)
+  const join = friend.page.getByTestId('race-join')
+  const box = join.getByRole('textbox', { name: 'Got a race code from a friend?' })
+  await box.fill('kate')
+  await join.getByRole('button', { name: 'Join' }).click()
+  await expect(join.getByRole('alert')).toHaveText('A race code is four consonants, like KXTP.')
+  await expect(friend.page).toHaveURL(/\/room$/)
   const seated = friend.page.waitForRequest(request => request.url().endsWith('/api/actions/raceJoin'))
-  await friend.page.goto('/race?code=' + code.toLowerCase())
+  await box.fill(` ${code.slice(0, 2)} ${code.slice(2)} `.toLowerCase())
+  await join.getByRole('button', { name: 'Join' }).click()
+  await friend.page.waitForURL(new RegExp(`/race\\?code=${code}&from=room$`))
   const session = (await seated).headers().authorization
   const friendBoard = friend.page.getByTestId('race-board')
   for (const board of [hostBoard, friendBoard]) {

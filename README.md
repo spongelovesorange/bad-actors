@@ -51,59 +51,29 @@
 1. **Open the site.** A ten-second silent demo shows the whole loop, from the curtain opening on the cue to Stubbs’s guess. Choose **Let’s play! Sound on**.
 2. **Free play → sign in → Talking on the phone.** Drag the actor’s hand to its ear, pick **Phone** from the prop tray and press **Ready! Guess, Stubbs**. Claude Haiku 5.5 guesses from the picture alone. Claude Haiku 4.5 rules on whether the guess means the cue, and ElevenLabs reads Stubbs’s heckle aloud.
 3. **Timed show → Opening Night.** You get five 45-second acts and a curtain call. Guess three acts to open the next night, where props are flung from the wings, then come mood bonuses, blackouts and a heckler.
-4. **Race a friend.** On the signed-in stage, open a race and send the four-letter code or link to a second account. Both stages get the same cue at the same moment; whoever makes Stubbs say it first wins, timed by the server.
+4. **Race a friend.** On the signed-in stage, open a race and send the four-letter code or the invite link to a second account, who types the code into the box under **Race a friend** or opens the link. Both stages get the same cue at the same moment; whoever makes Stubbs say it first wins, timed by the server.
 
 ### At a glance
 
 | | |
 | --- | --- |
-| **Integrations** | Anthropic through DeepSpace handles the picture-only guess and the text-only referee. ElevenLabs gives Stubbs his voice. Speech-to-text was left out on purpose, because this is silent charades. |
+| **Integrations** | Anthropic through DeepSpace handles the picture-only guess and the text-only referee. ElevenLabs gives Stubbs his voice. Speech-to-text was left out on purpose, because this is silent charades. The task page suggests three; speech-to-text would turn silent charades into a word game, and I found no third that changes the game. |
 | **Main tradeoff** | Each look costs two model calls: a blind guess, then a referee. That way Stubbs never sees the answer, and paraphrases are judged the same way every time. |
 | **On DeepSpace** | Auth; the integration proxy; collections with per-row rules and live queries for race rooms, rosters, results and each player's best shows; a presence room per race; server actions as the race referee; a Durable Object as the ledger for paid looks. [Racing a friend](#racing-a-friend) |
-| **Built with** | I chose the project (dropping my first one), wrote the first plan, designed the game, chose every reference, tested every screen and button by hand and approved every commit and deploy. Coding agents (Codex, then Claude Code) wrote most of the code and the automated tests under my direction. [How it was built](#how-it-was-built) |
+| **Built with** | I chose the project (dropping my first one), set the direction, made the product decisions, played each release by hand and approved each commit and deploy. Coding agents wrote almost all of the code and the automated tests: Codex the first version, from a plan I drafted with ChatGPT, then Claude Code. [How it was built](#how-it-was-built) |
 | **Checked** | 227 unit tests, 44 Chromium stage tests, 12 DeepSpace tests on the local Worker (three with two real test accounts) and paid real-model checks. The latest covered the 12 new cues for $0.012. |
 | **Not built** | Spectators, chat and a party mode where friends guess each other's poses. [What I’d do next](#not-built-and-what-id-do-next) |
 | **SDK feedback** | Five things I ran into on DeepSpace SDK 0.44.2, with what I did about each. [Notes for the DeepSpace team](#notes-for-the-deepspace-team) |
 
-## The feel I was going for
+### Read these first
 
-I play a lot of games, and I wanted Bad Actors to feel like one: something you want to poke, not a tidy app you put up with. That taste decided most of what you see.
+The five files that carry the important logic:
 
-- **Everything answers back.** A prop pops into the hand, a face boings, and a joint squeaks and wobbles when you tug it. The clock ticks only while you act. A hit brings streamers, a shower of used tickets and six spectators who clap out of time. A miss gets one half-hearted party horn.
-- **Show, don't explain.** Like the hand demos before a party game, a silent glove plays a whole round before you read a word, then taps the way in.
-- **Characters, not widgets.** The AI has a face and a voice I picked by ear. Stubbs breathes, yawns, hops on a hit and sweats on a miss. Judge Monitor beams, glitches red or fills with static.
-- **Failure is part of the show.** Every night something goes wrong on purpose: stage fright, flying props, blackouts, a heckler, a curtain that sticks.
-- **Handmade, not a dashboard.** Paper flats, hand-lettered type, ink and spray stand in for cards and grey buttons. Two big tickets replace a menu, and the cue arrives on a board of chasing bulbs after a drum roll.
-
-## Where the ideas come from
-
-The idea, the design and every reference below are mine. The agents built from them.
-
-**Theatre**
-- *The Play That Goes Wrong* gave the game its running joke: every night something on stage fails. The crooked fly board, the curtain that sticks, the blackout electrician and the flung props all come from it.
-- [Pollock's paper toy theatres](https://www.pollockstoymuseum.co.uk/post/toy-theatre-and-puppetry/) set the look: cut-out flats, a paper proscenium and a printed programme.
-- The understudy is a canvas stage weight, the thing that keeps a stage steady and can barely stay upright itself. The National Theatre's puppetry lesson on weight shaped how it moves: the shoulders react first and the head lands a beat late.
-
-**Games**
-- Draw-and-guess party games and Jackbox's *Drawful* gave the core loop: one player makes a picture, someone else guesses. Here the pencil is a puppet.
-- *Paper Mario: The Thousand-Year Door* gave the front row: the audience sits in view, and the actor's hands and feet are never hidden behind the seats.
-- *Papers, Please* put the verdict in a machine. Judge Monitor prints its ruling on a slip, as Lucas Pope's stamp desk does.
-- *Octodad* showed how funny a body struggling at an everyday task can be.
-- *红蓝大作战*, a two-player iPad party game, gave the silent how-to-play demo: a hand shows you where to touch before you read a word.
-- Jackbox and Kahoot rooms, TypeRacer, Mario Kart and chess sites shaped the race: a room code to read out, a roster that fills in live, the same prompt for everyone, a countdown (here, the curtain) and one button for a rematch.
-
-**Comics and lettering**
-- Comic speech balloons give Stubbs his voice on the page: a balloon whose tail leads back to him, hand-lettered type and a line printed one letter at a time. [Blambot's lettering guide](https://blambot.com/pages/comic-book-grammar-tradition) set the rules.
-- The *Wild Style* mural and New York wall pieces gave the hand-cut BAD ACTORS wordmark its colours and its spray mark.
-
-**Film and animation**
-- *Spider-Man: Into the Spider-Verse* and *Across the Spider-Verse* gave the layered print marks in the title, the two ink strokes a sharp drag leaves behind and the stage light.
-- Pixar's colour scripts, after Lou Romano's work on *The Incredibles*, made the cue card's colour say whose turn it is. *Luxo Jr.* showed a machine body can act.
-- *WALL·E*, and Andrew Stanton's account of finding its face in a pair of binoculars, let Judge Monitor act with its own parts.
-- Disney's pose drawings for Mirabel and its guide to follow-through shaped the pose sheet and the actor's weight.
-- Jacques Tati's postman in *Jour de fête* set the timing: finish the sip before the other hand flies up.
-- *Mystery Science Theater 3000* kept the front-row silhouettes small enough to leave the show in view.
-- The *Hawkeye* title sequence showed how separating arms and props makes a silhouette readable.
+- [src/actions/race.ts](src/actions/race.ts): the race referee, four server actions in about 100 lines.
+- [src/schemas/race-schema.ts](src/schemas/race-schema.ts): the race collections and their per-row rules.
+- [src/server/stage-game.ts](src/server/stage-game.ts): the look ledger, where three limits and a receipt are checked in one transaction before any paid call.
+- [src/server/stage-routes.ts](src/server/stage-routes.ts): the booth's routes and their sign-in, origin and size checks.
+- [src/server/stage-provider.ts](src/server/stage-provider.ts): the two model calls and the voice, through DeepSpace's integration proxy.
 
 ## The game
 
@@ -177,38 +147,80 @@ The race is built from DeepSpace's own parts:
 
 ## How it was built
 
-I built Bad Actors by directing coding agents, and every change went through me. I wrote the first plan, made every product decision, tested every screen and button by hand, and approved every commit and every deploy. Every commit is in my name, and 17 of them also credit Claude as co-author. The agents wrote most of the code and the automated tests.
+I built Bad Actors by directing coding agents. I set the direction, made the product decisions, played each release by hand and approved each commit and deploy. The agents wrote almost all of the code and the automated tests. I read the race referee, the schemas and the look ledger line by line; I have not read all of the animation and sound code.
 
-**Choosing the project.** My first build for this task was a meetup app I called Plan B. I built it, but it was a familiar forms-and-lists app that would have been hard to show: nothing in it a reviewer would remember. On November 23 I set it aside and started Bad Actors. I'd rather change course early than polish an idea that can't show what I can do.
+**Choosing the project.** My first build for this task was a meetup app I called Plan B. I built it, but it needed two people before it showed anything, and it was a familiar forms-and-lists app: nothing in it a reviewer would remember. On November 23, with two of the five days left, I set it aside and started Bad Actors, rather than polish something forgettable.
 
 **What I did**
-- Wrote the first plan ([docs/PLAN.md](docs/PLAN.md)). Codex turned it into the first version of the code, adjusting details along the way.
-- Designed the game and its world: a sandbag understudy in a community hall, Mr. Stubbs in the front row and Judge Monitor in the wings. I chose every reference above.
+- Drafted the first plan with ChatGPT ([docs/PLAN.md](docs/PLAN.md)). Codex built the first version of the code from it.
+- Designed the game and its world: a sandbag understudy in a community hall, Mr. Stubbs in the front row and Judge Monitor in the wings. The references I brought are listed under [Where the ideas come from](#where-the-ideas-come-from).
 - Grew the game a request at a time. I asked for:
   - nine props, ten faces and seven hand shapes;
   - five nights that each go wrong in their own way;
   - the pit band and the sound effects;
   - characters that breathe and react between lines;
   - the silent demo, the opening curtain and the race.
-- Tested every screen, button and flow by hand, on desktop and phone, before approving each deploy, and played the signed-in game on the live site. That is how I found:
+- Played each release by hand, on desktop and phone, before approving it, and played the signed-in game on the live site. That is how I found six bugs, the last two while trying a race with two of my own accounts:
   - returning players getting no sound;
   - a silent Safari tab;
   - a cue that was easy to miss;
-  - the tutorial glove hidden behind the race ticket.
+  - the tutorial glove hidden behind the race ticket;
+  - nowhere to type a friend's race code;
+  - a hint that opened out of sight, at the foot of the stage.
 - Made the calls an agent can't: I picked Stubbs's voice by ear from five ElevenLabs voices and judged the music and sound by ear.
 - Compared the build with DeepSpace's example apps. Every one keeps its data in collections and tests with two users, so I proposed racing the same cue, run the way established party games run their rooms.
-- Approved every paid model check and kept them small.
+- Approved the paid model checks and kept them small.
 - Caught the agents' mistakes. Their first Safari "fix" blamed `connect()`; a sound check I ran in my own Safari disproved that, and the shipped notes were corrected.
 
 **What the agents did**
-- Codex wrote the first version of the code from my plan.
-- Claude Code wrote most of the later code under my direction, including the hosted AI booth, the race, the art and animation, and the synthesized music and sound. It also wrote the automated tests (227 unit, 44 browser and 12 DeepSpace) and kept [the verification log](docs/VERIFICATION.md).
+- Codex wrote the first version of the code from the plan I drafted with ChatGPT.
+- Claude Code wrote almost all of the later code under my direction, including the hosted AI booth, the race, the art and animation, and the synthesized music and sound. It also wrote the automated tests (227 unit, 44 browser and 12 DeepSpace) and kept [the verification log](docs/VERIFICATION.md).
+
+## The feel I was going for
+
+I play a lot of games, and I wanted Bad Actors to feel like one: something you want to poke, not a tidy app you put up with. That taste decided most of what you see.
+
+- **Everything answers back.** A prop pops into the hand, a face boings, and a joint squeaks and wobbles when you tug it. The clock ticks only while you act. A hit brings streamers, a shower of used tickets and six spectators who clap out of time. A miss gets one half-hearted party horn.
+- **Show, don't explain.** Like the hand demos before a party game, a silent glove plays a whole round before you read a word, then taps the way in.
+- **Characters, not widgets.** The AI has a face and a voice I picked by ear. Stubbs breathes, yawns, hops on a hit and sweats on a miss. Judge Monitor beams, glitches red or fills with static.
+- **Failure is part of the show.** Every night something goes wrong on purpose: stage fright, flying props, blackouts, a heckler, a curtain that sticks.
+- **Handmade, not a dashboard.** Paper flats, hand-lettered type, ink and spray stand in for cards and grey buttons. Two big tickets replace a menu, and the cue arrives on a board of chasing bulbs after a drum roll.
+
+## Where the ideas come from
+
+**References I brought.** These are mine, and each one shaped part of the game:
+
+- *The Play That Goes Wrong* gave the running joke: every night something on stage fails, from the crooked fly board and the curtain that sticks to the blackouts and the flung props.
+- [Pollock's paper toy theatres](https://www.pollockstoymuseum.co.uk/post/toy-theatre-and-puppetry/) set the look: cut-out flats, a paper proscenium and a printed programme.
+- Draw-and-guess party games gave the loop: one player makes a picture and someone else guesses. Here the pencil is a puppet.
+- *Paper Mario: The Thousand-Year Door* gave the front row: the audience sits in view, and the actor is never hidden behind the seats.
+- *Papers, Please* put the verdict in a machine: Judge Monitor prints its ruling on a slip.
+- *Spider-Man: Into the Spider-Verse* shaped the title's layered print marks, the ink strokes a sharp drag leaves behind and the stage light.
+- Pixar's colour scripts made the cue card's colour say whose turn it is.
+- *红蓝大作战*, a two-player iPad party game, gave the silent how-to-play demo: a hand shows you where to touch before you read a word.
+
+**Found with the agents while building.** The agents brought these as they worked, and I kept the ones that fit:
+- the National Theatre's puppetry lesson on weight;
+- Jackbox's *Drawful* and *Octodad*;
+- *WALL·E* and Andrew Stanton's account of finding its face;
+- Disney's pose drawings for Mirabel and its guide to follow-through;
+- Jacques Tati's *Jour de fête*;
+- *Mystery Science Theater 3000*'s front-row silhouettes;
+- the *Hawkeye* title sequence and the *Wild Style* mural;
+- Blambot's lettering guide;
+- for the race: the way Jackbox, Kahoot, TypeRacer, Mario Kart and chess sites run their rooms.
+
+[docs/DESIGN.md](docs/DESIGN.md) explains where each one shows.
 
 ## Not built, and what I’d do next
 
 - **Races are small and live.** Two to six players, no spectators and no chat, and nothing kept beyond the room. Next I'd add a spectator seat and a weekly table of the fastest time per cue.
 - **A party mode.** In charades, friends usually guess each other. The next step is a room where one player poses, the others race Stubbs to guess the frozen pose on their phones, and Judge Monitor rules on every answer.
 - **A player who leaves mid-round.** The round waits for everyone's result. If a player closes the tab, the host can deal the next round anyway.
+- **The picture comes from the browser.** The stage draws the frozen pose in the player's browser, and the server only checks that it is a small, valid PNG, so a player could send a doctored picture. Next I'd send the pose and draw it on the server.
+- **Race rows are readable by any signed-in player.** `races`, `race_players` and `race_results` are not scoped to their room. Nothing secret is in them; DeepSpace's `'team'` permission level, which checks a members table, is the ready-made way to close them.
+- **The six-player cap counts, then inserts.** Two players taking the last seat at the same moment could both get in.
+- **Stubbs knows the night, never the cue.** The guesser is told which of the five nights it is, to set his mood. That narrows the cue to one night's six.
 - **Stubbs isn't always right.** In the last real-model check he named 9 of 12 new cues on the first look, and the three misses needed new poses or names. I’d measure all 30 cues the same way.
 - **Safari.** A long-open Safari tab once stayed silent with sound on. Two fixes shipped and sound came back, but the root cause is unconfirmed. [The notes](docs/VERIFICATION.md)
 - **One pair of ears.** The music and effects are synthesized in code and only I have judged them.

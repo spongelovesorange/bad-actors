@@ -720,13 +720,19 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
     <p className="ba-lobby-note">{correct ? 'You got it! Now it’s your turn on stage.' : 'It was “Talking on the phone”. Your turn on stage now.'}</p>
   ) : null
   const cueTools = solo && <>
-    <button type="button" className="ba-audience-leave" aria-expanded={noteOpen} onClick={() => setNoteOpen(open => !open)}>
+    <button type="button" className="ba-audience-leave ba-hint-toggle" aria-expanded={noteOpen} onClick={() => setNoteOpen(open => !open)}>
       <BookOpen size={14} aria-hidden="true" /> Hint
     </button>
     {solo === 'rehearse' && !race && <button type="button" className="ba-audience-leave" onClick={() => playWithAudience('rehearse')}>
       <LayoutGrid size={14} aria-hidden="true" /> Change cue
     </button>}
   </>
+  // The hint opens just under the Hint button, where the player is already looking. Down in the
+  // stage bar it ended up below the race board, or under the dressing room on a phone.
+  const cueHint = noteOpen && solo ? <p className="ba-stage-hint" data-testid="cue-hint">
+    {deck[cue].sketch && <img src={`/blocking/${deck[cue].sketch}.png`} alt="" width="40" height="40" />}
+    <BookOpen size={15} aria-hidden="true" /> <span>{deck[cue].note}</span>
+  </p> : undefined
   const account = accountControl ?? (accountAvailable ? (
     <a className="ba-nav-room" href="/room" onClick={() => parkPose()}>
       Backstage <ArrowRight size={16} />
@@ -756,7 +762,7 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
             <div className="ba-theater">
               <AudienceSeat firstLook={firstLook} paused={!introChecked || dialog !== null || curtain !== null} client={hostedAudience ?? (publicEntry ? publicAudience : undefined)} publicEntry={publicEntry} requestedPlay={requestedPlay} mode={solo} cue={cue + 1} pose={pose} stage={stage} player={player}
                 openingVerdict={phase === 'revealed' ? openingVerdict : undefined}
-                lobby={race ? undefined : lobby} cueTools={cueTools}
+                lobby={race ? undefined : lobby} cueTools={cueTools} cueHint={cueHint}
                 raceBoard={race?.board} onRace={race ? undefined : onRace} onProgress={race?.onProgress}
                 beckon={guide === 'ticket' || guide === 'ready' ? guide : undefined}
                 opener={night?.opener} actSeconds={inShow && night ? night.seconds : 45} onRoundOver={setRoundEnd} night={twist}
@@ -795,12 +801,9 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
               </AudienceSeat>
             </div>
             <div className="ba-stage-bar">
-              {noteOpen && solo ? <span className="ba-stage-hint">
-                {deck[cue].sketch && <img src={`/blocking/${deck[cue].sketch}.png`} alt="" width="40" height="40" />}
-                <BookOpen size={15} aria-hidden="true" /> {deck[cue].note}
-              </span> : <span>
+              <span>
                 <Hand size={17} aria-hidden="true" /> Drag any joint. A quick tug makes it wobble.
-              </span>}
+              </span>
               <button type="button" disabled={grabbing} onClick={reset}>
                 <RotateCcw size={15} aria-hidden="true" /> Reset pose
               </button>

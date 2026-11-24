@@ -1,11 +1,35 @@
-import { useState } from 'react'
-import { Copy, Flag, LogOut } from 'lucide-react'
-import { formatRaceTime, maxRacers, minRacers } from '../race'
+import { useId, useState, type FormEvent } from 'react'
+import { ArrowRight, Copy, Flag, LogOut } from 'lucide-react'
+import { formatRaceTime, maxRacers, minRacers, readRaceCode } from '../race'
 import type { useRaceRoom } from './race-client'
 import './race.css'
 
 type Room = ReturnType<typeof useRaceRoom>
 const places = ['1st', '2nd', '3rd', '4th', '5th', '6th']
+
+/**
+ * The box a friend's four letters go in, like the code box on a Jackbox or Kahoot join screen.
+ * Case and spaces don't matter. The race page then checks that the room exists.
+ */
+export function RaceCodeForm({ label, from }: { label: string; from?: 'room' }) {
+  const id = useId()
+  const [typed, setTyped] = useState('')
+  const [problem, setProblem] = useState<string>()
+  function join(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const code = readRaceCode(typed)
+    if (!code) { setProblem('A race code is four consonants, like KXTP.'); return }
+    window.location.assign(`/race?code=${code}${from ? `&from=${from}` : ''}`)
+  }
+  return <form className="ba-race-join" onSubmit={join} noValidate data-testid="race-join">
+    <label htmlFor={id}>{label}</label>
+    <input id={id} name="code" value={typed} placeholder="KXTP" maxLength={8} autoComplete="off" autoCapitalize="characters" spellCheck={false}
+      aria-invalid={problem ? true : undefined} aria-describedby={problem ? `${id}-problem` : undefined}
+      onChange={event => { setTyped(event.target.value); setProblem(undefined) }} />
+    <button type="submit">Join <ArrowRight size={16} aria-hidden="true" /></button>
+    {problem && <p id={`${id}-problem`} role="alert">{problem}</p>}
+  </form>
+}
 
 /**
  * The race desk under the stage, built like the party games it borrows from: the room code in

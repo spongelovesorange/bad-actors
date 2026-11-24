@@ -400,15 +400,23 @@ test.describe('opening the how-to-play demo', () => {
   })
 })
 
-test('the hint replaces the drag tip during free play, with the pose sheet for a classic cue', async ({ page }) => {
+test('the hint opens right under its button during free play, with the pose sheet for a classic cue', async ({ page }) => {
   await mockAudience(page, () => ({ guess: 'Taking a selfie.', verdict: 'correct' }))
   await page.goto('/?cue=3')
   await page.getByRole('button', { name: /^Free play/ }).click()
   await page.getByRole('dialog', { name: 'Pick a cue' }).getByRole('button', { name: 'Taking a selfie' }).click()
-  await panel(page).getByRole('button', { name: 'Hint' }).click()
-  const hint = page.locator('.ba-stage-hint')
+  const toggle = panel(page).getByRole('button', { name: 'Hint' })
+  await toggle.click()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+  const hint = panel(page).getByTestId('cue-hint')
   await expect(hint).toContainText('peace sign')
   await expect(hint.locator('img')).toHaveAttribute('src', '/blocking/selfie.png')
-  await panel(page).getByRole('button', { name: 'Hint' }).click()
+  // It opens where the player is looking: on the desk, just below the button they pressed.
+  await expect(hint).toBeInViewport()
+  const [button, card] = [(await toggle.boundingBox())!, (await hint.boundingBox())!]
+  expect(card.y).toBeGreaterThan(button.y + button.height - 1)
+  expect(card.y - (button.y + button.height)).toBeLessThan(40)
+  await toggle.click()
   await expect(hint).toHaveCount(0)
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
 })

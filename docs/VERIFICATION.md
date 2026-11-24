@@ -1,5 +1,22 @@
 # Bad Actors verification
 
+## The house curtain · November 24, 2026
+
+- **What the player asked for.** The cue still didn't stand out. The player suggested a curtain that starts closed, shows the cue in big letters and then opens, done with some humour, and the same opening at the front of the how-to-play demo.
+- **What changed.**
+  - Each act now opens behind a red curtain that covers the boards down to the stage lip. A board of chasing bulbs comes down on two ropes with the act, the cue in big letters and the director's note. On a night's first act it also warns what will go wrong. The house lights dim and a follow spot finds the board a beat late.
+  - A notice pasted across the board's corner rotates through gags such as *Sold out · 1 seat* and *Understudy on tonight*. On the third act of a visit, and every fifth act after it, the curtain sticks halfway while a stagehand shouts from the wings, then flies open.
+  - A click on the curtain, or the player's first move (a joint, a prop, a face), opens it at once. The act's clock and Stubbs's first look wait until it is open. Stubbs stays in front of it. On a stage narrower than 620 px his balloon waits for the curtain, because there it covered the board's text.
+  - The demo now opens the same way: the curtain and a board reading "Your cue: Talking on the phone", then the glove's round. **Read the cue** is the new first of four steps. The loop is 10 seconds and ends with the curtain closing rather than a fade.
+  - Three new synthesized sounds: the curtain's swish with its rings ticking over the rod, a snare roll timed to end as the curtain opens, and a "ta-da". The board lands with the old clapperboard clack. The slate that used to open each act is gone.
+- **How it was checked.**
+  - Muted headless Chromium screenshots of the whole sequence: closing, the board dropping, reading and opening at 1280 px; reading at 1024, 768, 390 and 320 px; the stuck curtain on the third act; reduced motion, where the board appears without movement and the curtain fades away; the demo's opening at 1280 and 390 px.
+  - The screenshots caught two overlaps, both fixed before release: Stubbs's balloon over the board on phones, and the "Click the curtain to start" hint under a tall board at 768 px. The hint now hangs below the board.
+  - A new stage test: the curtain shows the cue in big letters with the night's warning; a Ready pressed behind it sends no look until the curtain opens by itself; the same night's next cue has no warning; and picking a prop opens the curtain at once. The timed-show test now checks that the clock is paused behind the curtain. The demo test checks the four steps and the cue on the demo's curtain.
+  - Unit tests: the demo's curtain opens before the glove comes on, moves without a jump all round the loop and closes at the end; the new sounds render at their set levels; the "ta-da" cuts off the drum roll and nothing else.
+  - **Not checked by ear.** The assistant can't hear the new sounds; the player judges them.
+- 216 unit tests, the typecheck, lint, both builds and all 44 stage tests pass.
+
 ## Sound in Safari and a livelier front row · November 24, 2026
 
 - **Silence in Safari.** In Safari on a Mac the live game made no sound, even with the Stage sound button reading On.
@@ -18,7 +35,7 @@
     - Any click or key press now also tells the sound desk the page is in front. The stage test failed before this change and passes after it.
     - Unit tests cover the unchained `connect()` and both ways of waking.
 
-    It is still not confirmed whether the old tab missed that event, had been muted with Safari's speaker button, or held an audio context that Safari had paused.
+    It is still not confirmed whether the old tab missed that event, had been muted with Safari's speaker button, or held an audio context that Safari had paused. Later that day the player reported sound in their Safari tab again; which change, if any, fixed that tab is unknown.
 - **Stubbs and Judge Monitor act between lines.** The player asked for richer faces that move. The README describes what each of them does in each mood. Every mood was drawn close up in Chromium, and the animations running on each part were read back from the page:
   - Stubbs: breathing, blinking and glancing at rest, plus a yawn when idle with his jaw shut; the opera-glass sweep while looking; three hops on a hit; a shiver and a falling bead of sweat on a miss; a wobble and circling eyes on an error; a falling tear on the Big Feelings night; glances at the balcony on the Gala night.
   - Judge Monitor: a flicker and a slow scan bar in every mood; blinking and glancing eyes at rest; typing dots and a blinking amber light while it weighs a guess; a hop, a glow and sparkles for a match; a glitch and a red flash for a miss; one eye pondering beside a question mark for a close call; static snow when it can't rule.

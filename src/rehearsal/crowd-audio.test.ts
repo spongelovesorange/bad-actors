@@ -216,6 +216,32 @@ describe('the audience in the cheap seats', () => {
     desk.dispose()
   })
 
+  it('plays in Safari, whose connect() returns nothing to chain from', async () => {
+    const starts: { loop: boolean }[] = []
+    const wired = vi.fn()
+    class SafariAudio {
+      state = 'running'
+      currentTime = 0
+      destination = { kind: 'speakers' }
+      createBuffer = (_channels: number, length: number) => ({ duration: length / crowdSampleRate, copyToChannel: vi.fn() })
+      createGain = () => ({ connect: (node: unknown) => { wired(node) }, disconnect: vi.fn(), gain: { value: 1, cancelScheduledValues: vi.fn(), setTargetAtTime: vi.fn() } })
+      createBufferSource() {
+        return { context: this, loop: false, buffer: { duration: 1 }, playbackRate: { value: 1 }, disconnect: vi.fn(),
+          connect: () => undefined, start() { starts.push({ loop: this.loop }) }, stop: vi.fn() }
+      }
+      close = vi.fn().mockResolvedValue(undefined)
+    }
+    vi.stubGlobal('window', { AudioContext: SafariAudio })
+    const desk = createCrowdAudio()
+    desk.setRoom(true)
+    desk.music('lobby')
+    expect(await desk.enable()).toBe(true)
+    desk.button('punch')
+    expect(starts).toEqual([{ loop: true }, { loop: true }, { loop: false }])
+    expect(wired).toHaveBeenCalledWith({ kind: 'speakers' })
+    desk.dispose()
+  })
+
   it('leaves the stage usable without a browser audio device', async () => {
     vi.stubGlobal('window', {})
     const house = createCrowdAudio()

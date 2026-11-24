@@ -275,7 +275,9 @@ export function createCrowdAudio() {
       source.playbackRate.value = speed
       source.loop = channel === 'room'
       gain.gain.value = level
-      source.connect(gain).connect(context.destination)
+      // Two separate calls: Safari's connect() does not hand back the node, so a chained call throws.
+      source.connect(gain)
+      gain.connect(context.destination)
       const active = { source, gain }
       source.onended = () => {
         if (playing.get(channel) === active) playing.delete(channel)
@@ -341,7 +343,8 @@ export function createCrowdAudio() {
       source.loop = true
       gain.gain.value = 0
       gain.gain.setTargetAtTime(musicLevel, context.currentTime, .4)
-      source.connect(gain).connect(context.destination)
+      source.connect(gain)
+      gain.connect(context.destination)
       const tune = { source, gain, track: wanted }
       source.onended = () => {
         if (band === tune) band = undefined

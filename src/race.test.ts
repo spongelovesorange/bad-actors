@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { deck } from './deck'
-import { dealCue, formatRaceTime, newRaceCode, raceName, rankResults, readRaceCode, type RaceResult } from './race'
+import {
+  dealCue, formatMatchScore, formatRaceTime, matchWins, newRaceCode, raceName, rankResults, readRaceCode, scoreMatch,
+  type RaceResult, type RoundResult,
+} from './race'
 
 describe('race rules', () => {
   it('makes four-consonant codes and reads them back however they are typed', () => {
@@ -36,6 +39,42 @@ describe('race rules', () => {
       { userId: 'd', name: 'Di', outcome: 'guessed', ms: 23_400, looks: 2 },
     ]
     expect(rankResults(results).map(result => result.name)).toEqual(['Di', 'Cy', 'Bo', 'Ann'])
+  })
+
+  describe('the match: first to three round wins', () => {
+    const won = (round: number, userId: string, ms = 20_000): RoundResult => ({ round, userId, name: userId, outcome: 'guessed', ms, looks: 1 })
+    const out = (round: number, userId: string): RoundResult => ({ round, userId, name: userId, outcome: 'out', ms: 0, looks: 5 })
+    const players = [{ userId: 'ann' }, { userId: 'bo' }]
+
+    it('gives each round to its fastest guess, and a round nobody guessed to no one', () => {
+      const results = [won(1, 'ann', 30_000), won(1, 'bo', 21_000), out(2, 'ann'), out(2, 'bo'), won(3, 'ann'), out(3, 'bo')]
+      const score = scoreMatch(results, 3, true)
+      expect(score.wins).toEqual(new Map([['bo', 1], ['ann', 1]]))
+      expect(score.winner).toBeUndefined()
+      expect(formatMatchScore(score, players)).toBe('1–1')
+    })
+
+    it('counts the round being played only once it is over', () => {
+      const results = [won(1, 'ann'), won(2, 'ann')]
+      expect(scoreMatch(results, 2, false).wins.get('ann')).toBe(1)
+      expect(scoreMatch(results, 2, true).wins.get('ann')).toBe(2)
+    })
+
+    it('ends at three round wins, then the next deal starts a new match at nothing each', () => {
+      const results = [won(1, 'ann'), won(2, 'bo'), won(3, 'ann'), won(4, 'ann'), won(5, 'bo')]
+      const ended = scoreMatch(results, 4, true)
+      expect(ended).toMatchObject({ number: 1, winner: 'ann' })
+      expect(formatMatchScore(ended, players)).toBe(`${matchWins}–1`)
+      const next = scoreMatch(results, 5, false)
+      expect(next.number).toBe(2)
+      expect(next.winner).toBeUndefined()
+      expect(formatMatchScore(next, players)).toBe('0–0')
+      expect(scoreMatch(results, 5, true).wins).toEqual(new Map([['bo', 1]]))
+    })
+
+    it('scores nothing before the first deal', () => {
+      expect(scoreMatch([], 0, false)).toEqual({ number: 1, wins: new Map() })
+    })
   })
 
   it('reads a time like a stopwatch', () => {

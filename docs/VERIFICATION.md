@@ -1,5 +1,28 @@
 # Bad Actors verification
 
+## A real race on the live site, and a finish line · November 24, 2026
+
+- **The race.** On release #18 the player raced two of their own accounts in room TTXM for six rounds, with real model calls on every look.
+  - The player reported that the two stages played well together. In the two rounds the player screenshotted, 3 and 6, both accounts were ruled correct.
+  - Round 6, "Carrying a tray": the host won in 0:20.0 and the second account came second in 0:24.5, one look each. Stubbs said "Carrying a serving tray, is it?" and Judge Monitor showed "Guessed it!".
+  - Round 3, "Falling in love", seen from the second account: the host won in 0:50.6 with two looks, the second account took 1:40.8 with three, and the heart-eyed face earned the "Method acting! +1" badge.
+  - This is the first round won by a correct ruling in a real game. Until now the winning time was covered by the referee's unit tests only. [The round 6 screenshot](images/race-win.jpg)
+- **What the player found.** Six rounds in, there was still no overall winner, and nothing said how many rounds to play.
+- **What changed.** Rounds now add up to a match: the first player to win three rounds takes it, as in a best-of-five.
+  - Each round goes to its fastest correct guess once it is over; a round nobody guessed counts for no one.
+  - Every stage works the score out from the same stored finishes, so no new writes or server code were needed.
+  - The board shows each player's round wins as stars and the score after each round. When someone reaches three, it reads "You win the match, 3–1!", and the host's button becomes **New match**, which starts again at 0–0.
+- **How it was checked.**
+  - Unit tests for the scoring:
+    - a round goes to the fastest guess;
+    - a round nobody guessed counts for no one;
+    - the round being played counts only once it is over;
+    - the match ends at three wins, and the next deal starts a new one.
+  - Board tests render a 1–1 score and a 3–1 match win with the New match button.
+  - Screenshots of the lobby and round 1 at 1280 and 390 pixels show the empty stars and the rule, "First to win 3 rounds takes the match."
+  - A won match has not yet been played on the live site. It needs real correct rulings, which cost model calls.
+- 233 unit tests, the typecheck, lint, both builds, all 44 stage tests and 12 DeepSpace tests pass.
+
 ## Joining by code, and a hint in view · November 24, 2026
 
 - **What the player found.** Trying a race with two accounts on the live site (release #18), the player had a code on screen and nowhere to type it: the board said "Send the code to a friend", but only the invite link let a friend in. Pressing Hint also seemed to do nothing.
@@ -39,7 +62,7 @@
     - Both players then reopened the room, which made no new looks, and the host dealt round 2. Both stages got "Taking a selfie".
     - The ten looks made 20 model calls, about $0.008 at the rate measured on November 24. The exact bill wasn't recorded. The check script waited for a Ready button that, correctly, never returns after a fifth look, so it stopped before writing its receipt.
     - The results board highlighted the first row as the winner even when nobody had guessed. That is fixed.
-  - **Still not seen in a real game:** a round won by a correct ruling. The winning time (from the deal to the winning Ready press) is covered by the referee's unit tests only.
+  - **Not yet seen in a real game at this point:** a round won by a correct ruling. The winning time (from the deal to the winning Ready press) was covered by the referee's unit tests only. The player's race on the live site later the same day showed it; see the first entry.
   - **On the deployed app (release #15).** Two test accounts opened, joined and dealt a race in room BPHW ("Carrying a tray").
     - Both stages got the same cue, and the host's board showed the friend's progress live.
     - The referee refused the friend's unearned finish (`not_finished`) and their deal (`not_host`).

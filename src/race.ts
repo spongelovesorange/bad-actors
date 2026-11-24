@@ -48,6 +48,43 @@ export function rankResults<T extends RaceResult>(results: T[]): T[] {
         : a.name.localeCompare(b.name))
 }
 
+/** First to three round wins takes the match: best of five with two players, like a tennis set or a fighting game. */
+export const matchWins = 3
+
+export type RoundResult = RaceResult & { round: number }
+export type MatchScore = {
+  /** Which match of the room this is. A new one starts with the first deal after a match is won. */
+  number: number
+  /** Round wins in this match, by player. */
+  wins: Map<string, number>
+  /** Whoever has reached three round wins. */
+  winner?: string
+}
+
+/**
+ * Scores a room's rounds as a run of matches. A round counts once it is over (everyone has finished
+ * it, or the host has dealt the next one) and goes to its fastest correct guess. A round nobody
+ * guessed counts for no one. The referee stores every finish, so every stage gets the same score.
+ */
+export function scoreMatch(results: RoundResult[], round: number, roundOver: boolean): MatchScore {
+  let score: MatchScore = { number: 1, wins: new Map() }
+  for (let at = 1; at <= round; at++) {
+    if (score.winner) score = { number: score.number + 1, wins: new Map() }
+    if (at === round && !roundOver) break
+    const best = rankResults(results.filter(result => result.round === at))[0]
+    if (best?.outcome !== 'guessed') continue
+    const wins = (score.wins.get(best.userId) ?? 0) + 1
+    score.wins.set(best.userId, wins)
+    if (wins >= matchWins) score.winner = best.userId
+  }
+  return score
+}
+
+/** "3–1": each player's round wins in this match, most first. */
+export function formatMatchScore(score: MatchScore, players: { userId: string }[]) {
+  return players.map(player => score.wins.get(player.userId) ?? 0).sort((a, b) => b - a).join('–')
+}
+
 /** 23_456 ms reads "0:23.4". */
 export function formatRaceTime(ms: number) {
   const tenths = Math.max(0, Math.floor(ms / 100))

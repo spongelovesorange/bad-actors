@@ -1,6 +1,6 @@
 import { useId, useState, type FormEvent } from 'react'
-import { ArrowRight, Copy, Flag, LogOut } from 'lucide-react'
-import { formatRaceTime, maxRacers, minRacers, readRaceCode } from '../race'
+import { ArrowRight, Copy, Flag, LogOut, Trophy } from 'lucide-react'
+import { formatMatchScore, formatRaceTime, matchWins, maxRacers, minRacers, readRaceCode } from '../race'
 import type { useRaceRoom } from './race-client'
 import './race.css'
 
@@ -35,12 +35,13 @@ export function RaceCodeForm({ label, from }: { label: string; from?: 'room' }) 
  * The race desk under the stage, built like the party games it borrows from: the room code in
  * big letters (Jackbox, Kahoot), a roster that fills in live with who is here, every opponent's
  * progress while you act (TypeRacer), and the finishing order with one button for the next round.
+ * Rounds add up to a match, first to three round wins, so a race has an end and a champion.
  */
 export function RaceBoard({ room, code, me, busy, error, onDeal, onLeave }: {
   room: Room; code: string; me: string; busy: boolean; error?: string
   onDeal: () => void; onLeave: () => void
 }) {
-  const { race, round, players, results, mine, online, progressOf, everyoneDone } = room
+  const { race, round, players, results, mine, online, progressOf, everyoneDone, match } = room
   const [copied, setCopied] = useState(false)
   const host = race?.host === me
   const hostName = race?.hostName || 'the host'
@@ -60,13 +61,18 @@ export function RaceBoard({ room, code, me, busy, error, onDeal, onLeave }: {
     return live?.phase === 'looking' ? `Stubbs is looking · look ${(live.looks ?? 0) + 1}` : live?.phase === 'posing' ? 'Posing…' : 'Taking a seat…'
   }
   const winner = results[0]?.outcome === 'guessed' ? results[0] : undefined
+  const champion = match.winner && (match.winner === me ? 'You win' : (players.find(player => player.userId === match.winner)?.name ?? 'Someone') + ' wins')
+  const score = formatMatchScore(match, players)
+  const rule = `First to win ${matchWins} rounds takes the match.`
   let line: string
   if (!round) line = host
-    ? players.length < minRacers ? `Send the code to a friend. Up to ${maxRacers} can race.` : 'Everyone here? Deal the first cue.'
-    : `Waiting for ${hostName} to deal the first cue.`
+    ? players.length < minRacers ? `Send the code to a friend. Up to ${maxRacers} can race.` : `Everyone here? Deal the first cue. ${rule}`
+    : `Waiting for ${hostName} to deal the first cue. ${rule}`
   else if (!mine) line = 'Same cue for everyone. First to make Stubbs say it wins.'
   else if (!everyoneDone) line = mine.outcome === 'guessed' ? `You got it in ${formatRaceTime(mine.ms)}! Waiting for the others.` : 'Out of looks. Cheer on the others.'
-  else line = winner ? `${winner.userId === me ? 'You win' : winner.name + ' wins'} round ${round}!` : 'Nobody got it. Stubbs blames the lighting.'
+  else if (champion) line = `${champion} the match, ${score}!`
+  else line = (winner ? `${winner.userId === me ? 'You win' : winner.name + ' wins'} round ${round}!` : 'Nobody got it. Stubbs blames the lighting.')
+    + ` Match score ${score}, first to ${matchWins}.`
   // Like a Kahoot lobby, the host's start button is there from the start, waiting for a second player.
   const canDeal = host && (!round || Boolean(mine))
   const waiting = !round && players.length < minRacers
@@ -79,27 +85,32 @@ export function RaceBoard({ room, code, me, busy, error, onDeal, onLeave }: {
   }
   return <section className="ba-race-board" aria-label="Race" data-testid="race-board" data-round={round}>
     <header className="ba-race-head">
-      <span className="ba-race-label"><Flag size={15} aria-hidden="true" /> {round ? `Race · round ${round}` : 'Race room'}</span>
+      <span className="ba-race-label"><Flag size={15} aria-hidden="true" /> {round ? `Race · ${match.number > 1 ? `match ${match.number} · ` : ''}round ${round}` : 'Race room'}</span>
       <strong className="ba-race-code" aria-label={'Room code ' + code.split('').join(' ')} data-testid="race-code">{code}</strong>
       <button type="button" className="ba-race-copy" onClick={copy}><Copy size={14} aria-hidden="true" /> {copied ? 'Link copied' : 'Copy invite link'}</button>
     </header>
     <ol className="ba-race-roster" aria-label="Players">
       {roster.map(player => {
         const at = place(player.userId)
+        const wins = match.wins.get(player.userId) ?? 0
         return <li key={player.userId} data-me={player.userId === me || undefined} data-online={online(player.userId) || undefined}
-          data-place={at >= 0 && results[at].outcome === 'guessed' ? at + 1 : undefined} data-out={results[at]?.outcome === 'out' || undefined}>
+          data-place={at >= 0 && results[at].outcome === 'guessed' ? at + 1 : undefined} data-out={results[at]?.outcome === 'out' || undefined}
+          data-champion={match.winner === player.userId || undefined}>
           <span className="ba-race-place">{at >= 0 && results[at].outcome === 'guessed' ? places[at] : ''}</span>
           <span className="ba-race-dot" aria-hidden="true" />
           <b>{player.name}{player.userId === me && <small> (you)</small>}{player.userId === race?.host && <small> · host</small>}</b>
+          <span className="ba-race-wins" role="img" aria-label={`${wins} of ${matchWins} round wins`}>
+            {'★'.repeat(Math.min(wins, matchWins))}{'☆'.repeat(Math.max(0, matchWins - wins))}
+          </span>
           <span className="ba-race-status">{status(player.userId)}</span>
         </li>
       })}
     </ol>
-    <p className="ba-race-line" role="status">{line}</p>
+    <p className="ba-race-line" role="status">{champion && <Trophy size={18} aria-hidden="true" />}{line}</p>
     {error && <p className="ba-race-error" role="alert">{error}</p>}
     <div className="ba-race-actions">
       {canDeal && <button type="button" className="ba-race-deal" disabled={busy || waiting} onClick={onDeal}>
-        {!round ? 'Start the race' : everyoneDone ? 'Next round' : 'Next round now'}
+        {!round ? 'Start the race' : champion ? 'New match' : everyoneDone ? 'Next round' : 'Next round now'}
       </button>}
       <button type="button" className="ba-race-leave" onClick={onLeave}><LogOut size={14} aria-hidden="true" /> Leave race</button>
     </div>

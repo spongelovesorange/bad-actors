@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react'
 import { getAuthToken, usePresenceRoom, useQuery } from 'deepspace'
-import { rankResults, type RaceOutcome } from '../race'
+import { rankResults, scoreMatch, type RaceOutcome } from '../race'
 
 export type RaceAnswer<T> = { ok: true; data: T } | { ok: false; code?: string; error: string }
 
@@ -42,15 +42,19 @@ export function useRaceRoom(code: string, me: string, progress: RaceProgress) {
   return useMemo(() => {
     const live = new Map(peers.map(peer => [peer.userId, peer.state as Partial<RaceProgress>]))
     const players = seats.records.map(record => record.data)
-    const results = rankResults(finishes.records.map(record => record.data).filter(result => result.round === round))
+    const every = finishes.records.map(record => record.data)
+    const results = rankResults(every.filter(result => result.round === round))
     const mine = results.find(result => result.userId === me)
+    const everyoneDone = players.length > 0 && players.every(player => results.some(result => result.userId === player.userId))
     return {
       loading: races.status === 'loading' || seats.status === 'loading',
       missing: races.status === 'ready' && !race,
       race, round, players, results, mine,
       online: (userId: string) => userId === me || live.has(userId),
       progressOf: (userId: string) => userId === me ? progress : live.get(userId),
-      everyoneDone: players.length > 0 && players.every(player => results.some(result => result.userId === player.userId)),
+      everyoneDone,
+      // Every finish of every round is in the collection, so every stage works out the same score.
+      match: scoreMatch(every, round, everyoneDone),
     }
   }, [peers, seats.records, finishes.records, round, me, races.status, seats.status, race, progress])
 }

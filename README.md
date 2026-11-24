@@ -20,7 +20,7 @@
   <img alt="Built on DeepSpace" src="https://img.shields.io/badge/built%20on-DeepSpace-2f3c34">
   <img alt="AI: Claude Haiku 5.5 and 4.5" src="https://img.shields.io/badge/AI-Claude%20Haiku%205.5%20%2B%204.5-df5139">
   <img alt="Voice: ElevenLabs" src="https://img.shields.io/badge/voice-ElevenLabs-2c241c">
-  <img alt="Tests: 227 unit and 56 browser" src="https://img.shields.io/badge/tests-227%20unit%20%C2%B7%2056%20browser-4d9a5b">
+  <img alt="Tests: 233 unit and 56 browser" src="https://img.shields.io/badge/tests-233%20unit%20%C2%B7%2056%20browser-4d9a5b">
 </p>
 
 <p align="center">
@@ -51,7 +51,7 @@
 1. **Open the site.** A ten-second silent demo shows the whole loop, from the curtain opening on the cue to Stubbs’s guess. Choose **Let’s play! Sound on**.
 2. **Free play → sign in → Talking on the phone.** Drag the actor’s hand to its ear, pick **Phone** from the prop tray and press **Ready! Guess, Stubbs**. Claude Haiku 5.5 guesses from the picture alone. Claude Haiku 4.5 rules on whether the guess means the cue, and ElevenLabs reads Stubbs’s heckle aloud.
 3. **Timed show → Opening Night.** You get five 45-second acts and a curtain call. Guess three acts to open the next night, where props are flung from the wings, then come mood bonuses, blackouts and a heckler.
-4. **Race a friend.** On the signed-in stage, open a race and send the four-letter code or the invite link to a second account, who types the code into the box under **Race a friend** or opens the link. Both stages get the same cue at the same moment; whoever makes Stubbs say it first wins, timed by the server.
+4. **Race a friend.** On the signed-in stage, open a race and send the four-letter code or the invite link to a second account, who types the code into the box under **Race a friend** or opens the link. Both stages get the same cue at the same moment; whoever makes Stubbs say it first wins the round, timed by the server. The first to win three rounds takes the match.
 
 ### At a glance
 
@@ -61,7 +61,7 @@
 | **Main tradeoff** | Each look costs two model calls: a blind guess, then a referee. That way Stubbs never sees the answer, and paraphrases are judged the same way every time. |
 | **On DeepSpace** | Auth; the integration proxy; collections with per-row rules and live queries for race rooms, rosters, results and each player's best shows; a presence room per race; server actions as the race referee; a Durable Object as the ledger for paid looks. [Racing a friend](#racing-a-friend) |
 | **Built with** | I chose the project (dropping my first one), set the direction, made the product decisions, played each release by hand and approved each commit and deploy. Coding agents wrote almost all of the code and the automated tests: Codex the first version, from a plan I drafted with ChatGPT, then Claude Code. [How it was built](#how-it-was-built) |
-| **Checked** | 227 unit tests, 44 Chromium stage tests, 12 DeepSpace tests on the local Worker (three with two real test accounts) and paid real-model checks. The latest covered the 12 new cues for $0.012. |
+| **Checked** | 233 unit tests, 44 Chromium stage tests, 12 DeepSpace tests on the local Worker (three with two real test accounts) and paid real-model checks. The latest covered the 12 new cues for $0.012. I also raced two of my own accounts for six rounds on the live site. |
 | **Not built** | Spectators, chat and a party mode where friends guess each other's poses. [What I’d do next](#not-built-and-what-id-do-next) |
 | **SDK feedback** | Five things I ran into on DeepSpace SDK 0.44.2, with what I did about each. [Notes for the DeepSpace team](#notes-for-the-deepspace-team) |
 
@@ -134,9 +134,9 @@ flowchart LR
     host <-.->|presence| friend
 ```
 
-<p align="center"><img src="docs/images/race-lobby.jpg" alt="The race lobby: room code HCHR in a dashed ticket stub, Shi (host) and Alex both online and Ready, and the host's Start the race button." width="560"></p>
+<p align="center"><img src="docs/images/race-win.jpg" alt="Round 6 of a real race on the live site, room TTXM: the actor holds a tray, Stubbs says Carrying a serving tray, Judge Monitor shows Guessed it, and the board ranks the host first at 0:20.0 and the second account at 0:24.5, one look each." width="620"><br><sub>A real race on the live site between my two accounts: round 6, "Carrying a tray", both guessed on the first look.</sub></p>
 
-Charades is a party game, so the signed-in stage has a third ticket: **Race a friend**. It opens a room with a four-letter code, the way Jackbox and Kahoot rooms work. The code uses consonants only, so it can't spell a word. Two to six signed-in players join by link or code and watch the roster fill in. The host deals, and every stage gets the same cue at the same moment; the curtain is the countdown. While you act, the board shows each rival's progress live, as TypeRacer does ("Stubbs is looking · look 2"). The first player to make Stubbs say the cue wins, with ties going to fewer looks. After the results, the host deals the next round.
+Charades is a party game, so the signed-in stage has a third ticket: **Race a friend**. It opens a room with a four-letter code, the way Jackbox and Kahoot rooms work. The code uses consonants only, so it can't spell a word. Two to six signed-in players join by link or code and watch the roster fill in. The host deals, and every stage gets the same cue at the same moment; the curtain is the countdown. While you act, the board shows each rival's progress live, as TypeRacer does ("Stubbs is looking · look 2"). The first player to make Stubbs say the cue wins the round, with ties going to fewer looks. Rounds add up to a match, as cups do in Mario Kart: the first to win three rounds takes it, and the host can start a new one.
 
 The race is built from DeepSpace's own parts:
 
@@ -160,13 +160,14 @@ I built Bad Actors by directing coding agents. I set the direction, made the pro
   - the pit band and the sound effects;
   - characters that breathe and react between lines;
   - the silent demo, the opening curtain and the race.
-- Played each release by hand, on desktop and phone, before approving it, and played the signed-in game on the live site. That is how I found six bugs, the last two while trying a race with two of my own accounts:
+- Played each release by hand, on desktop and phone, before approving it, and played the signed-in game on the live site. That is how I found seven problems, the last three while racing two of my own accounts:
   - returning players getting no sound;
   - a silent Safari tab;
   - a cue that was easy to miss;
   - the tutorial glove hidden behind the race ticket;
   - nowhere to type a friend's race code;
-  - a hint that opened out of sight, at the foot of the stage.
+  - a hint that opened out of sight, at the foot of the stage;
+  - a race with no finish line: six rounds in, still no overall winner.
 - Made the calls an agent can't: I picked Stubbs's voice by ear from five ElevenLabs voices and judged the music and sound by ear.
 - Compared the build with DeepSpace's example apps. Every one keeps its data in collections and tests with two users, so I proposed racing the same cue, run the way established party games run their rooms.
 - Approved the paid model checks and kept them small.
@@ -174,7 +175,7 @@ I built Bad Actors by directing coding agents. I set the direction, made the pro
 
 **What the agents did**
 - Codex wrote the first version of the code from the plan I drafted with ChatGPT.
-- Claude Code wrote almost all of the later code under my direction, including the hosted AI booth, the race, the art and animation, and the synthesized music and sound. It also wrote the automated tests (227 unit, 44 browser and 12 DeepSpace) and kept [the verification log](docs/VERIFICATION.md).
+- Claude Code wrote almost all of the later code under my direction, including the hosted AI booth, the race, the art and animation, and the synthesized music and sound. It also wrote the automated tests (233 unit, 44 browser and 12 DeepSpace) and kept [the verification log](docs/VERIFICATION.md).
 
 ## The feel I was going for
 

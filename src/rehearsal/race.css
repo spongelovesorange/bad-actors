@@ -16,7 +16,7 @@
 .ba-race-copy { margin-left: auto; }
 .ba-race-roster { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
 .ba-race-roster li {
-  display: grid; grid-template-columns: 34px 12px minmax(0, 1fr) auto; align-items: center; gap: 8px;
+  display: grid; grid-template-columns: 34px 12px minmax(0, 1fr) auto auto; align-items: center; gap: 8px;
   padding: 5px 8px; border-radius: 5px; background: #fff9e9; border: 1.5px solid #d9c9a8;
   font: 600 15px/1.2 var(--ba-sign);
 }
@@ -29,7 +29,11 @@
 .ba-race-dot { width: 10px; height: 10px; border-radius: 50%; background: #b9ab90; }
 .ba-race-roster li[data-online] .ba-race-dot { background: #4d9a5b; box-shadow: 0 0 0 2px #4d9a5b40; }
 .ba-race-status { font-variant-numeric: tabular-nums; color: #4d4031; white-space: nowrap; }
+/* Round wins in the match, as stars: first to three takes it. */
+.ba-race-wins { font: 400 17px/1 system-ui, sans-serif; letter-spacing: 1px; color: #c08a12; white-space: nowrap; }
+.ba-race-roster li[data-champion] { box-shadow: inset 0 0 0 1px #a5770c; }
 .ba-race-line { margin: 0; font: 700 16px/1.25 var(--ba-voice); }
+.ba-race-line svg { margin-right: 6px; vertical-align: -3px; color: #a5770c; }
 .ba-race-error { margin: 0; padding: 5px 8px; border-radius: 5px; background: #fbe1da; color: #7a2414; font: 650 14px/1.25 var(--ba-sign); }
 .ba-race-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .ba-app .ba-race-deal {
@@ -60,8 +64,8 @@
 .ba-front-desk .ba-race-join [role='alert'] { color: #ffc9bb; }
 @media (max-width: 600px) {
   .ba-race-code { font-size: 22px; }
-  .ba-race-roster li { grid-template-columns: 28px 10px minmax(0, 1fr); }
-  .ba-race-status { grid-column: 3; font-size: 13.5px; }
+  .ba-race-roster li { grid-template-columns: 28px 10px minmax(0, 1fr) auto; }
+  .ba-race-status { grid-column: 3 / -1; font-size: 13.5px; }
   /* On a phone the question takes its own line, so the code box and Join stay side by side. */
   .ba-race-join label { flex: 1 1 100%; }
 }

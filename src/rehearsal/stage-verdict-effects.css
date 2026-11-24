@@ -1,0 +1,114 @@
+/* The occupied seat at stage left and the operator's window stay on top of the paper. */
+.ba-stage-verdict {
+  position: absolute; inset: 0; z-index: 2; overflow: hidden; isolation: isolate;
+  pointer-events: none; user-select: none;
+  animation: ba-house-settle 2.85s linear both;
+}
+.ba-stage-verdict[data-verdict="incorrect"] { animation-duration: 2.55s; }
+.ba-stage-verdict svg { display: block; }
+.ba-ticket-shower { position: absolute; inset: 0; }
+.ba-wing-streamers { position: absolute; top: -2%; width: clamp(67px, 12cqw, 155px); height: auto; }
+.ba-streamers-left { left: -.4%; }
+.ba-streamers-right { right: -.5%; }
+.ba-ribbon { transform-box: fill-box; transform-origin: 50% 0; }
+.ba-ticket-fall {
+  position: absolute; top: 0; width: clamp(8px, 1.28cqw, 16px); height: 93%;
+  transform: translateY(var(--ticket-perch));
+}
+.ba-ticket-scrap { width: 100%; height: auto; transform: rotate(var(--ticket-tilt)); }
+.ba-front-clapper { position: absolute; bottom: -4px; width: clamp(52px, 10.4cqw, 114px); height: auto; }
+.ba-clapper-left { left: 29%; }
+.ba-clapper-right { right: 11%; }
+.ba-clap-arm-l { transform-origin: 35px 70px; transform: rotate(26deg); }
+.ba-clap-arm-r { transform-origin: 81px 70px; transform: rotate(-26deg); }
+.ba-clapper-right .ba-clap-arm-l { transform: rotate(9deg); }
+.ba-clapper-right .ba-clap-arm-r { transform: rotate(-9deg); }
+.ba-heckle-horn { position: absolute; bottom: -3px; right: 7%; width: clamp(78px, 16cqw, 158px); height: auto; }
+.ba-heckle-paper { transform-origin: 86px 39px; transform: rotate(-3deg); }
+.ba-house-call {
+  position: absolute; z-index: 1; margin: 0; white-space: normal; text-align: center;
+  font: 700 clamp(16px,2.1cqw,25px)/1.02 var(--ba-voice); letter-spacing: -.02em;
+  transform: rotate(-8deg);
+}
+.ba-house-encore {
+  bottom: 13%; right: 17.5%; color: #ffecac;
+  text-shadow: -1px -1px #472f25, 1px -1px #472f25, -1px 1px #472f25, 2px 2px #472f25;
+}
+.ba-house-heckle {
+  bottom: clamp(42px, 7.5cqw, 79px); right: 4.8%; max-width: 23%;
+  padding: 4px 9px 2px; border: 1.8px solid #3e322d; border-radius: 48% 43% 37% 22% / 38% 48% 33% 45%;
+  background: #e9dfc5; color: #513c3c; box-shadow: 2px 2px #49362d;
+  font-size: clamp(13px,1.5cqw,19px); transform: rotate(3deg);
+}
+.ba-house-heckle::after {
+  content: ''; position: absolute; top: calc(100% - 1px); right: 24%; width: 12px; height: 10px;
+  background: #e9dfc5; clip-path: polygon(0 0,100% 0,100% 100%);
+}
+@keyframes ba-house-settle { 0%,83% { opacity: 1; } 100% { opacity: 0; } }
+
+@media (max-width: 600px) {
+  .ba-wing-streamers { width: clamp(49px,13cqw,72px); }
+  .ba-stage-verdict .ba-clapper-left { left: 29%; }
+  .ba-stage-verdict .ba-clapper-right { right: 6.5%; }
+  .ba-house-encore { bottom: 13%; right: 13%; }
+  .ba-house-heckle { right: 3%; bottom: 37px; max-width: 28%; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ba-ribbon { animation: ba-curl-from-rafters 2.27s cubic-bezier(.22,.61,.33,1) both; }
+  .ba-ribbon-inner { animation-delay: 180ms; animation-duration: 1.95s; }
+  .ba-streamers-right .ba-ribbon-outer { animation-delay: 100ms; }
+  .ba-ticket-fall { animation: ba-stub-fall 1.95s cubic-bezier(.32,.13,.76,.82) var(--ticket-start) both; }
+  .ba-ticket-scrap { animation: ba-stub-tumble .81s ease-in-out var(--ticket-start) 3 alternate both; }
+  .ba-front-clapper { animation: ba-take-front-seat 270ms cubic-bezier(.16,.76,.32,1.12) both; }
+  .ba-clapper-right { animation-delay: 120ms; }
+  .ba-clap-arm-l { animation: ba-clap-left .42s ease-out 180ms 5 both; }
+  .ba-clap-arm-r { animation: ba-clap-right .42s ease-out 180ms 5 both; }
+  .ba-clap-rays { animation: ba-clap-strike .42s ease-out 180ms 5 both; }
+  .ba-clapper-right :is(.ba-clap-arm, .ba-clap-rays) { animation-delay: 350ms; animation-duration: .39s; }
+  .ba-house-encore { animation: ba-house-shout 330ms ease-out 240ms both; }
+  .ba-heckle-horn { animation: ba-take-front-seat 350ms ease-out 100ms both; }
+  .ba-heckle-paper { animation: ba-dud-party-horn 1.6s ease-out 470ms both; }
+  .ba-house-heckle { animation: ba-heckle-delivery 250ms ease-out 760ms both; }
+
+  @keyframes ba-curl-from-rafters {
+    0% { opacity: 0; transform: translateY(-8%) scaleY(.04); }
+    12% { opacity: 1; }
+    42% { transform: translateY(-2%) scaleY(1.04) rotate(3deg); }
+    67% { transform: translateY(12%) scaleY(.88) rotate(-4deg); }
+    100% { opacity: 0; transform: translateY(61%) scaleY(.96) rotate(6deg); }
+  }
+  @keyframes ba-stub-fall {
+    0% { opacity: 0; transform: translate(0,-6%); }
+    10% { opacity: 1; }
+    42% { transform: translate(var(--ticket-drift),31%); }
+    67% { transform: translate(0,57%); }
+    87% { opacity: 1; }
+    100% { opacity: 0; transform: translate(var(--ticket-drift),95%); }
+  }
+  @keyframes ba-stub-tumble {
+    0% { transform: rotate(var(--ticket-tilt)) scaleX(.72); }
+    49% { transform: rotate(92deg) scaleX(.32); }
+    100% { transform: rotate(157deg) scaleX(1); }
+  }
+  @keyframes ba-take-front-seat {
+    0% { transform: translateY(102%); }
+    82% { transform: translateY(-3%); }
+    100% { transform: none; }
+  }
+  @keyframes ba-clap-left { 0%,100% { transform: rotate(0); } 35%,47% { transform: rotate(29deg); } }
+  @keyframes ba-clap-right { 0%,100% { transform: rotate(0); } 35%,47% { transform: rotate(-30deg); } }
+  @keyframes ba-clap-strike { 0%,25%,73%,100% { opacity: 0; } 36%,50% { opacity: 1; } }
+  @keyframes ba-house-shout { from { opacity: 0; transform: translateY(6px) rotate(-14deg) scale(.84); } to { opacity: 1; transform: rotate(-8deg); } }
+  @keyframes ba-dud-party-horn {
+    0% { transform: scaleX(.15) rotate(5deg); }
+    22% { transform: scaleX(1) rotate(7deg); }
+    39% { transform: scaleX(.89) rotate(-4deg); }
+    67%,100% { transform: scaleX(.77) rotate(-14deg); }
+  }
+  @keyframes ba-heckle-delivery { from { opacity: 0; transform: translateY(4px) rotate(-2deg); } to { opacity: 1; transform: rotate(3deg); } }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ba-stage-verdict { animation-timing-function: step-end; }
+}

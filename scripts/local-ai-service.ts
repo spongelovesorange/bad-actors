@@ -1,18 +1,23 @@
 import { createHash, randomUUID } from 'node:crypto'
-import { refereeFailure, type OwnProvider } from './local-ai-provider'
+import { providerFailureReason, refereeFailure, type OwnProvider } from './local-ai-provider'
 
 const cues = ['Drinking water', 'Talking on the phone', 'Taking a selfie', 'Covering your eyes', 'Surrendering', 'Carrying a tray']
 const limit = 5
 const uuid = /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i
 const pngPrefix = 'data:image/png;base64,'
 export const maxBodyBytes = 820_000
-type Reply = { status: number; body: Record<string, unknown>; cookie?: string }
-type Observation = { hash: string; response: Promise<Reply> }
+export type LocalReply = { status: number; body: Record<string, unknown>; cookie?: string }
+export type VisionGuess = {
+  roundId: string; observationId: string; used: number; limit: number
+  guess: string; visionModel: string; visionTokens?: number
+}
+type Observation = { hash: string; vision: Promise<VisionGuess | LocalReply>; response: Promise<LocalReply> }
+type GuessListener = (guess: VisionGuess) => void
 type Round = { id: string; cue: string; lastAt: number; closed: boolean; observations: Map<string, Observation> }
 type Session = { round: Round; busy: boolean; activeAt: number; starts: number[] }
 type Options = { provider?: OwnProvider; claim: (session: string, at: number) => boolean; now?: () => number }
 
-export const failure = (status: number, error: string, message: string, used?: number): Reply => ({
+export const failure = (status: number, error: string, message: string, used?: number): LocalReply => ({
   status, body: { error, message, ...(used === undefined ? {} : { used, limit }) },
 })
 
@@ -35,10 +40,12 @@ export function createLocalAudience({ provider, claim, now = Date.now }: Options
   const sessions = new Map<string, Session>()
   const staleRound = () => failure(409, 'stale_round', 'That round has ended. Start a fresh one.')
   return {
-    status(): Reply {
-      return { status: 200, body: provider ? { available: true, model: provider.model } : { available: false } }
+    status(): LocalReply {
+      if (!provider) return { status: 200, body: { available: false } }
+      const { visionModel, judgeModel } = provider
+      return { status: 200, body: { available: true, model: visionModel, visionModel, judgeModel } }
     },
-    start(sessionId: string, input: Record<string, unknown>): Reply {
+    start(sessionId: string, input: Record<string, unknown>): LocalReply {
       if (!provider) return failure(503, 'unavailable', 'The AI audience is offline.')
       const n = input.cue
       if (typeof n !== 'number' || !Number.isInteger(n) || !cues[n-1] || Object.keys(input).length !== 1) {
@@ -57,12 +64,19 @@ export function createLocalAudience({ provider, claim, now = Date.now }: Options
       sessions.set(cookie, session)
       return { status: 200, body: { roundId: round.id, limit }, cookie }
     },
-    async observe(sessionId: string, input: Record<string, unknown>): Promise<Reply> {
+    async observe(sessionId: string, input: Record<string, unknown>, onGuess?: GuessListener): Promise<LocalReply> {
       if (!provider) return failure(503, 'unavailable', 'The AI audience is offline.')
       const { roundId, observationId, image } = input
       const session = sessions.get(sessionId)
       if (!session || session.round.id !== roundId) return staleRound()
       const round = session.round
+      const deliver = async (observation: Observation) => {
+        if (onGuess) {
+          const vision = await observation.vision
+          if (session.round === round && 'guess' in vision) onGuess(vision)
+        }
+        return observation.response
+      }
       const used = round.observations.size
       if (typeof observationId !== 'string' || !uuid.test(observationId) || typeof image !== 'string' || Object.keys(input).length !== 3) {
         return failure(400, 'invalid_observation', 'The stage could not freeze that observation.', used)
@@ -70,7 +84,7 @@ export function createLocalAudience({ provider, claim, now = Date.now }: Options
       const hash = imageHash(image)
       if (!hash) return failure(400, 'invalid_image', 'The stage needs a small PNG snapshot.', used)
       const prior = round.observations.get(observationId)
-      if (prior) return prior.hash === hash ? prior.response : failure(409, 'observation_conflict', 'This observation belongs to a different pose.', used)
+      if (prior) return prior.hash === hash ? deliver(prior) : failure(409, 'observation_conflict', 'This observation belongs to a different pose.', used)
       if (round.closed) return failure(409, 'round_finished', 'This cue was already guessed.', used)
       if (used >= limit) return failure(429, 'round_limit', 'All five looks for this round have been used.', used)
       if (session.busy) return failure(409, 'in_flight', 'The audience is still looking at a pose.', used)
@@ -84,28 +98,36 @@ export function createLocalAudience({ provider, claim, now = Date.now }: Options
       // remains charged to the slot and a retry with the same ID shares its result.
       session.busy = true
       session.activeAt = round.lastAt = at
-      const response = (async (): Promise<Reply> => {
-        const slot = used + 1
+      const slot = used + 1
+      const vision = (async (): Promise<VisionGuess | LocalReply> => {
         try {
           const read = await provider.guess(image)
           if (session.round !== round) return staleRound()
-          const base = { roundId, observationId, used: slot, limit, guess: read.text, visionModel: read.model, visionTokens: read.tokens }
-          try {
-            const score = await provider.judge(round.cue, read.text)
-            if (session.round !== round) return staleRound()
-            if (score.verdict === 'correct') round.closed = true
-            return { status: 200, body: { ...base, verdict: score.verdict, judgeModel: score.model, judgeTokens: score.tokens } }
-          } catch (error) {
-            return session.round === round ? { status: 200, body: { ...base, verdict: 'unjudged', ...refereeFailure(error) } } : staleRound()
-          }
-        } catch {
-          return session.round === round ? failure(502, 'vision_failed', 'The audience could not read this snapshot. This look was counted.', slot) : staleRound()
+          return { roundId: round.id, observationId, used: slot, limit, guess: read.text, visionModel: read.model, visionTokens: read.tokens }
+        } catch (error) {
+          if (session.round !== round) return staleRound()
+          const reply = failure(502, 'vision_failed', 'The image model did not return a guess. This look was counted.', slot)
+          reply.body.visionFailure = providerFailureReason(error)
+          return reply
+        }
+      })()
+      const response = vision.then(async (base): Promise<LocalReply> => {
+        try {
+          if ('status' in base) return base
+          if (session.round !== round) return staleRound()
+          const score = await provider.judge(round.cue, base.guess)
+          if (session.round !== round) return staleRound()
+          if (score.verdict === 'correct') round.closed = true
+          return { status: 200, body: { ...base, verdict: score.verdict, judgeModel: score.model, judgeTokens: score.tokens } }
+        } catch (error) {
+          return session.round === round ? { status: 200, body: { ...base, verdict: 'unjudged', ...refereeFailure(error) } } : staleRound()
         } finally {
           session.busy = false
         }
-      })()
-      round.observations.set(observationId, { hash, response })
-      return response
+      })
+      const observation = { hash, vision, response }
+      round.observations.set(observationId, observation)
+      return deliver(observation)
     },
   }
 }

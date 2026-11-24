@@ -1,0 +1,68 @@
+.ba-referee {
+  position: relative; width: 100%; min-width: 0; isolation: isolate;
+  display: flex; flex-direction: column; align-items: start; color: #2b2925;
+}
+.ba-referee-art { position: relative; z-index: 1; display: block; width: 100%; height: auto; overflow: visible; }
+.ba-referee-set { transform-origin: 49px 67px; }
+.ba-referee-slip-holder {
+  position: relative; z-index: 3; display: grid; justify-items: center; width: 82%;
+  margin: -3px 0 0 4%; pointer-events: none;
+}
+.ba-referee-slip {
+  display: flex; justify-content: center; gap: 3px; align-items: center;
+  max-width: 100%; color: #fff6dc; background: #36624c;
+  padding: 4px 5px 5px; transform: rotate(-3deg);
+  font: 760 clamp(10px, .9vw, 14px)/1.14 var(--ba-sign);
+  text-align: center; text-wrap: balance;
+  clip-path: polygon(0 0, 99% 2%, 100% 94%, 92% 100%, 84% 93%, 76% 99%, 67% 93%, 58% 100%, 49% 94%, 39% 100%, 29% 94%, 20% 100%, 10% 94%, 0 100%);
+}
+.ba-referee-slip svg { flex: none; width: 10px; height: 10px; }
+.ba-referee[data-referee-mood='incorrect'] .ba-referee-slip { background: #923e33; transform: rotate(4deg); }
+.ba-referee[data-referee-mood='uncertain'] .ba-referee-slip { background: #edd291; color: #3d3729; }
+.ba-referee[data-referee-mood='unjudged'] .ba-referee-slip {
+  color: #392f29;
+  background: linear-gradient(119deg, #f3e2b5 0 64%, #b5a88d 65% 67%, #f3e2b5 68% 80%, #cbbd9d 81% 84%, #f3e2b5 85%);
+  transform: rotate(3deg);
+}
+.ba-referee .ba-referee-name {
+  position: relative; z-index: 2; isolation: isolate; width: 80%; margin: -4.2% 0 0 3.8%;
+  display: grid; justify-items: center; padding: 2px 0 6px;
+  color: #f5e5bc; text-align: center; transform: rotate(1.3deg); background: transparent; border: 0;
+}
+.ba-referee-name::before {
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  background: linear-gradient(#382f29 0 6%, #70543c 9% 83%, #523d30 84% 94%, #302720 96%);
+  clip-path: polygon(0 0,100% 0,98.5% 93%,97% 100%,2% 98%);
+}
+/* The verdict drops from the slot cut through the bottom edge of the wooden fascia. */
+.ba-referee-name::after {
+  content: ''; position: absolute; height: 2px; bottom: 2px; left: 15%; width: 64%;
+  border-radius: 1px; background: #221e1b; box-shadow: 0 1px 0 #a58760;
+}
+.ba-referee-name strong { font: 760 clamp(10px,1vw,15px)/1.04 var(--ba-sign); white-space: nowrap; }
+.ba-referee-name small { margin-top: 1px; font: 560 clamp(9px,.75vw,12px)/1.1 var(--ba-sign); }
+@media (max-width: 600px) {
+  .ba-referee-wall-ties { display: none; }
+  .ba-referee .ba-referee-name { width: 94%; margin: -5% 0 0 1%; padding: 1px 0 4px; }
+  .ba-referee-name strong { font-size: clamp(10px,2.6vw,12px); letter-spacing: -.025em; }
+  .ba-referee-name small { font-size: 9px; text-transform: capitalize; }
+  .ba-referee-name small span { display: none; }
+  .ba-referee-slip-holder { width: 100%; margin-left: -3%; }
+  .ba-referee-slip { gap: 2px; padding-inline: 2px; }
+  .ba-referee-slip svg { width: 8px; height: 9px; }
+}
+@media (max-width: 360px) {
+  .ba-referee-name small {
+    position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%);
+  }
+  .ba-referee-name small span { display: inline; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ba-referee[data-referee-mood='listening'] .ba-referee-set { transform: rotate(-4deg); transition: transform 150ms ease-out; }
+  .ba-referee-slip { animation: ba-receipt-feed 220ms ease-out both; }
+  @keyframes ba-receipt-feed {
+    from { translate: 0 -6px; clip-path: inset(0 0 85%); }
+    70% { translate: 0 1px; }
+    to { translate: 0 0; }
+  }
+}

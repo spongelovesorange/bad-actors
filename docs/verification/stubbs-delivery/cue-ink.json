@@ -1,0 +1,546 @@
+{
+  "scope": "Actual local Chromium game, six cues across eleven layout widths. CSS pixels. Font ink checked against the paper's cut edge, zero paid provider requests.",
+  "atUTC": "2026-11-23T23:54:56.226Z",
+  "cases": [
+    {
+      "width": 320,
+      "title": "Drinking water",
+      "fontSize": 16,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 5.962
+    },
+    {
+      "width": 320,
+      "title": "Talking on the phone",
+      "fontSize": 16,
+      "paperHeight": 50,
+      "lines": 2,
+      "minInkClearance": 5.941
+    },
+    {
+      "width": 320,
+      "title": "Taking a selfie",
+      "fontSize": 16,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 5.968
+    },
+    {
+      "width": 320,
+      "title": "Covering your eyes",
+      "fontSize": 16,
+      "paperHeight": 50,
+      "lines": 2,
+      "minInkClearance": 6.676
+    },
+    {
+      "width": 320,
+      "title": "Surrendering",
+      "fontSize": 16,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 6.005
+    },
+    {
+      "width": 320,
+      "title": "Carrying a tray",
+      "fontSize": 16,
+      "paperHeight": 50,
+      "lines": 2,
+      "minInkClearance": 6.918
+    },
+    {
+      "width": 360,
+      "title": "Drinking water",
+      "fontSize": 16,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 5.993
+    },
+    {
+      "width": 360,
+      "title": "Talking on the phone",
+      "fontSize": 16,
+      "paperHeight": 50,
+      "lines": 2,
+      "minInkClearance": 5.99
+    },
+    {
+      "width": 360,
+      "title": "Taking a selfie",
+      "fontSize": 16,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 5.999
+    },
+    {
+      "width": 360,
+      "title": "Covering your eyes",
+      "fontSize": 16,
+      "paperHeight": 50,
+      "lines": 2,
+      "minInkClearance": 6.7
+    },
+    {
+      "width": 360,
+      "title": "Surrendering",
+      "fontSize": 16,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 6.032
+    },
+    {
+      "width": 360,
+      "title": "Carrying a tray",
+      "fontSize": 16,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 5.975
+    },
+    {
+      "width": 390,
+      "title": "Drinking water",
+      "fontSize": 16,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 6.008
+    },
+    {
+      "width": 390,
+      "title": "Talking on the phone",
+      "fontSize": 16,
+      "paperHeight": 50,
+      "lines": 2,
+      "minInkClearance": 6.022
+    },
+    {
+      "width": 390,
+      "title": "Taking a selfie",
+      "fontSize": 16,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 6.018
+    },
+    {
+      "width": 390,
+      "title": "Covering your eyes",
+      "fontSize": 16,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 5.182
+    },
+    {
+      "width": 390,
+      "title": "Surrendering",
+      "fontSize": 16,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 6.05
+    },
+    {
+      "width": 390,
+      "title": "Carrying a tray",
+      "fontSize": 16,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 5.996
+    },
+    {
+      "width": 520,
+      "title": "Drinking water",
+      "fontSize": 17.1,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 5.752
+    },
+    {
+      "width": 520,
+      "title": "Talking on the phone",
+      "fontSize": 17.1,
+      "paperHeight": 52,
+      "lines": 2,
+      "minInkClearance": 5.766
+    },
+    {
+      "width": 520,
+      "title": "Taking a selfie",
+      "fontSize": 17.1,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 5.761
+    },
+    {
+      "width": 520,
+      "title": "Covering your eyes",
+      "fontSize": 17.1,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 5.691
+    },
+    {
+      "width": 520,
+      "title": "Surrendering",
+      "fontSize": 17.1,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 5.787
+    },
+    {
+      "width": 520,
+      "title": "Carrying a tray",
+      "fontSize": 17.1,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 5.742
+    },
+    {
+      "width": 600,
+      "title": "Drinking water",
+      "fontSize": 17.1,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 5.752
+    },
+    {
+      "width": 600,
+      "title": "Talking on the phone",
+      "fontSize": 17.1,
+      "paperHeight": 52,
+      "lines": 2,
+      "minInkClearance": 5.766
+    },
+    {
+      "width": 600,
+      "title": "Taking a selfie",
+      "fontSize": 17.1,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 5.761
+    },
+    {
+      "width": 600,
+      "title": "Covering your eyes",
+      "fontSize": 17.1,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 5.691
+    },
+    {
+      "width": 600,
+      "title": "Surrendering",
+      "fontSize": 17.1,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 5.787
+    },
+    {
+      "width": 600,
+      "title": "Carrying a tray",
+      "fontSize": 17.1,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 5.742
+    },
+    {
+      "width": 601,
+      "title": "Drinking water",
+      "fontSize": 16.2164,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 6.145
+    },
+    {
+      "width": 601,
+      "title": "Talking on the phone",
+      "fontSize": 16.2164,
+      "paperHeight": 50,
+      "lines": 2,
+      "minInkClearance": 5.894
+    },
+    {
+      "width": 601,
+      "title": "Taking a selfie",
+      "fontSize": 16.2164,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 6.158
+    },
+    {
+      "width": 601,
+      "title": "Covering your eyes",
+      "fontSize": 16.2164,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 6.921
+    },
+    {
+      "width": 601,
+      "title": "Surrendering",
+      "fontSize": 16.2164,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 6.199
+    },
+    {
+      "width": 601,
+      "title": "Carrying a tray",
+      "fontSize": 16.2164,
+      "paperHeight": 32,
+      "lines": 1,
+      "minInkClearance": 6.971
+    },
+    {
+      "width": 720,
+      "title": "Drinking water",
+      "fontSize": 19.6078,
+      "paperHeight": 35,
+      "lines": 1,
+      "minInkClearance": 6.031
+    },
+    {
+      "width": 720,
+      "title": "Talking on the phone",
+      "fontSize": 19.6078,
+      "paperHeight": 35,
+      "lines": 1,
+      "minInkClearance": 5.622
+    },
+    {
+      "width": 720,
+      "title": "Taking a selfie",
+      "fontSize": 19.6078,
+      "paperHeight": 35,
+      "lines": 1,
+      "minInkClearance": 6.039
+    },
+    {
+      "width": 720,
+      "title": "Covering your eyes",
+      "fontSize": 19.6078,
+      "paperHeight": 35,
+      "lines": 1,
+      "minInkClearance": 5.965
+    },
+    {
+      "width": 720,
+      "title": "Surrendering",
+      "fontSize": 19.6078,
+      "paperHeight": 35,
+      "lines": 1,
+      "minInkClearance": 6.067
+    },
+    {
+      "width": 720,
+      "title": "Carrying a tray",
+      "fontSize": 19.6078,
+      "paperHeight": 35,
+      "lines": 1,
+      "minInkClearance": 6.018
+    },
+    {
+      "width": 721,
+      "title": "Drinking water",
+      "fontSize": 19.1227,
+      "paperHeight": 35,
+      "lines": 1,
+      "minInkClearance": 6.155
+    },
+    {
+      "width": 721,
+      "title": "Talking on the phone",
+      "fontSize": 19.1227,
+      "paperHeight": 35,
+      "lines": 1,
+      "minInkClearance": 5.711
+    },
+    {
+      "width": 721,
+      "title": "Taking a selfie",
+      "fontSize": 19.1227,
+      "paperHeight": 35,
+      "lines": 1,
+      "minInkClearance": 6.164
+    },
+    {
+      "width": 721,
+      "title": "Covering your eyes",
+      "fontSize": 19.1227,
+      "paperHeight": 35,
+      "lines": 1,
+      "minInkClearance": 6.088
+    },
+    {
+      "width": 721,
+      "title": "Surrendering",
+      "fontSize": 19.1227,
+      "paperHeight": 35,
+      "lines": 1,
+      "minInkClearance": 6.193
+    },
+    {
+      "width": 721,
+      "title": "Carrying a tray",
+      "fontSize": 19.1227,
+      "paperHeight": 35,
+      "lines": 1,
+      "minInkClearance": 6.141
+    },
+    {
+      "width": 940,
+      "title": "Drinking water",
+      "fontSize": 23,
+      "paperHeight": 40,
+      "lines": 1,
+      "minInkClearance": 6.029
+    },
+    {
+      "width": 940,
+      "title": "Talking on the phone",
+      "fontSize": 23,
+      "paperHeight": 40,
+      "lines": 1,
+      "minInkClearance": 5.684
+    },
+    {
+      "width": 940,
+      "title": "Taking a selfie",
+      "fontSize": 23,
+      "paperHeight": 40,
+      "lines": 1,
+      "minInkClearance": 6.037
+    },
+    {
+      "width": 940,
+      "title": "Covering your eyes",
+      "fontSize": 23,
+      "paperHeight": 40,
+      "lines": 1,
+      "minInkClearance": 5.954
+    },
+    {
+      "width": 940,
+      "title": "Surrendering",
+      "fontSize": 23,
+      "paperHeight": 40,
+      "lines": 1,
+      "minInkClearance": 6.071
+    },
+    {
+      "width": 940,
+      "title": "Carrying a tray",
+      "fontSize": 23,
+      "paperHeight": 40,
+      "lines": 1,
+      "minInkClearance": 6.016
+    },
+    {
+      "width": 1024,
+      "title": "Drinking water",
+      "fontSize": 23,
+      "paperHeight": 40,
+      "lines": 1,
+      "minInkClearance": 6.029
+    },
+    {
+      "width": 1024,
+      "title": "Talking on the phone",
+      "fontSize": 23,
+      "paperHeight": 40,
+      "lines": 1,
+      "minInkClearance": 5.684
+    },
+    {
+      "width": 1024,
+      "title": "Taking a selfie",
+      "fontSize": 23,
+      "paperHeight": 40,
+      "lines": 1,
+      "minInkClearance": 6.037
+    },
+    {
+      "width": 1024,
+      "title": "Covering your eyes",
+      "fontSize": 23,
+      "paperHeight": 40,
+      "lines": 1,
+      "minInkClearance": 5.954
+    },
+    {
+      "width": 1024,
+      "title": "Surrendering",
+      "fontSize": 23,
+      "paperHeight": 40,
+      "lines": 1,
+      "minInkClearance": 6.071
+    },
+    {
+      "width": 1024,
+      "title": "Carrying a tray",
+      "fontSize": 23,
+      "paperHeight": 40,
+      "lines": 1,
+      "minInkClearance": 6.016
+    },
+    {
+      "width": 1440,
+      "title": "Drinking water",
+      "fontSize": 23,
+      "paperHeight": 40,
+      "lines": 1,
+      "minInkClearance": 6.029
+    },
+    {
+      "width": 1440,
+      "title": "Talking on the phone",
+      "fontSize": 23,
+      "paperHeight": 40,
+      "lines": 1,
+      "minInkClearance": 5.684
+    },
+    {
+      "width": 1440,
+      "title": "Taking a selfie",
+      "fontSize": 23,
+      "paperHeight": 40,
+      "lines": 1,
+      "minInkClearance": 6.037
+    },
+    {
+      "width": 1440,
+      "title": "Covering your eyes",
+      "fontSize": 23,
+      "paperHeight": 40,
+      "lines": 1,
+      "minInkClearance": 5.954
+    },
+    {
+      "width": 1440,
+      "title": "Surrendering",
+      "fontSize": 23,
+      "paperHeight": 40,
+      "lines": 1,
+      "minInkClearance": 6.071
+    },
+    {
+      "width": 1440,
+      "title": "Carrying a tray",
+      "fontSize": 23,
+      "paperHeight": 40,
+      "lines": 1,
+      "minInkClearance": 6.016
+    }
+  ],
+  "loadedFont": true,
+  "api": {
+    "statusChecks": 1,
+    "observationOrRoundAttempts": 0,
+    "upstreamCalls": 0
+  },
+  "result": {
+    "passed": 66,
+    "failed": 0,
+    "minimumPaperEdgeDistanceCssPx": 5.182,
+    "minimumRequiredCssPx": 5
+  }
+}

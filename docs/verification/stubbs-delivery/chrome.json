@@ -1,0 +1,598 @@
+{
+  "scope": "Real local desktop Chrome, loopback rehearsal with scripted read/referee streams. Every observation was intercepted locally. No external model calls. Responsive widths are CSS viewport tests, not physical mobile hardware.",
+  "dateUTC": "2026-11-23",
+  "streams": [
+    {
+      "mode": "delayed",
+      "phrase": "Talking to somebody on the phone.",
+      "accepted": "application/x-ndjson, application/json",
+      "observationPosts": 1,
+      "length": 33,
+      "interimMs": 87,
+      "resultMs": 1911,
+      "raisedBeforeTextOnly": true,
+      "preResult": 219,
+      "printsDuringSpeech": 0,
+      "printBeforeResult": 0,
+      "restarts": 0,
+      "first": {
+        "t": 97,
+        "n": 0,
+        "spoken": false,
+        "jaw": "closed",
+        "gesture": "raise",
+        "gaze": "upstage-right",
+        "judge": "listening",
+        "slip": null
+      },
+      "full": {
+        "t": 1363,
+        "n": 33,
+        "spoken": true,
+        "jaw": "closed",
+        "gesture": "rest",
+        "gaze": "upstage-right",
+        "judge": "listening",
+        "slip": null
+      },
+      "printed": {
+        "t": 1921,
+        "n": 33,
+        "spoken": false,
+        "jaw": "closed",
+        "gesture": "rest",
+        "gaze": "upstage-right",
+        "judge": "correct",
+        "slip": "Guessed it!"
+      },
+      "distinctCounts": 34,
+      "jawPositions": [
+        "closed",
+        "half",
+        "open"
+      ]
+    },
+    {
+      "mode": "miss",
+      "phrase": "Checking the weather.",
+      "accepted": "application/x-ndjson, application/json",
+      "observationPosts": 1,
+      "length": 21,
+      "interimMs": 85,
+      "resultMs": 192,
+      "raisedBeforeTextOnly": true,
+      "preResult": 12,
+      "printsDuringSpeech": 0,
+      "printBeforeResult": 0,
+      "restarts": 0,
+      "first": {
+        "t": 95,
+        "n": 0,
+        "spoken": false,
+        "jaw": "closed",
+        "gesture": "raise",
+        "gaze": "upstage-right",
+        "judge": "listening",
+        "slip": null
+      },
+      "full": {
+        "t": 968,
+        "n": 21,
+        "spoken": true,
+        "jaw": "closed",
+        "gesture": "rest",
+        "gaze": "upstage-right",
+        "judge": "listening",
+        "slip": null
+      },
+      "printed": {
+        "t": 1079,
+        "n": 21,
+        "spoken": false,
+        "jaw": "closed",
+        "gesture": "rest",
+        "gaze": "upstage-right",
+        "judge": "incorrect",
+        "slip": "Miss!"
+      },
+      "distinctCounts": 22,
+      "jawPositions": [
+        "closed",
+        "half",
+        "open"
+      ]
+    },
+    {
+      "mode": "uncertain",
+      "phrase": "Using a phone.",
+      "accepted": "application/x-ndjson, application/json",
+      "observationPosts": 1,
+      "length": 14,
+      "interimMs": 86,
+      "resultMs": 191,
+      "raisedBeforeTextOnly": true,
+      "preResult": 12,
+      "printsDuringSpeech": 0,
+      "printBeforeResult": 0,
+      "restarts": 0,
+      "first": {
+        "t": 96,
+        "n": 0,
+        "spoken": false,
+        "jaw": "closed",
+        "gesture": "raise",
+        "gaze": "upstage-right",
+        "judge": "listening",
+        "slip": null
+      },
+      "full": {
+        "t": 738,
+        "n": 14,
+        "spoken": true,
+        "jaw": "closed",
+        "gesture": "rest",
+        "gaze": "upstage-right",
+        "judge": "listening",
+        "slip": null
+      },
+      "printed": {
+        "t": 844,
+        "n": 14,
+        "spoken": false,
+        "jaw": "closed",
+        "gesture": "rest",
+        "gaze": "upstage-right",
+        "judge": "uncertain",
+        "slip": "Too close to call"
+      },
+      "distinctCounts": 15,
+      "jawPositions": [
+        "closed",
+        "half",
+        "open"
+      ]
+    },
+    {
+      "mode": "outage",
+      "phrase": "Talking to somebody on the phone.",
+      "accepted": "application/x-ndjson, application/json",
+      "observationPosts": 1,
+      "length": 33,
+      "interimMs": 89,
+      "resultMs": 194,
+      "raisedBeforeTextOnly": true,
+      "preResult": 12,
+      "printsDuringSpeech": 0,
+      "printBeforeResult": 0,
+      "restarts": 0,
+      "first": {
+        "t": 100,
+        "n": 0,
+        "spoken": false,
+        "jaw": "closed",
+        "gesture": "raise",
+        "gaze": "upstage-right",
+        "judge": "listening",
+        "slip": null
+      },
+      "full": {
+        "t": 1368,
+        "n": 33,
+        "spoken": true,
+        "jaw": "closed",
+        "gesture": "rest",
+        "gaze": "upstage-right",
+        "judge": "listening",
+        "slip": null
+      },
+      "printed": {
+        "t": 1474,
+        "n": 33,
+        "spoken": false,
+        "jaw": "closed",
+        "gesture": "rest",
+        "gaze": "upstage-right",
+        "judge": "unjudged",
+        "slip": "Score unavailable"
+      },
+      "distinctCounts": 34,
+      "jawPositions": [
+        "closed",
+        "half",
+        "open"
+      ]
+    }
+  ],
+  "shortenedMotion": {
+    "method": "The fixture supplied prefers-reduced-motion: reduce through matchMedia. The paid endpoints were again replaced with a controlled local stream.",
+    "result": {
+      "preference": true,
+      "mode": "delayed",
+      "accepted": "application/x-ndjson, application/json",
+      "observationPosts": 1,
+      "phrase": "Talking to somebody on the phone.",
+      "length": 33,
+      "interimMs": 89,
+      "resultMs": 1914,
+      "firstVisible": {
+        "t": 99,
+        "n": 33,
+        "spoken": false,
+        "jaw": "closed",
+        "gesture": "rest",
+        "gaze": "upstage-right",
+        "judge": "listening",
+        "slip": null
+      },
+      "firstFull": {
+        "t": 99,
+        "n": 33,
+        "spoken": false,
+        "jaw": "closed",
+        "gesture": "rest",
+        "gaze": "upstage-right",
+        "judge": "listening",
+        "slip": null
+      },
+      "last": {
+        "t": 1931,
+        "n": 33,
+        "spoken": false,
+        "jaw": "closed",
+        "gesture": "rest",
+        "gaze": "upstage-right",
+        "judge": "correct",
+        "slip": "Guessed it!"
+      },
+      "sampledChars": [
+        33
+      ],
+      "sampledMouths": [
+        "closed"
+      ],
+      "raisedBeforeTextOnly": false,
+      "preResult": 219,
+      "printsDuringSpeech": 0,
+      "printBeforeResult": 0,
+      "restarts": 0
+    }
+  },
+  "hands": {
+    "cardsPerHand": [
+      4,
+      4
+    ],
+    "pictures": [
+      {
+        "selection": "open",
+        "left": "open",
+        "right": "relaxed"
+      },
+      {
+        "selection": "fist",
+        "left": "fist",
+        "right": "relaxed"
+      },
+      {
+        "selection": "peace",
+        "left": "peace",
+        "right": "relaxed"
+      },
+      {
+        "selection": "relaxed",
+        "left": "relaxed",
+        "right": "relaxed"
+      }
+    ],
+    "beforeProp": [
+      "peace",
+      "fist"
+    ],
+    "holding": [
+      "peace",
+      "grip"
+    ],
+    "queued": "Holding the cup. On release: Open palm.",
+    "whileQueued": "grip",
+    "afterRelease": [
+      "peace",
+      "open"
+    ]
+  },
+  "keyboardHand": {
+    "active": "open",
+    "left": "open",
+    "right": "relaxed"
+  },
+  "renderer": "Kalam Bold on speech and acting cues; three WOFF2 font families loaded in Chrome. Each hand offers each of four separately illustrated radio cards.",
+  "stageGeometry": [
+    {
+      "width": 1440,
+      "documentWidth": 1440,
+      "gazeCosine": 0.902,
+      "actor": [
+        638,
+        140,
+        167,
+        247
+      ],
+      "stubbs": [
+        203,
+        272,
+        192,
+        172
+      ],
+      "monitor": [
+        1060,
+        110,
+        184,
+        127
+      ],
+      "figuresInside": [
+        true,
+        true,
+        true
+      ],
+      "allFiveGripCentersHitPuppet": true,
+      "flyCue": "Surrendering",
+      "hidden": "Guess the pose",
+      "hiddenRemovedFromStage": true,
+      "cardPixels": [
+        79,
+        58
+      ],
+      "loadedFonts": [
+        "Young Serif",
+        "National Park",
+        "Kalam"
+      ]
+    },
+    {
+      "width": 390,
+      "documentWidth": 390,
+      "gazeCosine": 0.999,
+      "actor": [
+        142,
+        99,
+        107,
+        159
+      ],
+      "stubbs": [
+        25,
+        216,
+        92,
+        83
+      ],
+      "monitor": [
+        293,
+        74,
+        77,
+        53
+      ],
+      "figuresInside": [
+        true,
+        true,
+        true
+      ],
+      "allFiveGripCentersHitPuppet": true,
+      "flyCue": "Surrendering",
+      "hidden": "Guess the pose",
+      "hiddenRemovedFromStage": true,
+      "cardPixels": [
+        88,
+        58
+      ],
+      "loadedFonts": [
+        "Young Serif",
+        "National Park",
+        "Kalam"
+      ]
+    },
+    {
+      "width": 320,
+      "documentWidth": 320,
+      "gazeCosine": 0.997,
+      "actor": [
+        111,
+        96,
+        100,
+        148
+      ],
+      "stubbs": [
+        20,
+        203,
+        86,
+        77
+      ],
+      "monitor": [
+        233,
+        71,
+        72,
+        50
+      ],
+      "figuresInside": [
+        true,
+        true,
+        true
+      ],
+      "allFiveGripCentersHitPuppet": true,
+      "flyCue": "Surrendering",
+      "hidden": "Guess the pose",
+      "hiddenRemovedFromStage": true,
+      "cardPixels": [
+        73,
+        58
+      ],
+      "loadedFonts": [
+        "Young Serif",
+        "National Park",
+        "Kalam"
+      ]
+    }
+  ],
+  "timedDisjointness": [
+    {
+      "width": 1440,
+      "matched": true,
+      "boardTitle": "Drinking water",
+      "clockSeconds": "45",
+      "allNamesAndBubbleFit": true,
+      "boardClockOverlap": false,
+      "boardHeadOverlap": false,
+      "boardActorOverlap": false,
+      "boardSpeechOverlap": false,
+      "clockHeadOverlap": false,
+      "clockActorOverlap": false,
+      "boardOutsideActorArt": true,
+      "clockOutsideActorArt": true
+    },
+    {
+      "width": 390,
+      "matched": true,
+      "boardTitle": "Talking on the phone",
+      "clockSeconds": "45",
+      "allNamesAndBubbleFit": true,
+      "boardClockOverlap": false,
+      "boardHeadOverlap": false,
+      "boardActorOverlap": false,
+      "boardSpeechOverlap": false,
+      "clockHeadOverlap": false,
+      "clockActorOverlap": false,
+      "boardOutsideActorArt": true,
+      "clockOutsideActorArt": true
+    },
+    {
+      "width": 320,
+      "matched": true,
+      "boardTitle": "Drinking water",
+      "clockSeconds": "45",
+      "allNamesAndBubbleFit": true,
+      "boardClockOverlap": false,
+      "boardHeadOverlap": false,
+      "boardActorOverlap": false,
+      "boardSpeechOverlap": false,
+      "clockHeadOverlap": false,
+      "clockActorOverlap": false,
+      "boardOutsideActorArt": true,
+      "clockOutsideActorArt": true
+    }
+  ],
+  "finalScreenshots": {
+    "stage": [
+      {
+        "file": "stage-1440.jpg",
+        "cssWidth": 1440,
+        "title": "Talking on the phone",
+        "seconds": "9",
+        "lookCount": 0
+      },
+      {
+        "file": "stage-390.jpg",
+        "cssWidth": 390,
+        "title": "Talking on the phone",
+        "seconds": "9",
+        "lookCount": 0
+      },
+      {
+        "file": "stage-320.jpg",
+        "cssWidth": 320,
+        "title": "Talking on the phone",
+        "seconds": "9",
+        "lookCount": 0
+      }
+    ],
+    "timedFixture": "These set photographs use a fixed local deal and accelerated acting clock for reproducibility.",
+    "effects": [
+      {
+        "file": "crowd-correct-1440.jpg",
+        "width": 1440,
+        "openingInput": "phone call",
+        "ruling": "correct",
+        "line": "Encore!",
+        "sampledAtMs": 740,
+        "activeAnimations": 38,
+        "observationPosts": 0,
+        "outsideObservation": true
+      },
+      {
+        "file": "crowd-incorrect-390.jpg",
+        "width": 390,
+        "openingInput": "baking bread",
+        "ruling": "incorrect",
+        "line": "Bold interpretation.",
+        "sampledAtMs": 1375,
+        "activeAnimations": 4,
+        "observationPosts": 0,
+        "outsideObservation": true
+      },
+      {
+        "file": "crowd-correct-390.jpg",
+        "width": 390,
+        "openingInput": "phone call",
+        "ruling": "correct",
+        "line": "Encore!",
+        "sampledAtMs": 740,
+        "activeAnimations": 38,
+        "observationPosts": 0,
+        "outsideObservation": true
+      },
+      {
+        "file": "crowd-incorrect-1440.jpg",
+        "width": 1440,
+        "openingInput": "baking bread",
+        "ruling": "incorrect",
+        "line": "Bold interpretation.",
+        "sampledAtMs": 1375,
+        "activeAnimations": 4,
+        "observationPosts": 0,
+        "outsideObservation": true
+      }
+    ],
+    "effectsMethod": "Real local opening guesses. The browser froze each CSS animation's computed frame to photograph both layouts; the simulated provider received zero pictures."
+  },
+  "gif": {
+    "file": "stubbs-speaks.gif",
+    "scope": "Live React performance sampled into native Chrome frames with a scripted, streamed phone guess. The player used ordinary stage controls to bring the phone to the ear. The animated stills reproduce the scene and the interval between sampled frames, with a hold at the end.",
+    "width": 700,
+    "height": 296,
+    "framesSampled": 22,
+    "wrist": [
+      290,
+      118
+    ],
+    "phonePresentAndHeld": true,
+    "modelCalls": 0,
+    "localObservations": 1,
+    "word": "Calling a friend.",
+    "raisedBeforeSpeech": true,
+    "printed": "Guessed it!"
+  },
+  "offline": {
+    "filename": "Bad-Actors.html",
+    "sha256": "ce94d85903f274098d9bc43ce09f746f5c568b04a671ab0a6016a34ec119109d",
+    "bytes": 1070106,
+    "method": "file:// copy of the final one-file build instrumented for network attempts. All six cue selections and illustrated hint exercised. Both installed copies have the same verified SHA-256 digest.",
+    "cues": [
+      "Drinking water",
+      "Talking on the phone",
+      "Taking a selfie",
+      "Covering your eyes",
+      "Surrendering",
+      "Carrying a tray"
+    ],
+    "fonts": [
+      "Young Serif",
+      "National Park",
+      "Kalam"
+    ],
+    "licenses": [
+      "OFL-Kalam.txt",
+      "OFL-National-Park.txt",
+      "OFL-Young-Serif.txt"
+    ],
+    "pictures": true,
+    "networkReceipt": "Network test. 0 fetches or CSP violations; 0 HTTP resources; images 4/4 loaded.",
+    "cast": "upstage-right",
+    "renderer": true
+  }
+}

@@ -1,11 +1,3 @@
-@font-face {
-  font-family: 'Bricolage Grotesque';
-  src: url('/fonts/bricolage-latin.woff2') format('woff2');
-  font-style: normal;
-  font-weight: 200 800;
-  font-display: swap;
-}
-
 .ba-app, .ba-room {
   --paper: #f6ecda;
   --ink: #292524;
@@ -13,13 +5,10 @@
   --blue: #354f60;
   --muted: #64594e;
   --rule: #b1a18a;
-  --serif: Baskerville, 'Iowan Old Style', Georgia, serif;
-  --sans: 'Bricolage Grotesque', Arial, sans-serif;
-  --mono: 'Courier New', ui-monospace, monospace;
   min-height: 100vh;
   background: var(--paper) url('/paper-stock.svg') repeat;
   color: var(--ink);
-  font: 16px/1.45 var(--sans);
+  font: 430 16px/1.45 var(--ba-sign);
   color-scheme: light;
   -webkit-font-smoothing: antialiased;
 }
@@ -83,7 +72,8 @@
 .ba-intro h1 img { width: min(100%, 615px); height: auto; display: block; }
 .ba-billing h2 {
   color: var(--red);
-  font: italic 700 clamp(22px, 2.15vw, 31px)/1.1 var(--serif);
+  font: 400 clamp(22px, 2.15vw, 31px)/1.1 var(--ba-print);
+  letter-spacing: -.03em;
   margin: 0 0 6px;
 }
 .ba-billing p { font-size: clamp(14px, 1.16vw, 17px); line-height: 1.39; margin: 0; max-width: 34ch; }
@@ -119,75 +109,44 @@
 .ba-stage-bar button:disabled, .ba-foot-turns button:disabled { opacity: .5; }
 .ba-stage-bar button:hover:enabled, .ba-prop-tools button:hover, .ba-note-toggle:hover { text-decoration: underline; text-underline-offset: 3px; }
 
-/* The colored slip, its counterfoil and the camera-facing reverse share a single edge. */
+/* The cue hangs in the rigging; the prompt desk holds the controls below it. */
 .ba-cue {
-  --slip: #f0cd76;
-  position: relative;
-  background: var(--slip) url('/paper-stock.svg') repeat;
-  border: 1.5px solid var(--ink);
-  box-shadow: 3px 4px 0 #594b3a;
-  color: var(--ink);
-  min-width: 0;
+  align-self: start; min-width: 0; border-top: 2px solid var(--ink);
 }
-.ba-cue::after {
-  content: '';
-  position: absolute;
-  right: -1px;
-  bottom: -1px;
-  width: 19px;
-  height: 16px;
-  pointer-events: none;
-  background: repeating-linear-gradient(127deg, transparent 0 3px, #3e3430 3px 4.4px);
-  clip-path: polygon(100% 0, 100% 100%, 0 100%);
-}
-.ba-cue[data-covered] { --slip: #cadbdf; }
-.ba-cue[data-revealed] { --slip: #deebde; }
 .ba-cue[data-revealed] .ba-cue-header > span:last-child {
   color: #284939;
   border: 1.5px solid currentColor;
   transform: rotate(-4deg);
   padding: 2px 6px;
 }
-.ba-cue[data-covered] .ba-cue-body {
-  background: radial-gradient(ellipse at 100% 0, transparent 38%, var(--slip) 76%),
-    radial-gradient(circle, #687a82 0 .8px, transparent 1.1px) top right / 5px 5px;
-}
 .ba-cue-header, .ba-cue-meta, .ba-hide-cue, .ba-note-toggle { display: flex; align-items: center; gap: 7px; }
-.ba-cue-header { justify-content: space-between; min-height: 43px; padding: 5px 18px; border-bottom: 1px dashed #786743; }
-.ba-cue-header > span:first-child {
-  background: #344e5d;
-  color: #fff4d5;
-  padding: 6px 13px 5px 7px;
-  margin-left: -5px;
-  transform: rotate(-2deg);
-  clip-path: polygon(0 9%, 100% 0, 96% 20%, 100% 37%, 97% 59%, 100% 88%, 1% 100%);
-}
-.ba-cue-header > span:first-child, .ba-tray-heading > span, .ba-cue-meta > span, .ba-cue-header > span:last-child, .ba-practice-note, .ba-choose-cue > span {
-  font: 700 11px/1.3 var(--mono);
-  letter-spacing: .07em;
+.ba-cue-header { justify-content: space-between; min-height: 35px; padding: 8px 0 4px; }
+.ba-cue-header > span:first-child { font: 400 23px/1.1 var(--ba-print); letter-spacing: -.025em; }
+.ba-cue-meta > span { color: var(--muted); }
+.ba-tray-heading > span, .ba-cue-meta > span, .ba-cue-header > span:last-child, .ba-practice-note, .ba-choose-cue > span {
+  font: 730 11px/1.3 var(--ba-sign);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: .09em;
   text-transform: uppercase;
 }
-.ba-cue-header > span:first-child { display: inline-flex; align-items: center; gap: 9px; font-size: 12px; }
-.ba-cue-header > span:first-child::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--paper); box-shadow: inset 1px 1px 1px #866944; border: 1px solid #665539; }
 .ba-cue-header .ba-hide-cue { min-height: 32px; font-size: 12px; font-weight: 680; padding: 4px; text-decoration: underline; text-underline-offset: 3px; }
-.ba-cue-body { padding: 17px 20px 10px; }
-.ba-cue-body h2, .ba-dialog h2, .ba-room h1 {
-  font-family: var(--serif); font-weight: 700; letter-spacing: -.045em; line-height: .98; text-wrap: balance;
+.ba-cue-body { padding: 4px 0 6px; }
+.ba-dialog h2, .ba-room h1 {
+  font-family: var(--ba-print); font-weight: 400; letter-spacing: -.035em; line-height: 1.04; text-wrap: balance;
 }
-.ba-cue-body h2 { font-size: clamp(34px, 3.3vw, 49px); margin: 0 0 13px; }
-.ba-cue-body h2:focus { outline-offset: 3px; }
 .ba-cue-hint, .ba-cue-actor p { font-size: 14px; line-height: 1.4; margin: 0; }
 .ba-guess-form { display: flex; align-items: center; border-bottom: 1.5px solid var(--ink); gap: 5px; background: #fff5dc60; }
 .ba-guess-form input { flex: 1; min-width: 0; background: transparent; border: 0; padding: 9px 7px; font-size: 15px; }
 .ba-guess-form input::placeholder { color: #695634; }
 .ba-guess-form button { display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 3px 8px; min-height: 36px; font-size: 13px; font-weight: 750; color: var(--paper); background: var(--blue); }
 .ba-guess-form button:disabled { background: transparent; color: #705d3c; }
-.ba-cue-actor { padding: 0 20px 4px; }
+.ba-cue-actor { padding: 4px 0 7px; }
 .ba-app .ba-note-toggle { min-height: 32px; color: #453726; font-weight: 730; font-size: 13px; padding: 2px 0; }
 .ba-blocking:not([hidden]) { display: grid; grid-template-columns: minmax(68px, .75fr) 1.35fr; align-items: center; gap: 12px; padding: 7px 0 9px; }
 .ba-blocking img { display: block; width: 100%; height: auto; transform: rotate(-2deg); border: 1px solid var(--ink); background: #f4edde; box-shadow: 2px 2px var(--red); }
 .ba-cue-actor p { margin: 0; }
-.ba-cue-bottom { padding: 6px 20px 18px; }
+.ba-blocking p { font: 700 16px/1.34 var(--ba-voice); }
+.ba-cue-bottom { padding: 4px 0 7px; }
 .ba-cue-bottom button, .ba-dark-button {
   display: inline-flex; align-items: center; justify-content: space-between; gap: 12px;
   background: var(--red) !important; color: #fff5df !important;
@@ -196,9 +155,9 @@
 }
 .ba-cue-bottom button { width: 100%; }
 .ba-cue-bottom button:hover, .ba-dark-button:hover { filter: brightness(.89); }
-.ba-choose-cue { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px dashed #786743; padding: 3px 17px; }
+.ba-choose-cue { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px dashed #786743; padding: 3px 0; }
 .ba-choose-cue > span { font-size: 10px; flex: none; letter-spacing: .03em; }
-.ba-app .ba-choose-cue select { min-width: 0; background: transparent; color: var(--ink); border: none; min-height: 36px; font: 650 13px var(--sans); width: auto; max-width: 64%; cursor: pointer; }
+.ba-app .ba-choose-cue select { min-width: 0; background: transparent; color: var(--ink); border: none; min-height: 36px; font: 650 13px var(--ba-sign); width: auto; max-width: 64%; cursor: pointer; }
 .ba-dressing {
   display: grid; grid-template-columns: minmax(190px, .82fr) minmax(0, 1.18fr);
   gap: clamp(15px, 2.5vw, 30px); margin-top: 19px; padding-top: 12px; border-top: 2px solid var(--ink);
@@ -206,7 +165,7 @@
 .ba-prop-shelf, .ba-faces { min-width: 0; }
 .ba-tray-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 4px; }
 .ba-tray-heading h2, .ba-faces h3, .ba-adjust h2 {
-  font: 700 23px/1.03 var(--serif); letter-spacing: -.035em; margin: 0;
+  font: 400 23px/1.1 var(--ba-print); letter-spacing: -.025em; margin: 0;
 }
 .ba-tray-heading > span { font-size: 10px; color: var(--muted); }
 .ba-props, .ba-faces > div { display: grid; margin-top: 9px; gap: 3px; }
@@ -236,14 +195,36 @@
 .ba-prop-tools { display: flex; flex-wrap: wrap; gap: 0 14px; padding-top: 3px; }
 .ba-prop-tools button { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 670; min-height: 34px; padding: 2px 0; }
 .ba-adjust { margin-top: 24px; border-top: 2px solid var(--ink); padding-top: 12px; }
-.ba-hand-shapes, .ba-foot-turns { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px 12px; margin-top: 12px; }
-.ba-hand-shapes label, .ba-foot-turns > div { display: grid; min-width: 0; gap: 4px; }
-.ba-hand-shapes label span, .ba-foot-turns span { font-size: 12px; font-weight: 660; }
-.ba-hand-shapes select {
-  font-family: var(--sans); font-size: 14px; padding: 3px 4px; min-height: 34px; background: #fff9e9; border: 1px solid #807360; border-radius: 0;
+.ba-hand-shapes { display: grid; gap: 12px; margin-top: 12px; }
+.ba-hand-picker { min-width: 0; margin: 0; padding: 0; border: 0; }
+.ba-hand-picker legend, .ba-foot-turns span { padding: 0; font-size: 12px; font-weight: 660; }
+.ba-hand-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; margin-top: 5px; }
+.ba-hand-option { position: relative; min-width: 0; }
+.ba-hand-option input {
+  position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; margin: 0;
+  opacity: 0; cursor: pointer;
 }
-.ba-hand-shapes small { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
-.ba-foot-turns > div { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 4px 0; }
+.ba-hand-card {
+  position: relative; display: grid; justify-items: center; align-content: center;
+  min-height: 58px; gap: 1px; padding: 2px 1px 4px; line-height: 1.13;
+  border: 1px solid #a4947d; background: #fff9e8;
+  color: var(--ink); font-size: 11px; font-weight: 660; text-align: center;
+}
+.ba-hand-option:nth-child(even) .ba-hand-card { background: #eddfc9; }
+.ba-hand-option input:hover:enabled + .ba-hand-card { background: #e3d8c1; }
+.ba-hand-option input:checked + .ba-hand-card {
+  background: #cadae0; border-color: var(--blue); box-shadow: inset 0 -2px var(--blue); color: #243f50;
+}
+.ba-hand-option input:checked + .ba-hand-card::after {
+  content: ''; position: absolute; top: 5px; right: 4px; width: 10px; height: 8px;
+  transform: rotate(-12deg); background: var(--blue);
+  clip-path: polygon(0 41%, 30% 56%, 92% 0, 100% 17%, 34% 100%);
+}
+.ba-hand-option input:focus-visible + .ba-hand-card { outline: 3px solid var(--blue); outline-offset: 2px; }
+.ba-hand-option input:disabled { cursor: default; }
+.ba-hand-picker small { display: block; margin-top: 4px; font-size: 12px; color: var(--muted); }
+.ba-foot-turns { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px 12px; margin-top: 12px; }
+.ba-foot-turns > div { display: grid; min-width: 0; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 4px 0; }
 .ba-foot-turns span { grid-column: 1/-1; }
 .ba-foot-turns button { border: 1px solid #a79882; display: grid; place-items: center; height: 32px; }
 .ba-foot-turns button + button { border-left: 0; }
@@ -253,7 +234,7 @@
 .ba-dialog, .ba-room-main { background: #f5ead3 url('/paper-stock.svg') repeat; border: 2px solid var(--ink); box-shadow: 5px 5px var(--ink); padding: clamp(22px, 4vw, 36px); }
 .ba-dialog {
   position: fixed; width: min(435px, calc(100% - 35px)); max-height: calc(100svh - 35px);
-  margin: auto; color: var(--ink); font-family: var(--sans); line-height: 1.5;
+  margin: auto; color: var(--ink); font-family: var(--ba-sign); line-height: 1.5;
 }
 .ba-dialog::backdrop { background: #26201bc2; }
 .ba-dialog h2, .ba-room h1 { font-size: 42px; margin: 10px 0 16px; }
@@ -306,11 +287,6 @@
   .ba-stage-bar { gap: 3px; padding-inline: 7px; }
   .ba-stage-bar span, .ba-stage-bar button { font-size: 11px; gap: 5px; }
   .ba-stage-bar span svg { width: 14px; }
-  .ba-cue-header { min-height: 35px; }
-  .ba-cue-body { padding: 13px 16px 7px; }
-  .ba-cue-body h2 { font-size: 36px; margin-bottom: 9px; }
-  .ba-cue-header, .ba-cue-bottom, .ba-cue-actor { padding-inline: 16px; }
-  .ba-cue-bottom { padding-bottom: 13px; }
   .ba-dressing { margin-top: 5px; }
   .ba-prop-shelf, .ba-faces > div { max-width: none; }
   .ba-adjust { margin-top: 0; }
@@ -331,7 +307,6 @@
   .ba-app .ba-help-button svg { display: block; width: 19px; height: 19px; }
 }
 @media (pointer: coarse) {
-  .ba-stage-bar button, .ba-prop-tools button, .ba-foot-turns button, .ba-hand-shapes select,
+  .ba-stage-bar button, .ba-prop-tools button, .ba-foot-turns button,
   .ba-choose-cue select, .ba-cue-header .ba-hide-cue, .ba-app .ba-note-toggle { min-height: 44px; }
-  .ba-hand-shapes select { font-size: 16px; }
 }

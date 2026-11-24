@@ -2,19 +2,19 @@ import { expect, test, type Page, type Route } from '@playwright/test'
 
 type Verdict = 'correct' | 'incorrect' | 'uncertain' | 'unjudged'
 type Observation = { roundId: string; observationId: string; image: string }
-type Guess = { guess: string; verdict: Verdict; used?: number }
-type Outcome = Guess | { status: number; error: string; message: string; used?: number }
+type Guess = { guess: string; verdict: Verdict; used?: number; judgeFailure?: string }
+type Outcome = Guess | { status: number; error: string; message: string; used?: number; visionFailure?: string }
 
 // Intercept every local AI path before the browser navigates, including failed cases.
 // No test in this file can spend a real observation.
-async function mockAudience(page: Page, observe: (request: Observation, used: number) => Outcome | Promise<Outcome>, available = true) {
+async function mockAudience(page: Page, observe: (request: Observation, used: number) => Outcome | Promise<Outcome>, available: boolean | (() => boolean) = true) {
   const starts: number[] = []
   const frames: Observation[] = []
   const counts = new Map<string, number>()
   await page.route('**/api/local-ai/**', async (route: Route) => {
     const pathname = new URL(route.request().url()).pathname
     if (pathname === '/api/local-ai/status') {
-      return route.fulfill({ json: { available, model: 'mock-for-tests' } })
+      return route.fulfill({ json: { available: typeof available === 'function' ? available() : available, model: 'mock-for-tests' } })
     }
     if (pathname === '/api/local-ai/rounds') {
       const { cue } = route.request().postDataJSON() as { cue: number }
@@ -53,12 +53,14 @@ test('a wrong observation can recover with a differently worded right answer', a
   await guessButton(page).click()
   await expect(panel(page)).toHaveAttribute('data-verdict', 'incorrect')
   await expect(panel(page).locator('.ba-audience-balloon')).toContainText('Checking the weather.')
-  await expect(panel(page).locator('.ba-verdict')).toHaveText('Miss!')
+  await expect(panel(page).getByTestId('referee-slip')).toHaveText('Miss!')
+  await expect(panel(page).getByTestId('stage-verdict-effects')).toHaveAttribute('data-verdict', 'incorrect')
   await changePose(page)
   await expect(panel(page)).toHaveAttribute('data-verdict', 'correct', { timeout: 9000 })
   await expect(panel(page).locator('.ba-audience-balloon')).toContainText('Calling somebody.')
   await expect(panel(page)).toHaveAttribute('data-phase', 'complete')
-  await expect(panel(page).locator('.ba-verdict')).toHaveText('Guessed it!')
+  await expect(panel(page).getByTestId('referee-slip')).toHaveText('Guessed it!')
+  await expect(panel(page).getByTestId('stage-verdict-effects')).toHaveAttribute('data-verdict', 'correct')
   await panel(page).locator('summary').click()
   await expect(panel(page).locator('.ba-audience-log li')).toHaveCount(2)
   expect(starts).toEqual([2])
@@ -92,6 +94,7 @@ test('an old round cannot score the next cue', async ({ page }) => {
   await expect(panel(page)).toHaveAttribute('data-phase', 'ready')
   await expect(panel(page)).not.toHaveAttribute('data-verdict', 'correct')
   await expect(panel(page)).not.toContainText('Old guess from a retired round.')
+  await expect(panel(page).getByTestId('stage-verdict-effects')).toHaveCount(0)
 })
 
 test('five incorrect looks end the round even if the performer keeps moving', async ({ page }) => {
@@ -112,7 +115,8 @@ test('five incorrect looks end the round even if the performer keeps moving', as
 })
 
 test('an unavailable provider leaves the practice stage usable', async ({ page }) => {
-  const { starts, frames } = await mockAudience(page, () => { throw Error('Unavailable provider called') }, false)
+  let connected = false
+  const { starts, frames } = await mockAudience(page, () => { throw Error('Unexpected model call') }, () => connected)
   await page.goto('/?cue=3')
   await expect(page.getByRole('heading', { name: 'Taking a selfie' })).toBeVisible()
   await expect(panel(page)).toHaveAttribute('data-service', 'offline')
@@ -124,28 +128,58 @@ test('an unavailable provider leaves the practice stage usable', async ({ page }
   await changePose(page)
   await expect(palm).not.toHaveAttribute('cx', before!)
   await expect(panel(page).locator('.ba-audience-balloon')).not.toContainText('Calling somebody.')
+  const posed = await palm.getAttribute('cx')
+  connected = true
+  await panel(page).getByRole('button', { name: 'Recheck connection' }).click()
+  await expect(panel(page).getByRole('button', { name: 'Play with AI' })).toBeEnabled()
+  await expect(palm).toHaveAttribute('cx', posed!)
   expect(starts).toEqual([])
   expect(frames).toEqual([])
 })
 
 test('a referee outage keeps the real guess visible without declaring a win', async ({ page }) => {
-  await mockAudience(page, () => ({ guess: 'Dialling a friend.', verdict: 'unjudged' }))
+  await mockAudience(page, () => ({ guess: 'Dialling a friend.', verdict: 'unjudged', judgeFailure: 'http_limit' }))
   await page.goto('/?cue=2')
   await startRound(page)
   await guessButton(page).click()
   await expect(panel(page)).toHaveAttribute('data-verdict', 'unjudged')
   await expect(panel(page)).toContainText('Dialling a friend.')
   await expect(panel(page)).toContainText(/score unavailable/i)
+  await expect(panel(page)).toContainText('The referee reached its provider limit.')
+  await expect(panel(page).getByTestId('stage-verdict-effects')).toHaveCount(0)
 })
+
+for (const [answer, verdict] of [['phone call', 'correct'], ['baking bread', 'incorrect']]) {
+  test(`the free opening guess cues the ${verdict} audience reaction once`, async ({ page }) => {
+    const { frames, starts } = await mockAudience(page, () => { throw Error('Unexpected model call') }, false)
+    await page.setViewportSize({ width: 390, height: 720 })
+    await page.goto('/')
+    const effects = page.getByTestId('stage-verdict-effects')
+    const sound = page.getByRole('button', { name: 'Crowd sound' })
+    await expect(sound).toHaveAttribute('aria-pressed', 'false')
+    await expect(effects).toHaveCount(0)
+    await page.getByRole('textbox', { name: 'Guess the actor’s action' }).fill(answer)
+    await page.getByRole('button', { name: 'Submit guess' }).click()
+    await expect(effects).toHaveAttribute('data-verdict', verdict)
+    await expect(effects).toBeInViewport({ ratio: .9 })
+    await expect(page.getByTestId('referee-slip')).toHaveText(verdict === 'correct' ? 'Guessed it!' : 'Miss!')
+    await page.getByRole('button', { name: 'Your turn' }).click()
+    await expect(effects).toHaveCount(0)
+    expect(starts).toEqual([])
+    expect(frames).toEqual([])
+  })
+}
 
 test('a counted vision failure asks for a changed pose before the next look', async ({ page }) => {
   const { starts, frames } = await mockAudience(page, (_, used) => used === 1
-    ? { status: 502, error: 'vision_failed', message: 'The audience could not read this snapshot. This look was counted.' }
+    ? { status: 502, error: 'vision_failed', message: 'The image model did not return a guess.', visionFailure: 'timeout' }
     : { guess: 'Calling a friend.', verdict: 'correct' })
   await page.goto('/?cue=2')
   await startRound(page)
   await guessButton(page).click()
   await expect(panel(page)).toContainText('This look was counted.')
+  await expect(panel(page).locator('.ba-audience-balloon')).toContainText('The image model took too long to reply.')
+  await expect(panel(page).getByRole('button', { name: 'Change your pose' })).toBeDisabled()
   await expect(panel(page)).toHaveAttribute('data-phase', 'ready')
   await changePose(page)
   await expect(panel(page)).toHaveAttribute('data-verdict', 'correct', { timeout: 9000 })

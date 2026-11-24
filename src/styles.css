@@ -1,5 +1,6 @@
 @import "tailwindcss" source(none);
 @import "./themes.css";
+@import "./typography.css";
 
 /* Scan local source + SDK components for Tailwind class usage */
 @source "./**/*.{ts,tsx}";
@@ -17,6 +18,8 @@
  * they stay consistent across every preset.
  */
 @theme {
+  --font-sans: var(--ba-sign);
+  --font-serif: var(--ba-print);
   /* shadcn core tokens — slate (default): neutral gray on near-black, indigo accent */
   --color-background: #0a0a0a;
   --color-foreground: #e8eaed;
@@ -164,12 +167,17 @@
   }
 
   body {
-    font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--ba-sign);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-size: 14px;
     color: var(--color-foreground);
+  }
+
+  h1, h2, h3 {
+    font-family: var(--ba-print);
+    font-synthesis: none;
   }
 
   /* Scrollbar styling */

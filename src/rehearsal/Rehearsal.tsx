@@ -25,7 +25,6 @@ import {
   withHandShape,
   withProp,
   type FaceShape,
-  type HandShape,
   type PropKind,
   type PuppetPose,
   type PuppetStageApi,
@@ -37,8 +36,10 @@ import { isJoint, stageHandles } from '../puppet/geometry'
 import { footAngle, turnFoot } from '../puppet/joints'
 import { AudienceSeat } from './AudienceSeat'
 import { StageClock } from './StageClock'
+import { FlyCue } from './FlyCue'
 import { drawAnotherCue, type ClockReading, type PlayMode } from './acting-clock'
 import { checkOpeningGuess } from './opening-guess'
+import { HandShapePicker, handShapeOptions } from './HandShapePicker'
 import './rehearsal.css'
 
 // These are public movement exercises. Live round assignments belong on the server.
@@ -61,12 +62,6 @@ const faces: { shape: FaceShape; label: string }[] = [
   { shape: 'braced', label: 'Bracing' },
   { shape: 'smile', label: 'Forced smile' },
   { shape: 'open', label: 'Gulp' },
-]
-const handShapes: { value: HandShape; label: string }[] = [
-  { value: 'relaxed', label: 'Relaxed' },
-  { value: 'open', label: 'Open palm' },
-  { value: 'fist', label: 'Fist' },
-  { value: 'peace', label: 'Peace sign' },
 ]
 const fineJoints = new Set<string>(stageHandles.filter(isJoint))
 
@@ -118,7 +113,7 @@ function restoreSession(): RehearsalSession | null {
       (p.handShapes !== undefined &&
         (!p.handShapes || typeof p.handShapes !== 'object' || Array.isArray(p.handShapes) ||
           Object.entries(p.handShapes).some(([side, shape]) =>
-            (side !== 'left' && side !== 'right') || !handShapes.some((option) => option.value === shape),
+            (side !== 'left' && side !== 'right') || !handShapeOptions.some((option) => option.value === shape),
           ))) ||
       (p.footTurns !== undefined &&
         (!p.footTurns || typeof p.footTurns !== 'object' || Array.isArray(p.footTurns) ||
@@ -217,7 +212,7 @@ function PlayDialog({
       {kind === 'help' ? (
         <>
           <p>
-            Choose <strong>Play with AI</strong> to draw a cue. You get 45 seconds to act and Mr. Stubbs gets five looks. Hold still for a guess. The clock waits while he thinks.
+            Choose <strong>Play with AI</strong> to draw a cue. You get 45 seconds to act and Mr. Stubbs gets five looks. Hold still so he can guess. Judge Monitor prints the verdict. The clock waits for both of them.
           </p>
           <ul>
             <li>For a friend, select <strong>Your turn</strong>, pose the actor and hide the cue before passing the screen.</li>
@@ -322,6 +317,7 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
   const [noteOpen, setNoteOpen] = useState(false)
   const [guess, setGuess] = useState('')
   const [correct, setCorrect] = useState(false)
+  const [openingVerdict, setOpeningVerdict] = useState<'correct' | 'incorrect'>()
   const [dialog, setDialog] = useState<DialogKind | null>(null)
   const [resetMessage, setResetMessage] = useState('')
   const [grabbing, setGrabbing] = useState(false)
@@ -424,7 +420,17 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
     const match = checkOpeningGuess(guess)
     if (match === null) return
     setCorrect(match)
+    setOpeningVerdict(match ? 'correct' : 'incorrect')
     setPhase('revealed')
+    // Return from the answer field to the stage so the crowd is in view on a phone.
+    requestAnimationFrame(() => {
+      const heading = cueHeading.current
+      heading?.focus({ preventScroll: true })
+      const scene = heading?.closest('.ba-scene-floor')
+      const bounds = scene?.getBoundingClientRect()
+      if (bounds && (bounds.top < 0 || bounds.bottom > window.innerHeight))
+        scene?.scrollIntoView({ block: 'center', behavior: 'instant' })
+    })
   }
   function reset() {
     setPose(initialPose())
@@ -432,6 +438,9 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
     setResetMessage('Pose reset.')
   }
   const prop = pose.prop
+  const covered = phase === 'practice' && cueHidden
+  const flyTitle = phase === 'guess' ? 'What’s the act?' : phase === 'revealed' ? 'Talking on the phone'
+    : covered ? 'Guess the pose' : exercises[cue].title
   const account = accountAvailable ? (
     <a className="ba-nav-room" href="/room" onClick={parkPose}>
       Backstage <ArrowRight size={16} />
@@ -453,28 +462,35 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
           </div>
           <div className="ba-billing">
             <h2>Puppet charades</h2>
-            <p>Our lead called in sick. Pose the understudy for a friend or our front-row AI critic.</p>
+            <p>Our lead called in sick. You pose the understudy. Stubbs guesses. Judge Monitor prints the verdict.</p>
           </div>
         </header>
         <div className="ba-workspace ba-has-audience">
           <section className="ba-stage-block" aria-label="Rehearsal stage">
             <div className="ba-theater">
-              <div className="ba-stage-canvas">
-                <div className="ba-player" ref={player}>
-                  <PuppetStage
-                    stageRef={stage}
-                    pose={pose}
-                    onPoseChange={inputPose}
-                    bodyFollow={bodyFollow}
-                    onGrabChange={setGrabbing}
-                  />
+              <AudienceSeat mode={solo} canRehearse={phase === 'practice' && !cueHidden} cue={cue + 1} pose={pose} stage={stage} player={player}
+                openingVerdict={phase === 'revealed' ? openingVerdict : undefined}
+                onStart={playWithAudience} onLeave={() => setSolo(null)} onClock={setClock}
+                onNext={() => solo === 'draw' ? playWithAudience('draw') : changeCue((cue + 1) % exercises.length)}
+                flyCue={<FlyCue title={flyTitle} covered={covered} reveal={phase === 'revealed'} headingRef={cueHeading}
+                  draw={solo === 'draw' ? cue : undefined} />}
+                clock={solo === 'draw' && clock && <StageClock seconds={clock.seconds} mode={clock.mode} className="ba-show-clock" />}>
+                <div className="ba-stage-canvas">
+                  <div className="ba-player" ref={player}>
+                    <PuppetStage
+                      stageRef={stage}
+                      pose={pose}
+                      onPoseChange={inputPose}
+                      bodyFollow={bodyFollow}
+                      onGrabChange={setGrabbing}
+                    />
+                  </div>
                 </div>
-                {solo === 'draw' && clock && <StageClock seconds={clock.seconds} mode={clock.mode} className="ba-show-clock" />}
-              </div>
+              </AudienceSeat>
             </div>
             <div className="ba-stage-bar">
-              <span className={solo && !cueHidden ? 'ba-live-cue' : undefined}>
-                <Hand size={17} aria-hidden="true" /> {solo && !cueHidden ? <>Your cue <strong>{exercises[cue].title}</strong></> : 'Drag any joint. A quick tug makes it wobble.'}
+              <span>
+                <Hand size={17} aria-hidden="true" /> Drag any joint. A quick tug makes it wobble.
               </span>
               <button type="button" disabled={grabbing} onClick={reset}>
                 <RotateCcw size={15} aria-hidden="true" /> Reset pose
@@ -484,21 +500,22 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
               {resetMessage}
             </span>
           </section>
-          <AudienceSeat mode={solo} canRehearse={phase === 'practice' && !cueHidden} cue={cue + 1} pose={pose} stage={stage} player={player}
-            onStart={playWithAudience} onLeave={() => setSolo(null)} onClock={setClock}
-            onNext={() => solo === 'draw' ? playWithAudience('draw') : changeCue((cue + 1) % exercises.length)} />
-          <section className="ba-cue" aria-label="Cue card" data-revealed={phase === 'revealed' || undefined} data-covered={phase === 'practice' && cueHidden || undefined}>
+          <section className="ba-cue" aria-label="Cue card" data-revealed={phase === 'revealed' || undefined} data-covered={covered || undefined}>
             <div className="ba-cue-header">
-              <span>Cue card</span>
+              <span>Cue controls</span>
               {phase === 'practice' ? (
                 <div className="ba-cue-meta">
-                  <span>{String(cue + 1).padStart(2, '0')} / 06</span>
+                  {!covered && <span>{String(cue + 1).padStart(2, '0')} / 06</span>}
                   {solo !== 'draw' && <button
                     type="button"
                     className="ba-hide-cue"
                     aria-expanded={!cueHidden}
                     aria-controls="ba-cue-heading"
-                    onClick={() => { setCueHidden((hidden) => !hidden); setNoteOpen(false) }}
+                    onClick={() => {
+                      if (!cueHidden) setSolo(null)
+                      setCueHidden((hidden) => !hidden)
+                      setNoteOpen(false)
+                    }}
                   >
                     {cueHidden ? (
                       <Eye size={14} aria-hidden="true" />
@@ -513,15 +530,6 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
               )}
             </div>
             <div className="ba-cue-body">
-              <h2 id="ba-cue-heading" ref={cueHeading} tabIndex={-1} aria-live="polite">
-                {phase === 'practice'
-                  ? cueHidden
-                    ? 'Guess the pose'
-                    : exercises[cue].title
-                  : phase === 'revealed'
-                    ? 'Talking on the phone'
-                    : 'What’s the act?'}
-              </h2>
               {phase === 'guess' ? (
                 <form onSubmit={submitGuess} className="ba-guess-form">
                   <label className="ba-sr" htmlFor="sample-guess">
@@ -544,7 +552,7 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
                   {phase === 'practice'
                     ? cueHidden
                       ? 'Pass the screen to your guesser.'
-                      : solo ? 'Stubbs sees the actor and the prop.' : 'Keep this slip to yourself until they guess.'
+                      : solo ? 'Stubbs sees the actor and the prop.' : 'Hide the cue before handing over the screen.'
                     : correct
                       ? 'You got it. Now take the stage.'
                       : 'That was the sample cue. Try acting one out.'}
@@ -622,29 +630,11 @@ export default function Rehearsal({ accountAvailable = true }: { accountAvailabl
           <section className="ba-adjust" aria-label="Actor controls">
             <h2>Hands &amp; feet</h2>
             <div className="ba-hand-shapes" role="group" aria-label="Hand shapes">
-              {(['left', 'right'] as const).map((side) => {
-                const label = side === 'left' ? 'Left hand' : 'Right hand'
-                const holding = pose.prop && pose.holder === side
-                return (
-                  <label key={side}>
-                    <span>{label}</span>
-                    <select
-                      aria-label={label + ' shape'}
-                      aria-describedby={holding ? 'ba-hand-grip' : undefined}
-                      value={handShape(pose, side)}
-                      disabled={grabbing}
-                      onChange={(event) => inputPose(withHandShape(pose, side, event.target.value as HandShape))}
-                    >
-                      {handShapes.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-                    </select>
-                  </label>
-                )
-              })}
-              {pose.prop && pose.holder && (
-                <small id="ba-hand-grip">
-                  The {pose.holder} hand keeps its grip until you put the {shelf.find((item) => item.kind === pose.prop)?.label.toLowerCase()} down.
-                </small>
-              )}
+              {(['left', 'right'] as const).map(side => (
+                <HandShapePicker key={side} side={side} value={handShape(pose, side)}
+                  heldProp={pose.holder === side ? shelf.find(item => item.kind === pose.prop)?.label.toLowerCase() : undefined}
+                  disabled={grabbing} onChange={shape => inputPose(withHandShape(pose, side, shape))} />
+              ))}
             </div>
             <div className="ba-foot-turns" role="group" aria-label="Foot rotation">
               {(['left', 'right'] as const).map((side) => (

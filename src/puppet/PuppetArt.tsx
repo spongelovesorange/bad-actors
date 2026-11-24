@@ -101,6 +101,14 @@ const palmArt = {
   },
 } satisfies Record<HandShape | 'grip' | 'support', { edge: string; seam: string }>
 
+export function PalmDrawing({ shape }: { shape: keyof typeof palmArt }) {
+  const art = palmArt[shape]
+  return <>
+    <path d={art.edge} fill="#a88959" stroke={ink} strokeWidth="2.7" />
+    <path d={art.seam} fill="none" stroke="#796742" strokeWidth="1.5" />
+  </>
+}
+
 function underPlate(rig: PuppetRig, side: Hand) {
   const p = rig.pose
   if (p.prop !== 'plate' || !p.holder) return false
@@ -115,11 +123,9 @@ function Palm({ side, rig }: { side: Hand; rig: PuppetRig }) {
   const pose = rig.pose
   const shape = pose.prop && pose.holder === side ? 'grip' : handShape(pose, side)
   const supporting = underPlate(rig, side)
-  const art = palmArt[supporting ? 'support' : shape]
   return (
     <g data-palm={side} data-palm-shape={shape} data-support={supporting || undefined} transform={`translate(${xy(pose[side])}) rotate(${supporting ? rig.propAngle : 0}) scale(${side === 'left' ? -1 : 1} 1)`}>
-      <path d={art.edge} fill="#a88959" stroke={ink} strokeWidth="2.7" />
-      <path d={art.seam} fill="none" stroke="#796742" strokeWidth="1.5" />
+      <PalmDrawing shape={supporting ? 'support' : shape} />
     </g>
   )
 }

@@ -16,6 +16,9 @@ class ProviderFailure extends Error {
     this.details = details
   }
 }
+export function providerFailureReason(error: unknown) {
+  return error instanceof ProviderFailure ? error.reason : 'unavailable'
+}
 export function refereeFailure(error: unknown) {
   if (error instanceof ProviderFailure) {
     return { judgeFailure: error.reason, judgeModel: error.details?.model, judgeTokens: error.details?.tokens }
@@ -23,7 +26,8 @@ export function refereeFailure(error: unknown) {
   return { judgeFailure: 'unavailable' }
 }
 export type OwnProvider = {
-  model: string
+  visionModel: string
+  judgeModel: string
   guess: (image: string) => Promise<Completion>
   judge: (cue: string, guess: string) => Promise<Omit<Completion, 'text'> & { verdict: Verdict }>
 }
@@ -59,7 +63,9 @@ export function privateProfilePaths(path: string | undefined, publicDir: string)
 export function readOwnProvider(profilePath: string, send: typeof fetch = fetch): OwnProvider {
   const config = parseEnv(readFileSync(profilePath, 'utf8'))
   const key = config.OPENAI_API_KEY || config.PLANB_AI_KEY
-  const model = process.env.BAD_ACTORS_AI_MODEL || 'gpt-6.2-sol'
+  const sharedModel = process.env.BAD_ACTORS_AI_MODEL || config.BAD_ACTORS_AI_MODEL || 'gpt-6.2-sol'
+  const visionModel = process.env.BAD_ACTORS_VISION_MODEL || config.BAD_ACTORS_VISION_MODEL || sharedModel
+  const judgeModel = process.env.BAD_ACTORS_REFEREE_MODEL || config.BAD_ACTORS_REFEREE_MODEL || sharedModel
   const endpoint = new URL(config.OPENAI_BASE_URL || config.PLANB_AI_BASE_URL || 'https://api.openai.com/v1')
   const prefix = endpoint.pathname.replace(/\/+$/, '')
   endpoint.pathname = prefix
@@ -71,7 +77,7 @@ export function readOwnProvider(profilePath: string, send: typeof fetch = fetch)
   }
   endpoint.pathname = prefix + '/chat/completions'
 
-  async function complete(messages: unknown[], maxCompletionTokens: number): Promise<Completion> {
+  async function complete(model: string, messages: unknown[], maxCompletionTokens: number): Promise<Completion> {
     const signal = AbortSignal.timeout(30_000)
     let response: Response
     try {
@@ -108,12 +114,12 @@ export function readOwnProvider(profilePath: string, send: typeof fetch = fetch)
   }
 
   return {
-    model,
-    guess: (image) => complete([{ role: 'user', content: [
+    visionModel, judgeModel,
+    guess: (image) => complete(visionModel, [{ role: 'user', content: [
       { type: 'text', text: visionPrompt }, { type: 'image_url', image_url: { url: image } },
     ] }], 512),
     async judge(cue, guess) {
-      const result = await complete([
+      const result = await complete(judgeModel, [
         { role: 'system', content: refereePrompt },
         { role: 'user', content: JSON.stringify({ assignedAction: cue, guess }) },
       ], 1024)

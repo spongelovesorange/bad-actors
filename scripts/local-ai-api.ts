@@ -1,10 +1,10 @@
 import { mkdirSync } from 'node:fs'
 import { join } from 'node:path'
-import type { IncomingMessage } from 'node:http'
+import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin } from 'vite'
 import { readOwnProvider, type OwnProvider } from './local-ai-provider'
 import { openObservationQuota } from './local-ai-quota'
-import { createLocalAudience, failure, maxBodyBytes } from './local-ai-service'
+import { createLocalAudience, failure, maxBodyBytes, type LocalReply, type VisionGuess } from './local-ai-service'
 
 const cookieName = 'ba_practice_audience'
 const base = '/api/local-ai/'
@@ -29,6 +29,23 @@ async function readJson(req: IncomingMessage): Promise<Record<string, unknown> |
     const value = JSON.parse(Buffer.concat(chunks).toString('utf8'))
     return value && typeof value === 'object' && !Array.isArray(value) ? value : null
   } catch { return null }
+}
+
+async function streamObservation(res: ServerResponse, observe: (onGuess: (guess: VisionGuess) => void) => Promise<LocalReply>) {
+  if (res.destroyed) return
+  res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8')
+  res.setHeader('Cache-Control', 'no-store, no-transform')
+  res.flushHeaders()
+  let reply: LocalReply
+  try {
+    reply = await observe(guess => {
+      if (!res.destroyed) res.write(JSON.stringify({ type: 'guess', ...guess }) + '\n')
+    })
+  } catch {
+    reply = failure(503, 'unavailable', 'The local audience could not take a look.')
+  }
+  // Finishing the reserved work lets a disconnected player recover the same result by ID.
+  if (!res.destroyed) res.end(JSON.stringify({ type: 'result', status: reply.status, body: reply.body }) + '\n')
 }
 
 export function localAudiencePlugin(project: string, profile?: string): Plugin {
@@ -77,7 +94,11 @@ export function localAudiencePlugin(project: string, profile?: string): Plugin {
         try {
           const input = await readJson(req)
           if (!input) return send(failure(400, 'invalid_request', 'The rehearsal request could not be read.'))
-          return send(path === base + 'rounds' ? audience.start(sessionId, input) : await audience.observe(sessionId, input))
+          if (path === base + 'rounds') return send(audience.start(sessionId, input))
+          if (req.headers.accept?.split(',').some(type => type.trim() === 'application/x-ndjson')) {
+            return streamObservation(res, onGuess => audience.observe(sessionId, input, onGuess))
+          }
+          return send(await audience.observe(sessionId, input))
         } catch {
           return send(failure(503, 'unavailable', 'The local audience could not take a look.'))
         }

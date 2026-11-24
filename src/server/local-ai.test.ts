@@ -2,8 +2,9 @@ import { randomUUID } from 'node:crypto'
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { createServer } from 'vite'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { localRequestAllowed } from '../../scripts/local-ai-api'
+import { localAudiencePlugin, localRequestAllowed } from '../../scripts/local-ai-api'
 import { privateProfilePaths, readOwnProvider, refereeFailure, type OwnProvider } from '../../scripts/local-ai-provider'
 import { openObservationQuota } from '../../scripts/local-ai-quota'
 import { createLocalAudience } from '../../scripts/local-ai-service'
@@ -17,11 +18,15 @@ const temp = () => {
   dirs.push(dir)
   return dir
 }
-afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }) })
+afterEach(() => {
+  vi.unstubAllEnvs()
+  for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true })
+})
 
 function fake() {
   return {
-    model: 'test-model', guess: vi.fn<OwnProvider['guess']>(async () => ({ text: 'make a call', model: 'vision' })),
+    visionModel: 'vision', judgeModel: 'referee',
+    guess: vi.fn<OwnProvider['guess']>(async () => ({ text: 'make a call', model: 'vision' })),
     judge: vi.fn<OwnProvider['judge']>(async () => ({ verdict: 'incorrect', model: 'referee' })),
   }
 }
@@ -66,14 +71,112 @@ describe('local AI observation and independent referee', () => {
     expect(f.claim).toHaveBeenCalledTimes(1)
   })
 
+  it('publishes real vision before scoring and replays both stages of a duplicate without new work', async () => {
+    const f = fixture()
+    let finish!: (value: { verdict: 'correct'; model: string }) => void
+    f.provider.judge.mockImplementationOnce(() => new Promise(resolve => { finish = resolve }))
+    const request = f.input(0)
+    const firstGuess = vi.fn()
+    const first = f.game.observe(f.cookie, request, firstGuess)
+    await vi.waitFor(() => expect(firstGuess).toHaveBeenCalledTimes(1))
+    const guess = firstGuess.mock.calls[0][0]
+    expect(guess).toMatchObject({ roundId: request.roundId, observationId: request.observationId, used: 1, limit: 5, guess: 'make a call' })
+    expect(guess).not.toHaveProperty('verdict')
+    expect(JSON.stringify(guess)).not.toContain('Talking on the phone')
+    const repeatedGuess = vi.fn()
+    const repeat = f.game.observe(f.cookie, request, repeatedGuess)
+    await vi.waitFor(() => expect(repeatedGuess).toHaveBeenCalledExactlyOnceWith(guess))
+    finish({ verdict: 'correct', model: 'referee' })
+    const final = await first
+    expect(final.body.verdict).toBe('correct')
+    expect(await repeat).toEqual(final)
+    const replayGuess = vi.fn()
+    expect(await f.game.observe(f.cookie, request, replayGuess)).toEqual(final)
+    expect(replayGuess).toHaveBeenCalledExactlyOnceWith(guess)
+    expect(f.provider.guess).toHaveBeenCalledTimes(1)
+    expect(f.provider.judge).toHaveBeenCalledTimes(1)
+    expect(f.claim).toHaveBeenCalledTimes(1)
+  })
+
+  it('streams a guess on a real loopback connection before the referee answers, and recovers a disconnected observer', async () => {
+    const project = temp()
+    const profile = join(project, '.profile')
+    writeFileSync(profile, 'OPENAI_API_KEY=offline-test\nOPENAI_BASE_URL=https://provider.invalid/v1\n')
+    const localFetch = globalThis.fetch
+    let release!: () => void
+    const judgeGate = new Promise<void>(resolve => { release = resolve })
+    const providerTransport = vi.fn<typeof fetch>(async (url, init) => {
+      expect(String(url)).toBe('https://provider.invalid/v1/chat/completions')
+      const vision = JSON.parse(String(init?.body)).messages.length === 1
+      if (!vision) await judgeGate
+      return Response.json({ choices: [{ message: { content: vision ? 'Calling someone.' : 'CORRECT' } }] })
+    })
+    vi.stubGlobal('fetch', providerTransport)
+    const app = await createServer({
+      configFile: false, root: project, logLevel: 'silent',
+      plugins: [localAudiencePlugin(project, profile)],
+      server: { host: '127.0.0.1', port: 0, strictPort: true, watch: null, hmr: false },
+      optimizeDeps: { noDiscovery: true, include: [] },
+    }).finally(() => vi.unstubAllGlobals())
+    try {
+      await app.listen()
+      const address = app.httpServer!.address()
+      if (!address || typeof address === 'string') throw new Error('Could not open the local rehearsal fixture.')
+      const origin = 'http://127.0.0.1:' + address.port
+      const post = (path: string, body: unknown, cookie = '', accept = 'application/json') =>
+        localFetch(origin + '/api/local-ai/' + path, {
+          method: 'POST', headers: { origin, cookie, accept, 'content-type': 'application/json' },
+          body: JSON.stringify(body),
+        })
+      const start = await post('rounds', { cue: 2 })
+      expect(start.status).toBe(200)
+      const cookie = start.headers.get('set-cookie')!.split(';')[0]
+      const { roundId } = await start.json() as { roundId: string }
+      const frame = { roundId, observationId: randomUUID(), image: frames[0] }
+      const ndjson = 'application/x-ndjson'
+      const first = await post('observe', frame, cookie, ndjson)
+      expect(first.headers.get('content-type')).toContain(ndjson)
+      const reader = first.body!.getReader()
+      const decoder = new TextDecoder()
+      let firstLine = ''
+      while (!firstLine.includes('\n')) {
+        const chunk = await reader.read()
+        if (chunk.done) throw new Error('The first guess was missing.')
+        firstLine += decoder.decode(chunk.value, { stream: true })
+      }
+      const guess = JSON.parse(firstLine)
+      expect(guess).toMatchObject({ type: 'guess', guess: 'Calling someone.', used: 1, roundId, observationId: frame.observationId })
+      expect(guess).not.toHaveProperty('verdict')
+      expect(providerTransport).toHaveBeenCalledTimes(2)
+      await reader.cancel()
+      const jsonRetry = post('observe', frame, cookie)
+      release()
+      const fallback = await jsonRetry
+      expect(fallback.headers.get('content-type')).toContain('application/json')
+      const final = await fallback.json()
+      expect(final).toMatchObject({ guess: guess.guess, verdict: 'correct', used: 1 })
+      const replay = await post('observe', frame, cookie, ndjson)
+      const events = (await replay.text()).trimEnd().split('\n').map(line => JSON.parse(line))
+      expect(events).toEqual([guess, { type: 'result', status: 200, body: final }])
+      const stale = await post('observe', frame, '', ndjson)
+      expect(JSON.parse(await stale.text())).toMatchObject({ type: 'result', status: 409, body: { error: 'stale_round' } })
+      expect(providerTransport).toHaveBeenCalledTimes(2)
+    } finally {
+      release()
+      await app.close()
+    }
+  })
+
   it('discards late results after a cue switch and skips the obsolete referee request', async () => {
     const f = fixture()
     let resolve!: (v: { text: string; model: string }) => void
     f.provider.guess.mockImplementationOnce(() => new Promise(r => { resolve = r }))
-    const first = f.game.observe(f.cookie, f.input(0))
+    const staleGuess = vi.fn()
+    const first = f.game.observe(f.cookie, f.input(0), staleGuess)
     expect(f.game.start(f.cookie, { cue: 3 }).body.roundId).not.toBe(f.round.body.roundId)
     resolve({ text: 'Sipping', model: 'vision' })
     expect((await first).body.error).toBe('stale_round')
+    expect(staleGuess).not.toHaveBeenCalled()
     expect(f.provider.judge).not.toHaveBeenCalled()
   })
 
@@ -99,7 +202,9 @@ describe('local AI observation and independent referee', () => {
     const f = fixture()
     f.provider.guess.mockRejectedValueOnce(new Error('private upstream diagnostic'))
     const bad = f.input(0)
-    expect((await f.game.observe(f.cookie, bad)).body).toMatchObject({ error: 'vision_failed', used: 1 })
+    const interim = vi.fn()
+    expect((await f.game.observe(f.cookie, bad, interim)).body).toMatchObject({ error: 'vision_failed', used: 1 })
+    expect(interim).not.toHaveBeenCalled()
     expect((await f.game.observe(f.cookie, bad)).status).toBe(502)
     f.tick()
     f.provider.judge.mockRejectedValueOnce(new Error('private referee diagnostic'))
@@ -184,6 +289,41 @@ describe('local AI observation and independent referee', () => {
     expect(() => readOwnProvider(path, send)).toThrow()
     writeFileSync(path, 'OPENAI_API_KEY=offline-test\nOPENAI_BASE_URL=https://38.92.25.168:3000/v1\n')
     expect(() => readOwnProvider(path, send)).toThrow()
+  })
+
+  it('can switch just the picture reader and reports both requested models on the local status route', async () => {
+    vi.stubEnv('BAD_ACTORS_AI_MODEL', undefined)
+    vi.stubEnv('BAD_ACTORS_VISION_MODEL', undefined)
+    vi.stubEnv('BAD_ACTORS_REFEREE_MODEL', undefined)
+    const path = join(temp(), '.profile')
+    writeFileSync(path, 'OPENAI_API_KEY=offline-test\nBAD_ACTORS_VISION_MODEL=vision-candidate\n')
+    const send = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json({ choices: [{ message: { content: 'Taking a sip.' } }] }))
+      .mockResolvedValueOnce(Response.json({ choices: [{ message: { content: 'CORRECT' } }] }))
+    const provider = readOwnProvider(path, send)
+    expect(createLocalAudience({ provider, claim: () => true }).status().body).toEqual({
+      available: true, model: 'vision-candidate', visionModel: 'vision-candidate', judgeModel: 'gpt-6.2-sol',
+    })
+    const guess = await provider.guess(frames[0])
+    const score = await provider.judge('Drinking water', guess.text)
+    expect(send.mock.calls.map(([, init]) => JSON.parse(init!.body as string).model))
+      .toEqual(['vision-candidate', 'gpt-6.2-sol'])
+    expect(guess.model).toBe('vision-candidate')
+    expect(score.model).toBe('gpt-6.2-sol')
+  })
+
+  it('prioritizes per-role shell settings, then per-role profile settings, then the shared model', () => {
+    const path = join(temp(), '.profile')
+    writeFileSync(path, 'OPENAI_API_KEY=offline-test\nBAD_ACTORS_AI_MODEL=profile-default\nBAD_ACTORS_REFEREE_MODEL=profile-referee\n')
+    vi.stubEnv('BAD_ACTORS_AI_MODEL', undefined)
+    vi.stubEnv('BAD_ACTORS_VISION_MODEL', undefined)
+    vi.stubEnv('BAD_ACTORS_REFEREE_MODEL', undefined)
+    expect(readOwnProvider(path)).toMatchObject({ visionModel: 'profile-default', judgeModel: 'profile-referee' })
+    vi.stubEnv('BAD_ACTORS_AI_MODEL', 'shell-default')
+    expect(readOwnProvider(path)).toMatchObject({ visionModel: 'shell-default', judgeModel: 'profile-referee' })
+    vi.stubEnv('BAD_ACTORS_VISION_MODEL', 'shell-vision')
+    vi.stubEnv('BAD_ACTORS_REFEREE_MODEL', 'shell-referee')
+    expect(readOwnProvider(path)).toMatchObject({ visionModel: 'shell-vision', judgeModel: 'shell-referee' })
   })
 
   it('reports safe categories for truncated, unavailable and non-atomic referee verdicts without reissuing a request', async () => {

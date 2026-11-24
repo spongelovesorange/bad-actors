@@ -1,0 +1,37 @@
+/* Set the line breaks before the performance so the face and the controls hold still. */
+.ba-speech-word { display: inline-block; max-width: 100%; vertical-align: baseline; }
+.ba-speech-word .ba-speech-letter { display: inline-block; }
+.ba-speech-letter[data-visible='false'] { visibility: hidden; }
+.ba-critic-upper { transform-origin: 41px 52px; transform: rotate(-5deg); }
+.ba-critic-tongue { transform-origin: 77px 61px; }
+.ba-usher-arm { transform-origin: 0 0; transform: rotate(23deg); }
+.ba-usher-forearm { transform-origin: 0 0; transform: rotate(145deg); }
+@media (prefers-reduced-motion: no-preference) {
+  .ba-critic-upper, .ba-critic-tongue { transition: transform 55ms ease-out; }
+  [data-jaw='open'] .ba-critic-upper { transform: rotate(-18deg); }
+  [data-jaw='half'] .ba-critic-upper { transform: rotate(-10deg); }
+  [data-jaw='open'] .ba-critic-tongue { transform: translate(2px, 1px) rotate(6deg); }
+  .ba-usher-arm, .ba-usher-forearm { transition: transform 160ms ease-in-out; }
+  [data-gesture='raise'] .ba-usher-arm { animation: ba-usher-volunteer 185ms ease-out both; }
+  [data-gesture='raise'] .ba-usher-forearm { animation: ba-usher-unfold 200ms ease-out both; }
+  [data-gesture='hold'] .ba-usher-arm { transform: rotate(-12deg); }
+  [data-gesture='hold'] .ba-usher-forearm { transform: rotate(-33deg); }
+  @keyframes ba-usher-volunteer {
+    from { transform: rotate(23deg); }
+    75% { transform: rotate(-17deg); }
+    to { transform: rotate(-12deg); }
+  }
+  @keyframes ba-usher-unfold {
+    from { transform: rotate(145deg); }
+    72% { transform: rotate(-38deg); }
+    to { transform: rotate(-33deg); }
+  }
+  .ba-audience-balloon[data-speaking='true'] .ba-speech-word .ba-speech-letter[data-visible='true'] {
+    animation: ba-speech-pop 115ms ease-out backwards;
+  }
+  @keyframes ba-speech-pop {
+    from { transform: translateY(0.14em) rotate(2deg); }
+    55% { transform: translateY(-0.065em); }
+    to { transform: none; }
+  }
+}

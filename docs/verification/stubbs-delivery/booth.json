@@ -1,0 +1,23 @@
+{
+  "source": "Real browser UI on an isolated loopback fixture; simulated model failures.",
+  "upstream": 0,
+  "cases": [
+    {
+      "name": "recheck",
+      "statusRequests": 2,
+      "modelRequests": 0,
+      "preservedPose": true
+    },
+    {
+      "name": "vision timeout",
+      "bubble": "The image model took too long to reply.",
+      "detail": "This look was counted. Change the pose for another look.",
+      "blocked": true
+    },
+    {
+      "name": "unjudged",
+      "bubble": "Dialling a friend.",
+      "detail": "Score unavailable\n\nThe referee reached its provider limit. Change the pose for another look."
+    }
+  ]
+}

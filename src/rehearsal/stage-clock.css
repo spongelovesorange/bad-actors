@@ -10,12 +10,12 @@
 .ba-clock-stock { fill: var(--clock-card); }
 .ba-clock-digit {
   fill: var(--clock-ink);
-  font: 800 29px/1 'Bricolage Grotesque', 'Arial Black', Arial, sans-serif;
+  font: 800 29px/1 var(--ba-sign);
   font-variant-numeric: tabular-nums;
 }
 .ba-clock-caption, .ba-clock-unit {
   fill: #f4ead2;
-  font: 800 8.2px/1 'Courier New', monospace;
+  font: 760 8.2px/1 var(--ba-sign);
   letter-spacing: .45px;
 }
 .ba-clock-unit { font-size: 7.1px; letter-spacing: -.25px; }

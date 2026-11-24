@@ -1,0 +1,55 @@
+.ba-fly-cue {
+  pointer-events: none;
+  min-width: 0;
+  container-type: inline-size;
+  --fly-board: #e9cd86;
+}
+.ba-fly-cue[data-covered] { --fly-board: #bbd1ce; }
+.ba-fly-cue[data-reveal] { --fly-board: #d5dfb5; }
+.ba-fly-mechanism { position: relative; box-sizing: border-box; width: 100%; padding: clamp(11px, 5cqw, 16px) 14% 4px 3%; }
+.ba-fly-rig { position: absolute; inset: 0 0 auto; width: 100%; height: clamp(47px, 24cqw, 70px); }
+.ba-fly-plank {
+  position: relative; padding: 3px 5px 4px 4px;
+  transform: rotate(-1.5deg); transform-origin: 86% -10px;
+  background: #556659; border: 2px solid #332b22; border-radius: 2px 4px 5px 3px;
+  box-shadow: 1px 2px 0 #32291d, 2px 4px 2px #31251855;
+}
+.ba-fly-paper {
+  position: relative; display: grid; place-items: center; box-sizing: border-box;
+  min-height: clamp(32px, 13cqw, 42px); padding: 6px clamp(8px, 3.5cqw, 12px);
+}
+.ba-fly-paper::before {
+  content: ''; position: absolute; inset: 0; background: var(--fly-board) url('/paper-stock.svg');
+  clip-path: polygon(0 3%, 88% 0, 99% 5%, 100% 63%, 97% 95%, 85% 99%, 0 97%);
+}
+.ba-fly-plank::after {
+  content: ''; position: absolute; inset: 1px 0 auto; height: 4px;
+  background: radial-gradient(circle at 12% 50%, #493924 1px, #c8ab77 1.5px, transparent 2.3px),
+    radial-gradient(circle at 87% 50%, #493924 1px, #c8ab77 1.5px, transparent 2.3px);
+}
+.ba-fly-cue .ba-fly-cue-title {
+  position: relative; max-width: 100%; margin: 0; padding: 0; color: #30271f;
+  font: 700 clamp(16px, 7.5cqw, 23px)/1.18 var(--ba-voice);
+  text-align: center; text-wrap: balance; overflow-wrap: anywhere;
+}
+.ba-fly-boot {
+  position: absolute; width: 13.5%; height: clamp(30px, 15cqw, 45px); right: .2%; top: clamp(16px, 8cqw, 24px);
+  transform: rotate(11deg); transform-origin: 29% 1%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ba-fly-mechanism[data-drop] .ba-fly-plank { animation: ba-fly-catch 640ms both; }
+  .ba-fly-mechanism[data-drop] .ba-fly-boot { animation: ba-boot-hoist 640ms both; }
+  @keyframes ba-fly-catch {
+    0% { transform: translateY(-12px) rotate(4deg); }
+    31% { transform: translateY(-3px) rotate(4deg); }
+    54% { transform: translateY(1px) rotate(-4deg); }
+    73% { transform: rotate(.2deg); }
+    100% { transform: rotate(-1.5deg); }
+  }
+  @keyframes ba-boot-hoist {
+    0% { transform: translateY(5px) rotate(-8deg); }
+    45% { transform: translateY(-4px) rotate(21deg); }
+    80% { transform: rotate(6deg); }
+    100% { transform: rotate(11deg); }
+  }
+}

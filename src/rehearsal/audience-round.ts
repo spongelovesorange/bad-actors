@@ -1,27 +1,28 @@
 import { ActingClock, type ClockReading } from './acting-clock'
+import { audienceIssue, AudienceError } from './audience-issue'
+import { failedReply, readAudienceStream } from './audience-stream'
+
+export { AudienceError } from './audience-issue'
 
 export type Verdict = 'correct' | 'incorrect' | 'uncertain' | 'unjudged'
 type Frame = { roundId: string; observationId: string; image: string }
-export type Guess = Omit<Frame, 'image'> & { guess: string; verdict: Verdict; used: number; limit: number }
+export type PendingGuess = Omit<Frame, 'image'> & { guess: string; used: number; limit: number }
+export type Guess = PendingGuess & { verdict: Verdict; judgeFailure?: string }
 export type Look = Guess & { image: string }
 export type AudienceState = {
   phase: 'idle' | 'starting' | 'ready' | 'looking' | 'complete' | 'error'
   used: number
   limit: number
   history: Look[]
+  pendingGuess?: PendingGuess
+  issue?: string
   message?: string
   recovery?: 'restart' | 'daily-limit' | 'change-pose'
   end?: 'timeout'
 }
 export const quietAudience: AudienceState = { phase: 'idle', used: 0, limit: 5, history: [] }
 
-export class AudienceError extends Error {
-  constructor(message: string, readonly status: number, readonly code?: string, readonly used?: number) {
-    super(message)
-  }
-}
-
-async function post<T>(path: string, payload: unknown, signal: AbortSignal): Promise<T> {
+async function post<T>(path: string, payload: unknown, signal: AbortSignal, stream?: (response: Response) => Promise<T>): Promise<T> {
   const request = new AbortController()
   const cancel = () => request.abort()
   if (signal.aborted) cancel()
@@ -31,17 +32,17 @@ async function post<T>(path: string, payload: unknown, signal: AbortSignal): Pro
   try {
     const response = await fetch('/api/local-ai/' + path, {
       method: 'POST', credentials: 'same-origin', signal: request.signal,
-      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/json', Accept: stream ? 'application/x-ndjson, application/json' : 'application/json' },
+      body: JSON.stringify(payload),
     })
-    if (!response.headers.get('content-type')?.includes('application/json'))
-      throw new AudienceError('The live audience booth is unavailable on this page.', response.status)
-    if (!response.ok) {
-      const data = await response.json() as { message?: string; error?: string; used?: number }
-      throw new AudienceError(data.message || 'The audience booth lost its connection.', response.status, data.error, data.used)
-    }
+    const mediaType = response.headers.get('content-type')?.split(';')[0].trim().toLowerCase()
+    if (stream && response.ok && mediaType === 'application/x-ndjson') return await stream(response)
+    if (mediaType !== 'application/json')
+      throw new AudienceError('The local AI game is unavailable on this page.', response.status)
+    if (!response.ok) throw failedReply(response.status, await response.json())
     return await response.json() as T
   } catch (error) {
-    if (request.signal.aborted && !signal.aborted) throw new Error('The booth took too long. Try again to check this look.')
+    if (request.signal.aborted && !signal.aborted) throw new DOMException('The local game timed out.', 'TimeoutError')
     throw error
   } finally {
     clearTimeout(timer)
@@ -51,7 +52,14 @@ async function post<T>(path: string, payload: unknown, signal: AbortSignal): Pro
 
 export const localAudience = {
   start: (cue: number, signal: AbortSignal) => post<{ roundId: string; limit: number }>('rounds', { cue }, signal),
-  observe: (frame: Frame, signal: AbortSignal) => post<Guess>('observe', frame, signal),
+  observe: (frame: Frame, signal: AbortSignal, onGuess: (guess: PendingGuess) => void) =>
+    post<Guess>('observe', frame, signal, response => readAudienceStream(response, onGuess)),
+}
+
+function matchesLook(guess: PendingGuess, frame: Frame, limit: number) {
+  return guess?.roundId === frame.roundId && guess.observationId === frame.observationId &&
+    typeof guess.guess === 'string' && guess.guess.trim().length > 0 && guess.guess.length <= 200 &&
+    guess.limit === limit && Number.isInteger(guess.used) && guess.used >= 1 && guess.used <= limit
 }
 
 /** The player can keep acting while a look is in flight. Only the newest unsent pose is retained. */
@@ -68,6 +76,7 @@ export class AudienceRound {
   private abort = new AbortController()
   private state: AudienceState = { ...quietAudience, history: [] }
   private clock?: ActingClock
+  private scoredAt?: { id: string; at: number }
 
   constructor(
     private cue: number,
@@ -77,16 +86,17 @@ export class AudienceRound {
     private publish: (state: AudienceState) => void,
     private visible: () => boolean = () => true,
     showTime?: (reading: ClockReading) => void,
+    private heardAt?: (observationId: string) => number | undefined,
   ) {
     if (showTime) this.clock = new ActingClock(showTime, () => {
       clearTimeout(this.timer)
       this.pending = false
-      this.update({ phase: 'complete', end: 'timeout', message: undefined })
+      this.update({ phase: 'complete', end: 'timeout', issue: undefined, message: undefined })
     })
   }
 
   private syncClock() {
-    const acting = this.state.phase === 'ready' && this.state.recovery !== 'change-pose' && this.visible()
+    const acting = this.state.phase === 'ready' && !this.unresolved && this.state.recovery !== 'change-pose' && this.visible()
     const mode = this.state.phase === 'complete' ? 'finished' : acting ? 'running' : 'paused'
     this.clock?.set(mode)
   }
@@ -101,7 +111,7 @@ export class AudienceRound {
   async start() {
     if (this.busy || this.abort.signal.aborted || this.roundId) return
     this.busy = true
-    this.update({ phase: 'starting', message: undefined })
+    this.update({ phase: 'starting', issue: undefined, message: undefined })
     try {
       const result = await this.send.start(this.cue, this.abort.signal)
       if (this.abort.signal.aborted) return
@@ -109,7 +119,7 @@ export class AudienceRound {
       this.roundId = result.roundId
       this.update({ phase: 'ready', limit: result.limit })
     } catch (error) {
-      this.update({ phase: 'error', message: this.explain(error) })
+      this.update({ phase: 'error', ...audienceIssue(error, 'start', this.state.limit) })
     } finally {
       this.busy = false
       this.schedule()
@@ -119,7 +129,7 @@ export class AudienceRound {
   poseChanged() {
     if (this.state.phase === 'complete' || this.abort.signal.aborted) return
     ++this.revision
-    if (this.state.recovery === 'change-pose') this.update({ recovery: undefined, message: undefined })
+    if (this.state.recovery === 'change-pose') this.update({ recovery: undefined, issue: undefined, message: undefined })
     // After a connection failure, only the user can choose to retry.
     if (this.state.phase === 'error') return
     this.pending = true
@@ -129,17 +139,18 @@ export class AudienceRound {
 
   ask() {
     if (this.abort.signal.aborted || this.busy || this.state.phase === 'complete' ||
-        this.state.recovery === 'daily-limit') return
+        this.state.recovery === 'daily-limit' || this.state.recovery === 'change-pose') return
     if (this.state.recovery === 'restart') {
       this.roundId = undefined
       this.lastImage = undefined
+      this.scoredAt = undefined
       this.nextStart = 0
       this.state = { ...quietAudience, history: [] }
     }
     if (!this.roundId) { void this.start(); return }
     this.pending = true
     this.readyAt = Date.now()
-    this.update({ phase: 'ready', message: undefined })
+    this.update({ phase: 'ready', issue: undefined, message: undefined })
     this.schedule()
   }
 
@@ -148,7 +159,16 @@ export class AudienceRound {
     clearTimeout(this.timer)
     if (!this.pending || !this.roundId || this.busy || this.abort.signal.aborted ||
         this.state.phase !== 'ready' || !this.visible()) return
-    const wait = Math.max(0, this.readyAt - Date.now(), this.nextStart - Date.now())
+    let next = Math.max(this.readyAt, this.nextStart)
+    if (this.heardAt && this.scoredAt) {
+      const heard = this.heardAt(this.scoredAt.id)
+      if (heard === undefined) {
+        this.timer = setTimeout(() => this.schedule(), 80)
+        return
+      }
+      next = Math.max(next, Math.max(heard, this.scoredAt.at) + 750)
+    }
+    const wait = Math.max(0, next - Date.now())
     if (wait > 0 || !this.settled()) {
       this.timer = setTimeout(() => this.schedule(), wait || 100)
       return
@@ -160,6 +180,7 @@ export class AudienceRound {
     const revision = this.revision
     const roundId = this.roundId!
     let frame = this.unresolved
+    this.scoredAt = undefined
     this.busy = true
     this.pending = false
     try {
@@ -184,20 +205,31 @@ export class AudienceRound {
       if (this.state.phase === 'complete') return
       this.unresolved = frame
       this.nextStart = Date.now() + 4000
-      this.update({ phase: 'looking', message: undefined })
-      const answer = await this.send.observe(frame, this.abort.signal)
+      this.update({ phase: 'looking', issue: undefined, message: undefined })
+      const sent = frame
+      const answer = await this.send.observe(sent, this.abort.signal, words => {
+        if (this.abort.signal.aborted || this.unresolved !== sent) return
+        const prior = this.state.pendingGuess
+        if (!matchesLook(words, sent, this.state.limit) || (prior && (prior.guess !== words.guess || prior.used !== words.used)))
+          throw new Error('The audience sent a mismatched guess.')
+        if (!prior) {
+          const { roundId, observationId, guess, used, limit } = words
+          this.update({ used, pendingGuess: { roundId, observationId, guess, used, limit } })
+        }
+      })
       if (this.abort.signal.aborted) return
-      if (answer.roundId !== roundId || answer.observationId !== frame.observationId ||
-          !answer.guess || !['correct','incorrect','uncertain','unjudged'].includes(answer.verdict) ||
-          !Number.isInteger(answer.used) || answer.used < 1 || answer.used > this.state.limit)
+      const spoken = this.state.pendingGuess
+      if (!matchesLook(answer, sent, this.state.limit) || !['correct','incorrect','uncertain','unjudged'].includes(answer.verdict) ||
+          (spoken && (spoken.guess !== answer.guess || spoken.used !== answer.used)))
         throw new Error('The projector received an incomplete result. Try again.')
       this.unresolved = undefined
       this.lastImage = frame.image
       const complete = answer.verdict === 'correct' || answer.used >= this.state.limit
       if (complete) this.pending = false
+      this.scoredAt = { id: answer.observationId, at: Date.now() }
       this.update({
-        used: answer.used, history: [...this.state.history, { ...answer, image: frame.image }],
-        phase: complete ? 'complete' : 'ready', message: undefined,
+        used: answer.used, pendingGuess: undefined, history: [...this.state.history, { ...answer, image: frame.image }],
+        phase: complete ? 'complete' : 'ready', issue: undefined, message: undefined,
         recovery: !complete && answer.verdict === 'unjudged' ? 'change-pose' : undefined,
       })
     } catch (error) {
@@ -211,20 +243,18 @@ export class AudienceRound {
       if (frame && (known?.code === 'same_pose' || known?.code === 'vision_failed')) this.lastImage = frame.image
       const newPoseNeeded = known?.code === 'same_pose' || known?.code === 'vision_failed'
       const recovery = known?.code === 'stale_round' ? 'restart' : known?.code === 'daily_limit' ? 'daily-limit' : newPoseNeeded ? 'change-pose' : undefined
-      const complete = used >= this.state.limit || known?.code === 'round_finished' || known?.code === 'round_limit'
+      const complete = (!this.unresolved && used >= this.state.limit) || known?.code === 'round_finished' || known?.code === 'round_limit'
+      const spoken = this.unresolved ? this.state.pendingGuess : undefined
       this.update({
         phase: complete ? 'complete' : newPoseNeeded ? 'ready' : 'error',
-        used, recovery, message: this.explain(error),
+        used, recovery, pendingGuess: spoken,
+        ...(spoken ? { issue: 'The referee’s reply is missing.', message: 'Try again to check the score for this same picture.' }
+          : audienceIssue(error, frame ? 'observe' : 'capture', this.state.limit - used)),
       })
     } finally {
       this.busy = false
       this.schedule()
     }
-  }
-
-  private explain(error: unknown) {
-    if (error instanceof TypeError) return 'The booth lost the connection. Try again to check this look.'
-    return error instanceof Error ? error.message : 'The booth lost the connection.'
   }
 
   dispose() {

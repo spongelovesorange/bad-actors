@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { AudienceError, AudienceRound, quietAudience, type AudienceState, type Guess, type Verdict } from './audience-round'
+import { AudienceError, AudienceRound, localAudience, quietAudience, type AudienceState, type Guess, type Verdict } from './audience-round'
 import { drawAnotherCue, type ClockReading } from './acting-clock'
 
 type Frame = { roundId: string; observationId: string; image: string }
@@ -14,16 +14,16 @@ function deferred<T>() {
   return { promise, resolve }
 }
 
-function booth(timed = false) {
+function booth(timed = false, heardAt?: (observationId: string) => number | undefined) {
   const stage = { settled: true, visible: true, image: 'first image' }
   let used = 0
   let state: AudienceState = quietAudience
   const start = vi.fn(async () => ({ roundId: 'current', limit: 5 }))
-  const observe = vi.fn(async (frame: Frame) => reply(frame, ++used))
+  const observe = vi.fn<typeof localAudience.observe>(async frame => reply(frame, ++used))
   const capture = vi.fn(async () => stage.image)
   const times: ClockReading[] = []
   const round = new AudienceRound(3, { start, observe }, () => stage.settled, capture, s => { state = s }, () => stage.visible,
-    timed ? reading => { times.push(reading) } : undefined)
+    timed ? reading => { times.push(reading) } : undefined, heardAt)
   return { start, observe, capture, stage, round, times, state: () => state }
 }
 
@@ -122,11 +122,139 @@ describe('AI audience at the stage', () => {
     b.round.poseChanged()
     await vi.advanceTimersByTimeAsync(6000)
     expect(b.state().phase).toBe('error')
+    expect(b.state().issue).toBe('I can’t reach the local game.')
+    expect(b.state().message).toMatch(/same picture/)
     expect(b.observe).toHaveBeenCalledTimes(1)
     b.round.ask()
     await vi.advanceTimersByTimeAsync(0)
     expect(b.observe.mock.calls[1][0]).toEqual(b.observe.mock.calls[0][0])
     expect(b.capture).toHaveBeenCalledTimes(1)
+  })
+
+  it('publishes the blind guess before the referee and keeps the acting clock paused', async () => {
+    const b = booth(true)
+    const score = deferred<Guess>()
+    b.observe.mockImplementationOnce(async (frame, _signal, speak) => {
+      speak(reply(frame, 1))
+      return score.promise
+    })
+    await b.round.start()
+    b.round.ask()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(b.state()).toMatchObject({ phase: 'looking', pendingGuess: { guess: 'Making a call' }, used: 1, history: [] })
+    b.stage.visible = false
+    b.stage.image = 'new position'
+    b.round.poseChanged()
+    await vi.advanceTimersByTimeAsync(50_000)
+    expect(b.times.at(-1)).toEqual({ mode: 'paused', seconds: 45 })
+    score.resolve(reply(b.observe.mock.calls[0][0], 1, 'unjudged'))
+    await vi.advanceTimersByTimeAsync(0)
+    expect(b.state().pendingGuess).toBeUndefined()
+    expect(b.state().history.at(-1)).toMatchObject({ verdict: 'unjudged', guess: 'Making a call' })
+    expect(b.observe).toHaveBeenCalledTimes(1)
+  })
+
+  it('gives the finished line and its verdict time on stage before sending the newest queued pose', async () => {
+    const heard = new Map<string, number>()
+    const b = booth(false, id => heard.get(id))
+    const score = deferred<Guess>()
+    b.observe.mockImplementationOnce(() => score.promise)
+    await b.round.start()
+    b.round.ask()
+    await vi.advanceTimersByTimeAsync(0)
+    b.stage.image = 'new pose'
+    b.round.poseChanged()
+    await vi.advanceTimersByTimeAsync(5100)
+    const first = b.observe.mock.calls[0][0]
+    score.resolve(reply(first, 1))
+    await vi.advanceTimersByTimeAsync(1800)
+    expect(b.observe).toHaveBeenCalledTimes(1)
+    heard.set(first.observationId, Date.now())
+    await vi.advanceTimersByTimeAsync(749)
+    expect(b.observe).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(2)
+    expect(b.observe.mock.calls.map(([frame]) => frame.image)).toEqual(['first image', 'new pose'])
+  })
+
+  it('keeps the spoken fifth look after a broken stream and retrieves only its original score', async () => {
+    const b = booth()
+    await b.round.start()
+    for (let n = 1; n <= 4; n++) {
+      b.stage.image = 'pose ' + n
+      b.round.poseChanged()
+      await vi.advanceTimersByTimeAsync(4100)
+    }
+    b.observe.mockImplementationOnce(async (frame, _signal, speak) => {
+      speak(reply(frame, 5))
+      throw new Error('Truncated stream')
+    })
+    b.stage.image = 'pose 5'
+    b.round.poseChanged()
+    await vi.advanceTimersByTimeAsync(4100)
+    expect(b.state()).toMatchObject({ used: 5, phase: 'error', pendingGuess: { guess: 'Making a call' } })
+    expect(b.state().history).toHaveLength(4)
+    b.observe.mockImplementationOnce(async (frame, _signal, speak) => {
+      speak(reply(frame, 5))
+      return reply(frame, 5, 'correct')
+    })
+    b.round.ask()
+    await vi.advanceTimersByTimeAsync(4000)
+    expect(b.capture).toHaveBeenCalledTimes(5)
+    expect(b.observe.mock.calls[5][0]).toEqual(b.observe.mock.calls[4][0])
+    expect(b.state()).toMatchObject({ used: 5, phase: 'complete', pendingGuess: undefined })
+    expect(b.state().history).toHaveLength(5)
+  })
+
+  it.each(['mismatched ID', 'changed words', 'discarded round'])('cannot score a %s', async fault => {
+    const b = booth()
+    b.observe.mockImplementationOnce(async (frame, _signal, speak) => {
+      const guess = reply(frame, 1)
+      if (fault === 'discarded round') b.round.dispose()
+      speak(fault === 'mismatched ID' ? { ...guess, observationId: 'other' } : guess)
+      return { ...guess, guess: 'Different action', verdict: 'correct' }
+    })
+    await b.round.start()
+    b.round.ask()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(b.state().history).toHaveLength(0)
+    expect(b.state().phase).not.toBe('complete')
+    expect(b.state().pendingGuess?.guess).toBe(fault === 'changed words' ? 'Making a call' : undefined)
+  })
+
+  it('distinguishes an unconnected start from a local camera failure without spending a look', async () => {
+    const b = booth()
+    b.start.mockRejectedValueOnce(new TypeError('fetch failed'))
+    await b.round.start()
+    expect(b.state().message).toMatch(/to start. No look was used/)
+    b.round.ask()
+    await vi.advanceTimersByTimeAsync(0)
+    b.capture.mockRejectedValueOnce(new TypeError('Image decode failed'))
+    b.round.ask()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(b.state()).toMatchObject({ phase: 'error', used: 0, issue: 'I couldn’t take a picture of the stage.' })
+    expect(b.observe).not.toHaveBeenCalled()
+    b.round.ask()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(b.state().issue).toBeUndefined()
+    expect(b.observe).toHaveBeenCalledTimes(1)
+  })
+
+  it('explains a counted image-model timeout and waits for an edited pose', async () => {
+    const b = booth()
+    b.observe.mockRejectedValueOnce(new AudienceError('Provider error', 502, 'vision_failed', 1, 'timeout'))
+    await b.round.start()
+    b.round.ask()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(b.state()).toMatchObject({ issue: 'The image model took too long to reply.', recovery: 'change-pose', used: 1 })
+    expect(b.state().message).toContain('This look was counted.')
+    b.round.ask()
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(b.capture).toHaveBeenCalledTimes(1)
+    b.stage.image = 'changed'
+    b.round.poseChanged()
+    expect(b.state().issue).toBeUndefined()
+    await vi.advanceTimersByTimeAsync(700)
+    expect(b.observe).toHaveBeenCalledTimes(2)
   })
 
   it.each(['same_pose', 'vision_failed', 'observation_conflict'])('discards the rejected frame after %s', async (code) => {

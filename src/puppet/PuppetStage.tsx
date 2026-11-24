@@ -5,6 +5,7 @@ import { FlickInk, flickAt, traceFlick } from './FlickInk'
 import { advanceMotion, computeRig, createMotion, displayPose, headAngle, motionAtRest, stillMotion, tug, type PuppetMotion, type PuppetRig } from './motion'
 import { pickTarget, stageTargets } from './hit'
 import { moveJoint, turnFoot, turnJoint } from './joints'
+import { defaultAnkle } from './legs'
 import { distance, dragHandle, isJoint, moveHandle, putDown, snapHand, turnProp, type Hand, type StageHandle, type Point, type PuppetPose } from './geometry'
 import './puppet.css'
 
@@ -359,6 +360,15 @@ export function PuppetStage({ pose, onPoseChange, onPosePreview, onGrabChange, i
     onPointerCancel={event => { if (drag.current?.id === event.pointerId) finish() }}
     onLostPointerCapture={event => { if (drag.current?.id === event.pointerId) finish() }}>
     {interactive && <desc id={help}>Drag any joint, grip, or object. Dragging a held prop moves the hand with it. To pass it, put it down and drag it to the other palm. Tap again in the same spot to reach an overlapping joint. Tab focuses each grip in turn. With a control focused, use arrow keys to move, Shift to move farther, and Escape to undo a drag. For a prop, Enter picks up or puts down and R turns it. For a boot, R and Shift–R turn the toes.</desc>}
+    <g pointerEvents="none" aria-hidden="true" fill="#432f23">
+      {(['left', 'right'] as const).map(side => {
+        const ankle = rig.joints[side === 'left' ? 'leftAnkle' : 'rightAnkle']
+        const floor = defaultAnkle(side).y
+        const height = Math.max(0, floor - ankle.y)
+        return <ellipse key={side} cx={ankle.x + (side === 'left' ? -6 : 6)} cy={Math.max(floor, ankle.y) + 9}
+          rx={17 + height * .10} ry={3.1 + height * .025} opacity={.32 / (1 + height / 22)} />
+      })}
+    </g>
     {interactive && active && grip && ink && bodyFollow && !reduced &&
       <FlickInk handle={active} point={grip.point} angle={ink.angle} opacity={ink.opacity} />}
     <PuppetArt pose={rendered} motion={motion} rig={rig}/>

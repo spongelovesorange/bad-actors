@@ -1,5 +1,15 @@
 # Bad Actors verification
 
+## Sound in Safari and a livelier front row · November 24, 2026
+
+- **Silence in Safari.** In Safari on a Mac the live game made no sound, even with the Stage sound button reading On. Safari's `AudioNode.connect()` returns nothing, so the chained `source.connect(gain).connect(destination)` threw before any sound started, and the error was swallowed. Making `connect()` return nothing in Chromium reproduced the silence on the live site: no sound source started. Each connection is now its own call. A unit test with a Safari-style `connect()` fails on the old code and passes on the new one. Locally the room tone, the pit band and a one-off cue all start again. Nobody has listened in Safari itself yet.
+- **Stubbs and Judge Monitor act between lines.** The player asked for richer faces that move. The README describes what each of them does in each mood. Every mood was drawn close up in Chromium, and the animations running on each part were read back from the page:
+  - Stubbs: breathing, blinking and glancing at rest, plus a yawn when idle with his jaw shut; the opera-glass sweep while looking; three hops on a hit; a shiver and a falling bead of sweat on a miss; a wobble and circling eyes on an error; a falling tear on the Big Feelings night; glances at the balcony on the Gala night.
+  - Judge Monitor: a flicker and a slow scan bar in every mood; blinking and glancing eyes at rest; typing dots and a blinking amber light while it weighs a guess; a hop, a glow and sparkles for a match; a glitch and a red flash for a miss; one eye pondering beside a question mark for a close call; static snow when it can't rule.
+  - A free-play round with scripted replies reached the opera glasses, then the programme and the Miss! slip.
+  - Reduced motion turns every one of these animations off and keeps the expressions.
+- 213 unit tests, the typecheck, lint, both builds and all 42 stage tests pass.
+
 ## The twelve new cues on the real models · November 24, 2026
 
 After release #8 the player approved a small paid check of the 12 new cues. Each pose was built from its cue's note and photographed by the stage's own camera. The requests matched the shipped ones exactly: Stubbs on Claude Haiku 5.5 with the night's mood and a random comic angle, then the referee on Haiku 4.5 at temperature 0. Each frame got one look; in the game Stubbs gets five and hears his earlier misses.

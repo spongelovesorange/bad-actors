@@ -66,3 +66,52 @@
     to { translate: 0 0; }
   }
 }
+
+/* The tube is alive: phosphor glow, rolling scanlines, eyes that blink and wander, and a reaction
+   for every ruling. Transforms here use translate and scale so they stack on the listening tilt. */
+.ba-referee-face { filter: drop-shadow(0 0 1.2px #d1ed9d99); }
+.ba-referee-eyes { transform-box: fill-box; transform-origin: center; }
+@media (prefers-reduced-motion: no-preference) {
+  .ba-referee-eyes { animation: ba-referee-blink 5.3s infinite, ba-referee-glance 9.5s ease-in-out infinite; }
+  .ba-referee-scanbar { animation: ba-referee-sweep 3.4s linear infinite; }
+  .ba-referee-face { animation: ba-referee-flicker 6s steps(1) infinite; }
+
+  /* Listening: eyes on the performer, dots ticking over, the power light blinking amber. */
+  .ba-referee[data-referee-mood='listening'] .ba-referee-eyes { animation: ba-referee-blink 5.3s infinite, ba-referee-watch 2.4s ease-in-out infinite; }
+  .ba-referee-dots rect { animation: ba-referee-dot 1.05s steps(1) infinite; }
+  .ba-referee-dots rect:nth-child(2) { animation-delay: .35s; }
+  .ba-referee-dots rect:nth-child(3) { animation-delay: .7s; }
+  .ba-referee[data-referee-mood='listening'] .ba-referee-led { animation: ba-referee-led .5s steps(1) infinite; }
+
+  /* A hit: the screen beams, pixels sparkle and the whole set gives two little hops. */
+  .ba-referee[data-referee-mood='correct'] .ba-referee-set { animation: ba-referee-hop .45s ease-out 2; }
+  .ba-referee[data-referee-mood='correct'] .ba-referee-face { animation: ba-referee-beam .9s ease-out; }
+  .ba-referee-sparkle { animation: ba-referee-twinkle .6s steps(1) infinite; }
+  /* A miss: a red flash and a shudder, like a cheap set taking a knock. */
+  .ba-referee[data-referee-mood='incorrect'] .ba-referee-set { animation: ba-referee-glitch .07s steps(1) 7; }
+  .ba-referee-flash { animation: ba-referee-red .7s ease-out; }
+  /* Too close to call: the eyes go back and forth while a question mark blinks. */
+  .ba-referee[data-referee-mood='uncertain'] .ba-referee-eyes { animation: ba-referee-ponder 1.8s ease-in-out infinite; }
+  .ba-referee-query { animation: ba-referee-twinkle 1s steps(1) infinite; }
+  /* No ruling at all: snow, and a tube that cannot hold its picture. */
+  .ba-referee-snow { animation: ba-referee-snow .24s steps(1) infinite; }
+  .ba-referee[data-referee-mood='unjudged'] .ba-referee-face { animation: ba-referee-flicker .5s steps(1) infinite; }
+
+  @keyframes ba-referee-blink { 0%, 92%, 100% { scale: 1 1; } 94% { scale: 1 .12; } }
+  @keyframes ba-referee-glance { 0%, 35%, 100% { translate: 0 0; } 40%, 55% { translate: -1.6px 0; } 60%, 75% { translate: 1.2px .4px; } 80% { translate: 0 0; } }
+  @keyframes ba-referee-watch { 0%, 100% { translate: -1.8px 0; } 50% { translate: -2.6px .6px; } }
+  @keyframes ba-referee-ponder { 0%, 100% { translate: -2px -.4px; } 50% { translate: 2px -.8px; } }
+  @keyframes ba-referee-sweep { from { translate: 0 0; } to { translate: 0 44px; } }
+  @keyframes ba-referee-flicker { 0%, 100% { opacity: 1; } 91% { opacity: .72; } 92% { opacity: 1; } 96% { opacity: .85; } 97% { opacity: 1; } }
+  @keyframes ba-referee-dot { 0% { opacity: 1; } 33% { opacity: .2; } }
+  @keyframes ba-referee-led { 0% { opacity: 1; } 50% { opacity: .35; } }
+  @keyframes ba-referee-hop { 0%, 100% { translate: 0 0; } 40% { translate: 0 -3.5px; } 70% { translate: 0 .5px; } }
+  @keyframes ba-referee-beam {
+    from { filter: drop-shadow(0 0 1.2px #d1ed9d99) brightness(1.9); }
+    to { filter: drop-shadow(0 0 1.2px #d1ed9d99) brightness(1); }
+  }
+  @keyframes ba-referee-twinkle { 0% { opacity: 1; } 50% { opacity: .15; } }
+  @keyframes ba-referee-glitch { 0% { translate: -1.5px 0; } 33% { translate: 1.6px -.4px; } 66% { translate: -.6px .5px; } }
+  @keyframes ba-referee-red { from { opacity: .45; } to { opacity: 0; } }
+  @keyframes ba-referee-snow { 0% { translate: 0 0; } 33% { translate: 7px 3px; } 66% { translate: -5px 6px; } }
+}

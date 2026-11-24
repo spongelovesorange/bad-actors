@@ -1,5 +1,7 @@
 import { memo } from 'react'
+import type { TwistId } from '../deck'
 import type { Jaw } from './critic-speech'
+import './critic-life.css'
 
 export type CriticMood = 'idle' | 'looking' | 'guess' | 'miss' | 'hit' | 'error'
 
@@ -63,14 +65,19 @@ function UsherArm() {
 }
 
 /** Stubbs is a box-office punch. The visor is the lever and the mouth actually issues tickets. */
-export const AudienceCritic = memo(function AudienceCritic({ mood = 'idle', jaw = 'closed', gesture = 'rest', className }: {
-  mood?: CriticMood; jaw?: Jaw; gesture?: 'rest' | 'raise' | 'hold'; className?: string
+/**
+ * He breathes, blinks, glances between the stage and you, and yawns when nothing happens. A hit
+ * makes him hop with his eyes screwed up in glee; a miss sends him shivering behind his programme.
+ * Each night tints him too: Big Feelings brings tears, the Gala a glare at the balcony.
+ */
+export const AudienceCritic = memo(function AudienceCritic({ mood = 'idle', jaw = 'closed', gesture = 'rest', night, className }: {
+  mood?: CriticMood; jaw?: Jaw; gesture?: 'rest' | 'raise' | 'hold'; night?: TwistId; className?: string
 }) {
   const lean = { idle: 4, looking: 7, guess: 4, miss: -2, hit: 5, error: 0 }[mood]
   const wide = mood === 'guess' || mood === 'error'
   return (
     <svg className={className} viewBox="0 0 134 120" width="134" height="120" aria-hidden="true" focusable="false"
-      data-critic-mood={mood} data-jaw={jaw} data-gesture={gesture} data-volunteering={gesture === 'raise'}
+      data-critic-mood={mood} data-jaw={jaw} data-gesture={gesture} data-volunteering={gesture === 'raise'} data-night={night}
       data-gaze="upstage-right" style={{ display: 'block', maxWidth: '100%', height: 'auto' }}>
       <g stroke={ink} strokeLinecap="round" strokeLinejoin="round">
         {/* The bent metal legs and red, sprung chair stay put as he leans out. */}
@@ -85,6 +92,7 @@ export const AudienceCritic = memo(function AudienceCritic({ mood = 'idle', jaw 
         <path d="m64 99 7 2 12-1q7 1 6 5l-16 6-8-1zM82 93l7 1 11-5q5-1 6 4l-9 7-12 2z" fill={ink} strokeWidth="2" />
         <path d="m70 108 15-5m5-5 11-6" stroke={ivory} strokeWidth="1.1" />
         <g transform={`rotate(${lean} 49 81)`}>
+          <g className="ba-critic-body">
           {/* The ticket roll peeks out of the back of the cast-iron housing. */}
           <path d="m36 58-9-7q-7-8 0-15l10-8 4 3q-7 12 0 17l6 4z" fill={ivory} strokeWidth="2" />
           <path d="m28 42 8-8m-6 13 6-5" stroke={cherry} strokeWidth="1.6" />
@@ -106,8 +114,16 @@ export const AudienceCritic = memo(function AudienceCritic({ mood = 'idle', jaw 
             {/* Foreshortened far eye, larger near eye. Both pupils sight the upper-right stage. */}
             <path d="M55 40q4-4 10-4l-.4 7q-3.5 6-8.6 2z" data-eye-socket="far" fill={ivory} strokeWidth="1.5" />
             <path d="M71 37q5-5 15-5l-.2 8q-3 7-12 6l-2-3z" data-critic-eye="" data-eye-socket="near" fill={ivory} strokeWidth="1.5" />
-            <ellipse data-pupil="far" cx="62.5" cy="39" rx="1.8" ry={wide ? '2.7' : '2.2'} fill={ink} stroke="none" />
-            <ellipse data-critic-pupil="" data-pupil="near" cx="82.8" cy="35.9" rx="2.25" ry={wide ? '3' : '2.5'} fill={ink} stroke="none" />
+            <g className="ba-critic-gaze">
+              <ellipse data-pupil="far" cx="62.5" cy="39" rx="1.8" ry={wide ? '2.7' : '2.2'} fill={ink} stroke="none" />
+              <ellipse data-critic-pupil="" data-pupil="near" cx="82.8" cy="35.9" rx="2.25" ry={wide ? '3' : '2.5'} fill={ink} stroke="none" />
+            </g>
+            {/* Glee screws both eyes shut; on Big Feelings night a tear rolls out of the near one. */}
+            {mood === 'hit' && <path className="ba-critic-glee" d="M56 42.5q4-5.5 9-1.4M72.5 39.5q6-7 13-1.6" fill="none" strokeWidth="2.3" />}
+            {night === 'feel' && (mood === 'guess' || mood === 'hit') &&
+              <path className="ba-critic-tear" d="M84 45q-2.6 4.2 0 6.3q2.6-2.1 0-6.3z" fill="#a9d6ea" strokeWidth="1" />}
+            <path className="ba-critic-lid" d="M54.6 39.6q4.2-4.4 10.8-4.3l-.4 7.8q-3.8 6.3-9 2.4z" fill={brass} strokeWidth="1.5" />
+            <path className="ba-critic-lid" d="M70.6 36.6q5.2-5.4 15.6-5.3l-.2 8.6q-3.3 7.4-12.5 6.4l-2.2-3.3z" fill={brass} strokeWidth="1.5" />
             {!wide && <path d="m53 40 10-4m6.8 2.1 13.2-5.7" strokeWidth="2.5" />}
             {/* Peaked usher's cap and a punch handle are the same piece of bent brass. */}
             <path d="m31 30 4-10 14-4 24 3 12 8-5 4-33 5-9 1z" fill={enamel} strokeWidth="2.8" />
@@ -118,11 +134,13 @@ export const AudienceCritic = memo(function AudienceCritic({ mood = 'idle', jaw 
           <circle cx="41" cy="52" r="8.7" fill={brass} strokeWidth="2" />
           <circle cx="41" cy="52" r="3.5" fill={enamel} strokeWidth="1.5" />
           <path d="m39.5 53.4 3-3" strokeWidth="1.2" />
-          {mood === 'looking' ? <>
+          {mood === 'looking' ? <g className="ba-critic-glasses">
             <path d="m42 66 10-6 8-16" fill="none" strokeWidth="6.2" />
             <OperaGlasses />
             <path d="m58 48 2-4 4-1 2 3-4 4z" fill={ivory} strokeWidth="1.4" />
-          </> : mood === 'miss' ? <Programme /> : <UsherArm />}
+          </g> : mood === 'miss' ? <Programme /> : <UsherArm />}
+          {mood === 'miss' && <path className="ba-critic-sweat" d="M33 31q-3 5 0 7q3-2 0-7z" fill="#a9d6ea" strokeWidth="1.2" />}
+          </g>
         </g>
         {/* Seen from behind the aisle: the seat back cuts across the near side of his coat. */}
         <path d="M10 59q-1-5 4-6l21-2q4 0 5 5l5 22q1 4-3 6l-18 6q-5 2-7-3z" fill="#813831" strokeWidth="2.7" />

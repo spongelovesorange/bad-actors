@@ -709,7 +709,7 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
                 openingVerdict={phase === 'revealed' ? openingVerdict : undefined}
                 lobby={lobby} cueTools={cueTools}
                 beckon={guide === 'ticket' || guide === 'ready' ? guide : undefined}
-                opener={night?.opener} actSeconds={inShow && night ? night.seconds : 45} onRoundOver={setRoundEnd}
+                opener={night?.opener} actSeconds={inShow && night ? night.seconds : 45} onRoundOver={setRoundEnd} night={twist}
                 actLabel={inShow ? `Act ${act} of ${actsPerShow}` : undefined}
                 nextLabel={inShow ? (act >= actsPerShow ? 'Curtain call' : 'Next act') : 'Next cue'}
                 onRoundEnd={inShow ? handleRoundEnd : undefined}

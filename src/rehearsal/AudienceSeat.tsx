@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNo
 import { ArrowRight, Drama, Eye, Timer, Volume2, VolumeX } from 'lucide-react'
 import type { PuppetPose, PuppetStageApi } from '../puppet'
 import type { CriticMood } from './AudienceCritic'
+import type { TwistId } from '../deck'
 import { CriticDelivery } from './CriticDelivery'
 import { refereeLabels, type RefereeMood } from './BoothReferee'
 import { FrontRowRail } from './FrontRowRail'
@@ -29,6 +30,8 @@ type SeatProps = {
   opener?: string
   /** Seconds per timed act. */
   actSeconds?: number
+  /** Tonight's trouble, for Stubbs's manner. */
+  night?: TwistId
   /** "Act 2 of 5" during a show. */
   actLabel?: string
   nextLabel?: string
@@ -51,7 +54,7 @@ const reaction: Record<Verdict, CriticMood> = {
   correct: 'hit', incorrect: 'miss', uncertain: 'guess', unjudged: 'guess',
 }
 
-export function AudienceSeat({ firstLook, paused, children, clock, flyCue, lobby, cueTools, beckon, opener, actSeconds = 45, actLabel, nextLabel, onRoundEnd, onRoundOver, openingVerdict, client = localAudience, publicEntry, requestedPlay, mode, cue, pose, stage, player, onStart, onLeave, onNext, onClock }: SeatProps) {
+export function AudienceSeat({ firstLook, paused, children, clock, flyCue, lobby, cueTools, beckon, opener, actSeconds = 45, night, actLabel, nextLabel, onRoundEnd, onRoundOver, openingVerdict, client = localAudience, publicEntry, requestedPlay, mode, cue, pose, stage, player, onStart, onLeave, onNext, onClock }: SeatProps) {
   const active = mode !== null
   const [availability, setAvailability] = useState<Availability>('checking')
   const [statusCheck, setStatusCheck] = useState(0)
@@ -231,7 +234,7 @@ export function AudienceSeat({ firstLook, paused, children, clock, flyCue, lobby
       <CriticDelivery key={JSON.stringify([cue, mode, observation?.observationId, speech])}
         line={speech} mood={mood} observationId={observation?.observationId}
         referee={referee} onVoiceBeat={audio.speak} onDelivered={markDelivered}
-        hold={awaitingVoice} pace={clip && clip.duration * 1000} onStart={startLine}
+        hold={awaitingVoice} pace={clip && clip.duration * 1000} onStart={startLine} night={night}
         animate={(publicEntry || availability !== 'checking') && (Boolean(observation) || (!state.issue && state.phase !== 'error'))} />
     </div>
     <FrontRowRail />

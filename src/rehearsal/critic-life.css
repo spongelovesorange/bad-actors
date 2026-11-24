@@ -1,0 +1,40 @@
+/* Mr. Stubbs between lines: he breathes, blinks, glances about and, left alone, yawns. */
+.ba-critic-body { transform-origin: 49px 81px; }
+.ba-critic-lid { transform-box: fill-box; transform-origin: 50% 0; transform: scaleY(0); }
+.ba-critic-gaze, .ba-critic-glasses { transform-origin: 42px 66px; }
+[data-critic-mood='hit'] .ba-critic-gaze { opacity: 0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-critic-mood] .ba-critic-body { animation: ba-critic-breathe 3.6s ease-in-out infinite; }
+  .ba-critic-lid { animation: ba-critic-blink 4.7s infinite; }
+  [data-critic-mood='idle'] .ba-critic-gaze, [data-critic-mood='guess'] .ba-critic-gaze { animation: ba-critic-glance 7.3s ease-in-out infinite; }
+  /* Left alone too long, the visor lifts into a yawn. Speech takes the jaw back at once. */
+  [data-critic-mood='idle'][data-jaw='closed'] .ba-critic-upper { animation: ba-critic-yawn 13s ease-in-out 4s infinite; }
+
+  [data-critic-mood='looking'] .ba-critic-glasses { animation: ba-critic-scan 1.7s ease-in-out infinite; }
+  [data-critic-mood='hit'] .ba-critic-body { animation: ba-critic-hop .42s ease-out 3; }
+  [data-critic-mood='hit'] .ba-critic-lid { animation: none; }
+  [data-critic-mood='miss'] .ba-critic-body { animation: ba-critic-shiver .12s linear 7; }
+  [data-critic-mood='error'] .ba-critic-body { animation: ba-critic-wobble 1.3s ease-in-out infinite; }
+  [data-critic-mood='error'] .ba-critic-gaze { animation: ba-critic-dizzy .8s linear infinite; }
+  .ba-critic-sweat { animation: ba-critic-drip 1.1s ease-in infinite; }
+  .ba-critic-tear { animation: ba-critic-drip 1.4s ease-in infinite; }
+  /* On the Gala night his eyes keep flicking up at the balcony. */
+  [data-night='heckler'][data-critic-mood='idle'] .ba-critic-gaze,
+  [data-night='heckler'][data-critic-mood='guess'] .ba-critic-gaze { animation-name: ba-critic-glare; animation-duration: 4.2s; }
+
+  @keyframes ba-critic-breathe { 0%, 100% { translate: 0 0; rotate: 0deg; } 50% { translate: 0 -.9px; rotate: -.8deg; } }
+  @keyframes ba-critic-blink { 0%, 93%, 100% { transform: scaleY(0); } 95.5% { transform: scaleY(1); } }
+  @keyframes ba-critic-glance {
+    0%, 30%, 100% { translate: 0 0; } 36%, 52% { translate: -2.4px 1.2px; } 58% { translate: 0 0; }
+    74%, 84% { translate: 1px -1.4px; } 90% { translate: 0 0; }
+  }
+  @keyframes ba-critic-glare { 0%, 40%, 100% { translate: 0 0; } 46%, 72% { translate: -1.6px -2.6px; } 78% { translate: 0 0; } }
+  @keyframes ba-critic-yawn { 0%, 85%, 100% { transform: rotate(-5deg); } 88%, 94% { transform: rotate(-21deg); } 97% { transform: rotate(-7deg); } }
+  @keyframes ba-critic-scan { 0%, 100% { rotate: -3deg; } 50% { rotate: 4deg; } }
+  @keyframes ba-critic-hop { 0%, 100% { translate: 0 0; } 40% { translate: 0 -5px; } 70% { translate: 0 .6px; } }
+  @keyframes ba-critic-shiver { 0%, 100% { rotate: 0deg; } 25% { rotate: -1.7deg; } 75% { rotate: 1.7deg; } }
+  @keyframes ba-critic-wobble { 0%, 100% { rotate: -2deg; } 50% { rotate: 2.6deg; } }
+  @keyframes ba-critic-dizzy { 0%, 100% { translate: 1.5px 0; } 25% { translate: 0 1.5px; } 50% { translate: -1.5px 0; } 75% { translate: 0 -1.5px; } }
+  @keyframes ba-critic-drip { 0% { translate: 0 0; opacity: 0; } 15% { opacity: 1; } 100% { translate: 0 10px; opacity: 0; } }
+}

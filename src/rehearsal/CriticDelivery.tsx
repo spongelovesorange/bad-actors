@@ -2,6 +2,7 @@ import { useLayoutEffect, useMemo, useState } from 'react'
 import { AudienceCritic, type CriticMood } from './AudienceCritic'
 import { BoothReferee, type RefereeMood } from './BoothReferee'
 import { scoreLine } from './critic-speech'
+import type { TwistId } from '../deck'
 import './critic-speech.css'
 
 type DeliveryProps = {
@@ -18,10 +19,12 @@ type DeliveryProps = {
   pace?: number
   /** Called as the first letter appears, to start the recorded line with it. */
   onStart?: () => void
+  /** Tonight's trouble, which colours how Stubbs behaves. */
+  night?: TwistId
 }
 
 /** A new utterance mounts a fresh performance. The announcement lives outside it. */
-export function CriticDelivery({ line, mood, observationId, referee, onVoiceBeat, onDelivered, animate, hold, pace, onStart }: DeliveryProps) {
+export function CriticDelivery({ line, mood, observationId, referee, onVoiceBeat, onDelivered, animate, hold, pace, onStart, night }: DeliveryProps) {
   const { words, beats } = useMemo(() => scoreLine(line), [line])
   const [count, setCount] = useState<number | null>(null)
   useLayoutEffect(() => {
@@ -85,7 +88,7 @@ export function CriticDelivery({ line, mood, observationId, referee, onVoiceBeat
         )}
       </p>
       <div className="ba-critic-portrait">
-        <AudienceCritic mood={awaitingReaction ? 'guess' : mood} jaw={jaw} gesture={gesture} />
+        <AudienceCritic mood={awaitingReaction ? 'guess' : mood} jaw={jaw} gesture={gesture} night={night} />
         <strong>Mr. Stubbs<small>AI guesser</small></strong>
       </div>
     </div>

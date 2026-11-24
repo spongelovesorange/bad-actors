@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
 import './booth-referee.css'
 
 export type RefereeMood = 'idle' | 'listening' | 'correct' | 'incorrect' | 'uncertain' | 'unjudged'
@@ -15,35 +15,31 @@ const marks: Record<keyof typeof refereeLabels, string> = {
   unjudged: 'm2 3 3 2 2-3 2 3 3-2m-9 6 3-2 2 3 3-3',
 }
 
-// The glass looks towards the performer at the left of the bench.
-const faces: Record<RefereeMood, ReactNode> = {
-  idle: <>
-    <path d="m26 38 9 1m10-1 9-2m-16 12 6-.5" />
-    <path d="M26 39h3v3h-3zm18-1h3v3h-3z" fill={phosphor} stroke="none" />
-  </>,
-  listening: <>
-    <path d="m25 33 8-2m12 2 8-2m-15 18 4-.5" />
-    <path d="M27 36h3v6h-3zm18-1h3v6h-3z" fill={phosphor} stroke="none" />
-  </>,
-  correct: <>
-    <path d="m25 38 4-4 5 2m10 .5 4-4 5 2m-20 9 4 3 5-.5 5-4" />
-  </>,
-  incorrect: <>
-    <path d="m24 35 10 1m10-3 9-3m-19 17 11-1" />
-    <path d="M28 38h3v3h-3zm18-2h3v4h-3z" fill={phosphor} stroke="none" />
-  </>,
-  uncertain: <>
-    <path d="m24 37 9 1m12-3 9-3m-20 15 5-1 3 2 5-2" />
-    <path d="M26 39h3v3h-3zm19-3h3v4h-3z" fill={phosphor} stroke="none" />
-  </>,
-  unjudged: <>
-    <path d="m23 37 6-1 2 3 5-6 3 4 5-.5 2-3 3 4 7-1M33 47l3-.3m5-.4 2-.2" strokeWidth="2" />
-  </>,
+// The glass looks towards the performer at the left of the bench. Eyes are kept apart from the
+// rest of the face so they can blink and glance on their own.
+const faces: Record<RefereeMood, { features: ReactNode; eyes?: string }> = {
+  idle: { features: <path d="m26 38 9 1m10-1 9-2m-16 12 6-.5" />, eyes: 'M26 39h3v3h-3zm18-1h3v3h-3z' },
+  listening: { features: <path d="m25 33 8-2m12 2 8-2m-15 18 4-.5" />, eyes: 'M27 36h3v6h-3zm18-1h3v6h-3z' },
+  correct: { features: <path d="m25 38 4-4 5 2m10 .5 4-4 5 2m-20 9 4 3 5-.5 5-4" /> },
+  incorrect: { features: <path d="m24 35 10 1m10-3 9-3m-19 17 11-1" />, eyes: 'M28 38h3v3h-3zm18-2h3v4h-3z' },
+  uncertain: { features: <path d="m24 37 9 1m12-3 9-3m-20 15 5-1 3 2 5-2" />, eyes: 'M26 39h3v3h-3zm19-3h3v4h-3z' },
+  unjudged: { features: <path d="m23 37 6-1 2 3 5-6 3 4 5-.5 2-3 3 4 7-1M33 47l3-.3m5-.4 2-.2" strokeWidth="2" /> },
 }
+const glass = 'M19 28q.2-5 4-5.4l33-3q5 0 5.5 4L64 48q.2 4-4 4.7l-35 2q-4 0-4.2-3.4z'
+// A fixed scatter of snow for a ruling the referee could not make.
+const snow = Array.from({ length: 46 }, (_, i) => ({ x: 18 + (i * 37) % 47, y: 19 + (i * 23) % 37, w: 1 + (i % 3) * .8 }))
+const scanlines = Array.from({ length: 19 }, (_, i) => 20 + i * 1.9)
 
 /** The clerk has been a single beige computer since somebody retired the last judge. */
+/**
+ * The clerk has been a single beige computer since somebody retired the last judge. Its tube hums:
+ * scanlines roll, the eyes blink and wander, it thinks in dots while Stubbs talks, beams and sparkles
+ * at a hit, flashes red and shudders at a miss, and fills with snow when it cannot rule at all.
+ */
 export function BoothReferee({ mood = 'idle', className }: { mood?: RefereeMood; className?: string }) {
   const receipt = mood === 'idle' || mood === 'listening' ? null : mood
+  const clip = useId().replace(/:/g, '') + '-glass'
+  const face = faces[mood]
 
   return <div className={className ? `ba-referee ${className}` : 'ba-referee'}
     data-testid="booth-referee" data-referee-mood={mood}>
@@ -107,9 +103,31 @@ export function BoothReferee({ mood = 'idle', className }: { mood?: RefereeMood;
             <path d="M16 27q0-6 6-7l35-3q7-.5 8 5l2 27q.7 5-5 6l-40 2q-5 0-5-5z" fill="#817f6b" strokeWidth="1.8" />
             <path d="M19 28q.2-5 4-5.4l33-3q5 0 5.5 4L64 48q.2 4-4 4.7l-35 2q-4 0-4.2-3.4z" fill="#263f3a" strokeWidth="1.7" />
             <path d="m24 27 9-1m-8 4 4-.4" stroke="#648477" fill="none" strokeWidth="1.1" />
-            <g className="ba-referee-face" fill="none" stroke={phosphor} strokeWidth="2.7" strokeLinecap="square">{faces[mood]}</g>
+            <g className="ba-referee-face" fill="none" stroke={phosphor} strokeWidth="2.7" strokeLinecap="square">
+              {face.features}
+              {face.eyes && <path className="ba-referee-eyes" d={face.eyes} fill={phosphor} stroke="none" />}
+            </g>
+            <defs><clipPath id={clip}><path d={glass} /></clipPath></defs>
+            <g clipPath={`url(#${clip})`} pointerEvents="none" stroke="none">
+              {mood === 'listening' && <g className="ba-referee-dots" fill={phosphor}>
+                <rect x="36.5" y="49.5" width="2" height="2" /><rect x="40.5" y="49.3" width="2" height="2" /><rect x="44.5" y="49.1" width="2" height="2" />
+              </g>}
+              {mood === 'correct' && <g className="ba-referee-sparkle" fill="none" stroke={phosphor} strokeWidth="1.2" strokeLinecap="square">
+                <path d="M22 27h3m-1.5-1.5v3M57 25h3m-1.5-1.5v3M58 45h3m-1.5-1.5v3" />
+              </g>}
+              {mood === 'uncertain' && <path className="ba-referee-query" d="M55 24.5q0-2.4 2.4-2.4t2.4 2.2q0 1.6-2 2.4v1.6m0 2.2v.3"
+                fill="none" stroke={phosphor} strokeWidth="1.3" strokeLinecap="square" />}
+              {mood === 'incorrect' && <rect className="ba-referee-flash" x="17" y="18" width="50" height="40" fill="#ff5a48" opacity="0" />}
+              {mood === 'unjudged' && <g className="ba-referee-snow" fill="#e9f3d4">
+                {snow.map(({ x, y, w }, i) => <rect key={i} x={x} y={y} width={w} height=".9" opacity={.35 + (i % 4) * .15} />)}
+              </g>}
+              <g className="ba-referee-scanlines" stroke="#0a1512" strokeWidth=".7" opacity=".32">
+                {scanlines.map(y => <path key={y} d={`M17 ${y}h50`} />)}
+              </g>
+              <rect className="ba-referee-scanbar" x="17" y="14" width="50" height="5" fill={phosphor} opacity=".09" />
+            </g>
             <path d="m20 61 12-.6m2.7-.1 3-.2" stroke="#7e7967" strokeWidth="1.25" />
-            <circle cx="67" cy="59" r="2" fill={mood === 'unjudged' ? '#ce6748' : '#8da868'} strokeWidth="1.1" />
+            <circle className="ba-referee-led" cx="67" cy="59" r="2" fill={mood === 'unjudged' ? '#ce6748' : mood === 'listening' ? '#e8b04e' : '#8da868'} strokeWidth="1.1" />
             <path d="m71 12-5 5 2 3-4 3" fill="none" stroke="#796e62" strokeWidth="1.2" />
             {/* Two barrister's paper tabs clipped over the stand. */}
             <path d="m40 61 11-.7 2 3-3.9 2.1-6.5-1z" fill="#43423d" strokeWidth="1.2" />

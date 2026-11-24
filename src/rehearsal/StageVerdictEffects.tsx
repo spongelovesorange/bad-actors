@@ -47,11 +47,28 @@ function TicketShower() {
   </div>
 }
 
+type Spectator = {
+  left: number; look: 'beanie' | 'cap'; coat: string; hair: string; hat: string
+  scale: number; seat: number; clap: number; speed: number
+}
+
+/** Six regulars fill the front stalls beside Stubbs, each clapping slightly out of time. */
+const house: Spectator[] = [
+  { left: 22.5, look: 'beanie', coat: '#4b655c', hair: '#655147', hat: '#4b4b43', scale: .94, seat: 0, clap: 0, speed: .42 },
+  { left: 32.5, look: 'cap', coat: '#7d4b40', hair: '#615048', hat: '#8c6756', scale: 1.02, seat: 70, clap: 170, speed: .39 },
+  { left: 43, look: 'beanie', coat: '#5b5174', hair: '#3f362f', hat: '#a4483d', scale: .9, seat: 150, clap: 90, speed: .45 },
+  { left: 53.5, look: 'cap', coat: '#9a7b3f', hair: '#7a5a44', hat: '#4f6b78', scale: .98, seat: 30, clap: 260, speed: .4 },
+  { left: 64, look: 'beanie', coat: '#3f5f78', hair: '#2f2a26', hat: '#c08a3e', scale: 1.04, seat: 110, clap: 40, speed: .43 },
+  { left: 75.5, look: 'cap', coat: '#6f5a4b', hair: '#5a463c', hat: '#5e7b52', scale: .92, seat: 190, clap: 330, speed: .38 },
+]
+
 /** Cropped spectators seen from behind; their elbows stay rooted in the front stalls. */
-function Clapper({ side }: { side: 'left' | 'right' }) {
-  return <svg className={'ba-front-clapper ba-clapper-' + side} viewBox="0 0 112 83" focusable="false">
+function Clapper({ left, look, coat, hair, hat, scale, seat, clap, speed }: Spectator) {
+  return <svg className={'ba-front-clapper ba-clapper-' + look} viewBox="0 0 112 83" focusable="false" style={{
+    left: left + '%', '--clapper-scale': scale, '--seat-delay': seat + 'ms', '--clap-delay': clap + 'ms', '--clap-speed': speed + 's',
+  } as CSSProperties}>
     <g stroke="#302a25" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M24 94q0-23 6-29l16-9 20 1 17 9q7 12 8 30Z" fill={side === 'left' ? '#4b655c' : '#7d4b40'} />
+      <path d="M24 94q0-23 6-29l16-9 20 1 17 9q7 12 8 30Z" fill={coat} />
       <g className="ba-clap-pair">
         <g className="ba-clap-arm ba-clap-arm-l">
           <path d="m32 75-12-16-6-19 9-4 10 16 10 12Z" fill="#596359" />
@@ -64,13 +81,13 @@ function Clapper({ side }: { side: 'left' | 'right' }) {
           <path d="m80 31 5 4m-2 3 9 3" fill="none" stroke="#8d704c" strokeWidth="1.2" />
         </g>
       </g>
-      {side === 'left' ? <>
-        <path d="M38 49q0-11 12-15t23 2q9 9 2 22l-9 8-17-2-9-8z" fill="#655147" />
-        <path d="m37 45 3-9 8-4 2-10 11 4 10-5 4 10 8 5-3 11-15-5-13 2z" fill="#4b4b43" />
+      {look === 'beanie' ? <>
+        <path d="M38 49q0-11 12-15t23 2q9 9 2 22l-9 8-17-2-9-8z" fill={hair} />
+        <path d="m37 45 3-9 8-4 2-10 11 4 10-5 4 10 8 5-3 11-15-5-13 2z" fill={hat} />
       </> : <>
-        <path d="M36 48q-2-11 6-15l12-5q15-1 22 10 4 8-3 20l-8 8-16-3-8-8z" fill="#615048" />
+        <path d="M36 48q-2-11 6-15l12-5q15-1 22 10 4 8-3 20l-8 8-16-3-8-8z" fill={hair} />
         <path d="M32 42q9-7 24-6l22 3 5 7-18-3-16 1-16 5z" fill="#ad8461" />
-        <path d="m39 38 3-12 8-5 17 1 7 13" fill="#8c6756" />
+        <path d="m39 38 3-12 8-5 17 1 7 13" fill={hat} />
       </>}
       <path d="M26 88q-2-9 3-11l51-2q6 0 6 7v6Z" fill="#713f38" />
       <path d="m34 79 43-2" fill="none" stroke="#aa6755" strokeWidth="1.5" />
@@ -109,7 +126,7 @@ export function StageVerdictEffects({ verdict, performanceKey }: Props) {
     data-verdict={verdict} aria-hidden="true">
     {verdict === 'correct' ? <>
       <TicketShower />
-      <Clapper side="left" /><Clapper side="right" />
+      {house.map(spectator => <Clapper key={spectator.left} {...spectator} />)}
       <span className="ba-house-call ba-house-encore">Encore!</span>
     </> : <>
       <PartyBlower />

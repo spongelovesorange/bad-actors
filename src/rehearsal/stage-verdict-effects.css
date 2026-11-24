@@ -16,13 +16,14 @@
   transform: translateY(var(--ticket-perch));
 }
 .ba-ticket-scrap { width: 100%; height: auto; transform: rotate(var(--ticket-tilt)); }
-.ba-front-clapper { position: absolute; bottom: -4px; width: clamp(52px, 10.4cqw, 114px); height: auto; }
-.ba-clapper-left { left: 29%; }
-.ba-clapper-right { right: 11%; }
+.ba-front-clapper {
+  position: absolute; bottom: -4px; height: auto;
+  width: calc(clamp(52px, 10.4cqw, 114px) * var(--clapper-scale, 1));
+}
 .ba-clap-arm-l { transform-origin: 35px 70px; transform: rotate(26deg); }
 .ba-clap-arm-r { transform-origin: 81px 70px; transform: rotate(-26deg); }
-.ba-clapper-right .ba-clap-arm-l { transform: rotate(9deg); }
-.ba-clapper-right .ba-clap-arm-r { transform: rotate(-9deg); }
+.ba-clapper-cap .ba-clap-arm-l { transform: rotate(9deg); }
+.ba-clapper-cap .ba-clap-arm-r { transform: rotate(-9deg); }
 .ba-heckle-horn { position: absolute; bottom: -3px; right: 7%; width: clamp(78px, 16cqw, 158px); height: auto; }
 .ba-heckle-paper { transform-origin: 86px 39px; transform: rotate(-3deg); }
 .ba-house-call {
@@ -48,8 +49,6 @@
 
 @media (max-width: 600px) {
   .ba-wing-streamers { width: clamp(49px,13cqw,72px); }
-  .ba-stage-verdict .ba-clapper-left { left: 29%; }
-  .ba-stage-verdict .ba-clapper-right { right: 6.5%; }
   .ba-house-encore { bottom: 13%; right: 13%; }
   .ba-house-heckle { right: 3%; bottom: 37px; max-width: 28%; }
 }
@@ -60,12 +59,10 @@
   .ba-streamers-right .ba-ribbon-outer { animation-delay: 100ms; }
   .ba-ticket-fall { animation: ba-stub-fall 1.95s cubic-bezier(.32,.13,.76,.82) var(--ticket-start) both; }
   .ba-ticket-scrap { animation: ba-stub-tumble .81s ease-in-out var(--ticket-start) 3 alternate both; }
-  .ba-front-clapper { animation: ba-take-front-seat 270ms cubic-bezier(.16,.76,.32,1.12) both; }
-  .ba-clapper-right { animation-delay: 120ms; }
-  .ba-clap-arm-l { animation: ba-clap-left .42s ease-out 180ms 5 both; }
-  .ba-clap-arm-r { animation: ba-clap-right .42s ease-out 180ms 5 both; }
-  .ba-clap-rays { animation: ba-clap-strike .42s ease-out 180ms 5 both; }
-  .ba-clapper-right :is(.ba-clap-arm, .ba-clap-rays) { animation-delay: 350ms; animation-duration: .39s; }
+  .ba-front-clapper { animation: ba-take-front-seat 270ms cubic-bezier(.16,.76,.32,1.12) var(--seat-delay, 0ms) both; }
+  .ba-clap-arm-l { animation: ba-clap-left var(--clap-speed, .42s) ease-out calc(180ms + var(--clap-delay, 0ms)) 5 both; }
+  .ba-clap-arm-r { animation: ba-clap-right var(--clap-speed, .42s) ease-out calc(180ms + var(--clap-delay, 0ms)) 5 both; }
+  .ba-clap-rays { animation: ba-clap-strike var(--clap-speed, .42s) ease-out calc(180ms + var(--clap-delay, 0ms)) 5 both; }
   .ba-house-encore { animation: ba-house-shout 330ms ease-out 240ms both; }
   .ba-heckle-horn { animation: ba-take-front-seat 350ms ease-out 100ms both; }
   .ba-heckle-paper { animation: ba-dud-party-horn 1.6s ease-out 470ms both; }

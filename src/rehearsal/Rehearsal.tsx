@@ -79,7 +79,6 @@ type RehearsalSession = {
   askOnReturn?: boolean
 }
 type DialogKind = 'welcome' | 'help' | 'account'
-const handbookKey = 'bad-actors:handbook:1'
 
 function restoreSession(): RehearsalSession | null {
   try {
@@ -353,8 +352,9 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
     if (compareMotion && params.get('direct') === '1') setBodyFollow(false)
     if (restored.current) return
     restored.current = true
-    try { if (localStorage.getItem(handbookKey) !== 'seen') setDialog('welcome') }
-    catch { setDialog('welcome') }
+    // Every visit and every refresh opens on the handbook. Its "Places! Sound on" is the gesture
+    // that lets the hall make sound, so a returning player is never left in a silent theatre.
+    setDialog('welcome')
     setIntroChecked(true)
     const saved = restoreSession()
     if (saved) {
@@ -390,9 +390,6 @@ export default function Rehearsal({ accountAvailable = true, hostedAudience, req
     setDialog(kind)
   }
   function dismissDialog() {
-    if (dialog === 'welcome') {
-      try { localStorage.setItem(handbookKey, 'seen') } catch { /* Dismiss for this visit. */ }
-    }
     setDialog(null)
     requestAnimationFrame(() => (helpTrigger.current ?? cueHeading.current)?.focus({ preventScroll: true }))
   }

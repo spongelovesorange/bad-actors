@@ -256,7 +256,7 @@ test('a timed show pauses for the audience, cuts off new looks at zero, and deal
 test.describe('opening the handbook', () => {
   test.use({ storageState: { cookies: [], origins: [] } })
 
-  test('first visit explains the act, quiet entry keeps the pose, and the booklet stays replayable', async ({ page }) => {
+  test('every visit opens on the handbook, quiet entry keeps the pose, and the booklet stays replayable', async ({ page }) => {
     const { starts, frames } = await mockAudience(page, () => ({ guess: 'Drinking.', verdict: 'correct' }))
     await page.goto('/?cue=1')
     const book = page.getByRole('dialog', { name: 'The understudy’s handbook' })
@@ -266,6 +266,8 @@ test.describe('opening the handbook', () => {
     await expect(book).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'Stage sound' })).toHaveAttribute('aria-pressed','false')
     await page.reload()
+    await expect(book).toBeVisible()
+    await book.getByRole('button', { name: 'Play quietly' }).click()
     await expect(page.getByRole('button', {name:'Guess it, Stubbs!'})).toBeEnabled()
     await expect(book).toHaveCount(0)
     await page.getByRole('button', {name:'How to play'}).click()

@@ -1,12 +1,12 @@
 # Bad Actors
 
-On your first visit, a three-panel cartoon introduces the actor, Mr. Stubbs and the judge. Choose **Places! Sound on** or **Play quietly**. **How to play** reopens the booklet.
+Every visit opens with a three-panel cartoon that introduces the actor, Mr. Stubbs and the judge. Choose **Places! Sound on** or **Play quietly**. **How to play** reopens the booklet.
 
 The community hall is one actor short. A canvas stage weight is covering the part. Pose the understudy so someone can guess what it is doing.
 
 [Open the live AI booth](https://bad-actors-shi.app.space/room?play=draw). Sign in to draw a cue. A stagehand lowers your cue on a plank tied to an old boot. You get 45 seconds to act it out. Mr. Stubbs, a ticket punch in the front row, gets five looks. Pose the understudy and hold still. The clock pauses while he thinks. He raises a glove and gives his guess. Judge Monitor prints the ruling from a window in the right wing. **What Stubbs saw** keeps the pictures and the exact guesses for the current round.
 
-A hit brings streamers, a shower of used tickets and two spectators who clap out of time. A miss gets one half-hearted party horn and a heckle from the cheap seats. Turn on **Stage sound** to hear the judge’s bell or buzzer and the puppet’s squeaking joints. In the signed-in game Stubbs reads his line aloud in an ElevenLabs voice; without a recording he mutters in tinny syllables. **Room tone** controls the backstage fan separately. The clock ticks only during acting time, doubles up at ten seconds and rings at zero. [Listen to the 11-second sound check](public/stage-soundcheck.mp3) You can try both reactions for free in the opening phone puzzle. Enter `phone call` for applause, or reload the opening and enter `baking bread` to meet the heckler.
+A hit brings streamers, a shower of used tickets and a front row of six spectators who clap out of time. A miss gets one half-hearted party horn and a heckle from the cheap seats. Turn on **Stage sound** to hear the judge’s bell or buzzer and the puppet’s squeaking joints. In the signed-in game Stubbs reads his line aloud in an ElevenLabs voice; without a recording he mutters in tinny syllables. **Room tone** controls the backstage fan separately. The clock ticks only during acting time, doubles up at ten seconds and rings at zero. [Listen to the 11-second sound check](public/stage-soundcheck.mp3) You can try both reactions for free in the opening phone puzzle. Enter `phone call` for applause, or reload the opening and enter `baking bread` to meet the heckler.
 
 You can also guess the opening act yourself or take **Your turn** to play one of six cues with a friend. **Choose a cue** jumps straight to an exercise. **Acting hint** shows an achievable pose. **Hide cue** covers the slip and puts away both the hint and the cue list before you hand over the screen.
 

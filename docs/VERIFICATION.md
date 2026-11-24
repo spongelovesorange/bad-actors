@@ -1,5 +1,14 @@
 # Bad Actors verification
 
+## Sound, handbook and front row · November 23, 2026
+
+The player reported a silent site after the release. On the live page, Chromium started the room tone, button sounds, applause and Stubbs's syllables once Stage sound was on. The cause was the stored preference. The handbook that offers **Places! Sound on** was remembered in localStorage, but the sound choice lived in sessionStorage. A returning player in a new tab therefore got neither the handbook nor sound.
+
+- The sound choice is now saved in localStorage. In a fresh live tab the first click turned it back on, and the room tone, buttons, applause and syllables all started.
+- The persisted choice shipped in release #5. In this local revision the handbook also opens on every visit and refresh, as the player asked. That puts **Places! Sound on** in front of them each time.
+- A hit now fills the front stalls with six spectators of varied size and colour, who clap out of time. They were checked frozen at desktop and 375 px widths beside Stubbs, clear of the actor.
+- The steady background noise the player heard after closing Safari came from the assistant's own preview browser, which had stage sound on during testing. That preview was closed and later checks ran muted.
+
 ## Stubbs reads the hard poses and says his line · November 23, 2026
 
 The player reported that Stubbs called every phone-at-the-ear pose a selfie and every covered-eyes pose a lifted load. We sent the same six stage PNGs from the earlier blind check through the developer CLI. Each request contained the picture and the brief and nothing else: no cue, filename or answer list. With a new brief describing the puppet's anatomy, Claude Haiku 4.5 still answered “Taking a selfie with phone” and “carrying a heavy suitcase overhead.” Claude Haiku 5.5, Sonnet 5.5 and Opus 5.5 each named both actions. Haiku 5.5 cost about $0.0002–0.0005 per look, less than Haiku 4.5's $0.001, so the hosted reader now uses it. The text-only referee stays on Haiku 4.5 at temperature 0.
